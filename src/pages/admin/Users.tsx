@@ -5,18 +5,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Pencil, UserX } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { User } from "@supabase/supabase-js";
 
-interface User {
+interface Profile {
   id: string;
-  email: string;
   role: string;
   first_name: string | null;
   last_name: string | null;
   company: string | null;
 }
 
+interface UserWithProfile extends Profile {
+  email: string;
+}
+
 export default function Users() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithProfile[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,14 +42,18 @@ export default function Users() {
       if (error) throw error;
 
       // Fetch corresponding user emails
-      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) throw authError;
+
+      const authUsers = authData.users as User[];
       
       const usersWithEmail = profiles?.map(profile => ({
         ...profile,
-        email: authUsers.users.find(user => user.id === profile.id)?.email || 'N/A'
+        email: authUsers.find(user => user.id === profile.id)?.email || 'N/A'
       }));
 
-      setUsers(usersWithEmail);
+      setUsers(usersWithEmail || []);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
