@@ -151,13 +151,15 @@ export default function Index() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Campaigns</h2>
               <div className="flex gap-4">
-                <Input
-                  placeholder="Search campaigns..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64"
-                  icon={<Search className="h-4 w-4" />}
-                />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
+                  <Input
+                    placeholder="Search campaigns..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-64 pl-10"
+                  />
+                </div>
               </div>
             </div>
             
