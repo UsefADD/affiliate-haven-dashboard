@@ -1,7 +1,8 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
-import { BarChart, LineChart } from "recharts";
+import { BarChart, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ArrowUpRight, DollarSign, Users, Link as LinkIcon } from "lucide-react";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 
 const mockData = {
   earnings: {
@@ -21,12 +22,14 @@ const mockData = {
   },
 };
 
-const chartData = [
-  { name: "Jan", value: 400 },
-  { name: "Feb", value: 300 },
-  { name: "Mar", value: 600 },
-  { name: "Apr", value: 800 },
-  { name: "May", value: 700 },
+const salesData = [
+  { month: "Jan", sales: 4000 },
+  { month: "Feb", sales: 3000 },
+  { month: "Mar", sales: 5000 },
+  { month: "Apr", sales: 4500 },
+  { month: "May", sales: 6000 },
+  { month: "Jun", sales: 5500 },
+  { month: "Jul", sales: 7000 },
 ];
 
 export default function Index() {
@@ -102,9 +105,51 @@ export default function Index() {
         {/* Charts */}
         <section className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Earnings Overview</h3>
+            <h3 className="text-lg font-semibold mb-4">Sales Trend</h3>
             <div className="h-[300px]">
-              {/* Add chart component here */}
+              <ChartContainer
+                config={{
+                  sales: {
+                    label: "Sales",
+                    theme: {
+                      light: "#0ea5e9",
+                      dark: "#38bdf8",
+                    },
+                  },
+                }}
+              >
+                <LineChart data={salesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="rounded-lg border bg-background p-2 shadow-sm">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col">
+                              <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                Sales
+                              </span>
+                              <span className="font-bold text-muted-foreground">
+                                ${payload[0].value}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+                    return null
+                  }} />
+                  <Line
+                    type="monotone"
+                    dataKey="sales"
+                    stroke="var(--color-sales)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ChartContainer>
             </div>
           </Card>
 
