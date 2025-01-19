@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 const offerSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  payout: z.string().transform((val) => parseFloat(val)),
+  payout: z.number().min(0, "Payout must be a positive number"),
 });
 
 interface Offer {
@@ -38,7 +38,7 @@ export default function Offers() {
     defaultValues: {
       name: "",
       description: "",
-      payout: "",
+      payout: 0,
     },
   });
 
@@ -175,7 +175,13 @@ export default function Offers() {
                       <FormItem>
                         <FormLabel>Payout ($)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="0.00" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
