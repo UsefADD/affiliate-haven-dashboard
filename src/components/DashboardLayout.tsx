@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, BarChart2, Link, Settings, LogOut } from "lucide-react";
+import { Menu, X, BarChart2, Link, Settings, LogOut, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
@@ -12,6 +12,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navItems = [
     { icon: BarChart2, label: "Dashboard", href: "/" },
     { icon: Link, label: "Campaigns", href: "/campaigns" },
+    { icon: FileText, label: "Reports", href: "/reports" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ];
 
