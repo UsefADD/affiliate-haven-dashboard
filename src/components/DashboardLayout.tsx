@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Menu, X, BarChart2, Link, Settings, LogOut, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, BarChart2, Link, Settings, LogOut, FileText, Users, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -9,19 +10,44 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  useEffect(() => {
+    const checkUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        setIsAdmin(profile?.role === 'admin');
+      }
+    };
+
+    checkUserRole();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem("isLoggedIn");
     navigate("/login");
   };
 
-  const navItems = [
+  const baseNavItems = [
     { icon: BarChart2, label: "Dashboard", href: "/" },
     { icon: Link, label: "Campaigns", href: "/campaigns" },
     { icon: FileText, label: "Reports", href: "/reports" },
-    { icon: Settings, label: "Settings", href: "/settings" },
   ];
+
+  const adminNavItems = [
+    { icon: Users, label: "Users", href: "/admin/users" },
+    { icon: Gift, label: "Offers", href: "/admin/offers" },
+  ];
+
+  const navItems = isAdmin ? [...baseNavItems, ...adminNavItems] : baseNavItems;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
@@ -78,7 +104,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </button>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-muted-foreground">
-                Welcome back, Affiliate
+                Welcome back, {isAdmin ? 'Admin' : 'Affiliate'}
               </div>
             </div>
           </div>

@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import Campaigns from "./pages/Campaigns";
 import Reports from "./pages/Reports";
 import Login from "./pages/Login";
+import Users from "./pages/admin/Users";
+import Offers from "./pages/admin/Offers";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +46,22 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/offers"
+            element={
+              <ProtectedRoute>
+                <Offers />
               </ProtectedRoute>
             }
           />

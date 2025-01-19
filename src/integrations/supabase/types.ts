@@ -9,7 +9,101 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          affiliate_id: string
+          conversion_date: string | null
+          created_at: string
+          id: string
+          offer_id: string
+          payout: number
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          conversion_date?: string | null
+          created_at?: string
+          id?: string
+          offer_id: string
+          payout: number
+          status: string
+        }
+        Update: {
+          affiliate_id?: string
+          conversion_date?: string | null
+          created_at?: string
+          id?: string
+          offer_id?: string
+          payout?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offers: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          payout: number
+          status: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          payout: number
+          status?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          payout?: number
+          status?: boolean | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +112,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "affiliate"
     }
     CompositeTypes: {
       [_ in never]: never
