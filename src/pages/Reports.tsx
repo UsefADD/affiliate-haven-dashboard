@@ -4,10 +4,15 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
 
 export default function Reports() {
-  const [dateRange, setDateRange] = useState("01/19/2025 - 01/19/2025");
+  const [date, setDate] = useState<Date>();
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState("");
 
@@ -18,12 +23,29 @@ export default function Reports() {
           <h2 className="text-2xl font-bold">Campaigns Report</h2>
           
           <div className="flex flex-col md:flex-row gap-4">
-            <Input
-              type="text"
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-full md:w-[300px]"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full md:w-[300px] justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            
             <Input
               type="text"
               placeholder="Search Campaigns..."
