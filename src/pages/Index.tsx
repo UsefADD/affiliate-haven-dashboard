@@ -32,6 +32,16 @@ const salesData = [
   { month: "Jul", sales: 7000 },
 ];
 
+const clickData = [
+  { month: "Jan", clicks: 1200 },
+  { month: "Feb", clicks: 1800 },
+  { month: "Mar", clicks: 2400 },
+  { month: "Apr", clicks: 2100 },
+  { month: "May", clicks: 2800 },
+  { month: "Jun", clicks: 3200 },
+  { month: "Jul", clicks: 3600 },
+];
+
 export default function Index() {
   return (
     <DashboardLayout>
@@ -154,9 +164,51 @@ export default function Index() {
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Conversion Rate</h3>
+            <h3 className="text-lg font-semibold mb-4">Click Trends</h3>
             <div className="h-[300px]">
-              {/* Add chart component here */}
+              <ChartContainer
+                config={{
+                  clicks: {
+                    label: "Clicks",
+                    theme: {
+                      light: "#10b981",
+                      dark: "#34d399",
+                    },
+                  },
+                }}
+              >
+                <LineChart data={clickData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="rounded-lg border bg-background p-2 shadow-sm">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col">
+                              <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                Clicks
+                              </span>
+                              <span className="font-bold text-muted-foreground">
+                                {payload[0].value}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+                    return null
+                  }} />
+                  <Line
+                    type="monotone"
+                    dataKey="clicks"
+                    stroke="var(--color-clicks)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ChartContainer>
             </div>
           </Card>
         </section>
