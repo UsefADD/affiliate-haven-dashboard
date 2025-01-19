@@ -8,8 +8,9 @@ export interface Campaign {
     type: "image" | "email";
     content: string;
     details?: {
-      fromName?: string;
-      subject?: string;
+      fromNames?: string[];
+      subjects?: string[];
     };
+    images?: string[];
   }[];
 }

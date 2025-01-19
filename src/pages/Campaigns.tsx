@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Campaign } from "@/types/campaign";
 import { useState } from "react";
 
@@ -20,13 +22,22 @@ const mockCampaigns: Campaign[] = [
         type: "email",
         content: "Summer Sale Email Template",
         details: {
-          fromName: "Special Offers",
-          subject: "Don't Miss Our Biggest Summer Sale!"
-        }
-      },
-      {
-        type: "image",
-        content: "/placeholder.svg"
+          fromNames: [
+            "Special Offers",
+            "Exclusive Deals",
+            "Summer Savings"
+          ],
+          subjects: [
+            "Don't Miss Our Biggest Summer Sale!",
+            "Limited Time: Summer Deals Inside",
+            "Your Exclusive Summer Savings"
+          ]
+        },
+        images: [
+          "/placeholder.svg",
+          "/placeholder.svg",
+          "/placeholder.svg"
+        ]
       }
     ]
   },
@@ -41,13 +52,22 @@ const mockCampaigns: Campaign[] = [
         type: "email",
         content: "Black Friday Email Template",
         details: {
-          fromName: "Exclusive Deals",
-          subject: "Early Access: Black Friday Deals Inside"
-        }
-      },
-      {
-        type: "image",
-        content: "/placeholder.svg"
+          fromNames: [
+            "Black Friday Deals",
+            "Early Access Offers",
+            "VIP Deals"
+          ],
+          subjects: [
+            "Early Access: Black Friday Deals Inside",
+            "VIP Preview: Black Friday Savings",
+            "Exclusive Black Friday Access"
+          ]
+        },
+        images: [
+          "/placeholder.svg",
+          "/placeholder.svg",
+          "/placeholder.svg"
+        ]
       }
     ]
   },
@@ -56,6 +76,9 @@ const mockCampaigns: Campaign[] = [
 export default function Campaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFromName, setSelectedFromName] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [selectedImage, setSelectedImage] = useState<string>("");
 
   const filteredCampaigns = mockCampaigns.filter(campaign =>
     campaign.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -166,31 +189,70 @@ export default function Campaigns() {
                   {selectedCampaign.creatives?.map((creative, index) => (
                     <div key={index} className="p-4 bg-muted rounded-md">
                       {creative.type === "email" && creative.details && (
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                           <div>
-                            <p className="text-sm text-muted-foreground">From Name</p>
-                            <p className="font-medium">{creative.details.fromName}</p>
+                            <p className="text-sm text-muted-foreground mb-2">Select "From" Name</p>
+                            <Select onValueChange={setSelectedFromName} value={selectedFromName}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Choose a from name..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {creative.details.fromNames?.map((name, idx) => (
+                                  <SelectItem key={idx} value={name}>
+                                    {name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
+                          
                           <div>
-                            <p className="text-sm text-muted-foreground">Subject Line</p>
-                            <p className="font-medium">{creative.details.subject}</p>
+                            <p className="text-sm text-muted-foreground mb-2">Select Subject Line</p>
+                            <Select onValueChange={setSelectedSubject} value={selectedSubject}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Choose a subject line..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {creative.details.subjects?.map((subject, idx) => (
+                                  <SelectItem key={idx} value={subject}>
+                                    {subject}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
+
                           <div>
-                            <p className="text-sm text-muted-foreground">Template</p>
-                            <p className="font-medium">{creative.content}</p>
+                            <p className="text-sm text-muted-foreground mb-2">Select Creative Image</p>
+                            <div className="grid grid-cols-2 gap-4">
+                              {creative.images?.map((image, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className={`relative cursor-pointer rounded-lg overflow-hidden ${
+                                    selectedImage === image ? 'ring-2 ring-primary' : ''
+                                  }`}
+                                  onClick={() => setSelectedImage(image)}
+                                >
+                                  <img 
+                                    src={image} 
+                                    alt={`Creative ${idx + 1}`} 
+                                    className="w-full h-auto"
+                                  />
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="absolute bottom-2 right-2"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Add download logic here
+                                    }}
+                                  >
+                                    Download
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {creative.type === "image" && (
-                        <div>
-                          <img 
-                            src={creative.content} 
-                            alt="Campaign Creative" 
-                            className="w-full h-auto rounded-md"
-                          />
-                          <Button variant="ghost" size="sm" className="mt-2">
-                            Download
-                          </Button>
                         </div>
                       )}
                     </div>
