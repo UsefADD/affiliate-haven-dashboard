@@ -10,11 +10,45 @@ import { format } from "date-fns";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Reports() {
   const [date, setDate] = useState<Date>();
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState("");
+  const [reportData, setReportData] = useState<any[]>([]);
+  const { toast } = useToast();
+
+  const handleRunReport = () => {
+    if (!date) {
+      toast({
+        title: "Date Required",
+        description: "Please select a date to run the report",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // This is where you would typically fetch data from your backend
+    // For now, we'll simulate some data based on the selected date
+    const mockData = [
+      {
+        id: "1",
+        campaignName: `Campaign for ${format(date, "MMM d, yyyy")}`,
+        clicks: 150,
+        sales: 12,
+        conversion: "8.00",
+        epc: "2.50",
+        earnings: "375.00"
+      }
+    ];
+
+    setReportData(mockData);
+    toast({
+      title: "Report Generated",
+      description: `Showing results for ${format(date, "MMM d, yyyy")}`,
+    });
+  };
 
   return (
     <DashboardLayout>
@@ -63,7 +97,10 @@ export default function Reports() {
                 <SelectItem value="display">Display</SelectItem>
               </SelectContent>
             </Select>
-            <Button className="bg-green-600 hover:bg-green-700 ml-auto">
+            <Button 
+              className="bg-green-600 hover:bg-green-700 ml-auto"
+              onClick={handleRunReport}
+            >
               Run
             </Button>
           </div>
@@ -82,36 +119,43 @@ export default function Reports() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
-                    No matching records found
-                  </TableCell>
-                </TableRow>
+                {reportData.length > 0 ? (
+                  <>
+                    {reportData.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell>{row.id}</TableCell>
+                        <TableCell>{row.campaignName}</TableCell>
+                        <TableCell>{row.clicks}</TableCell>
+                        <TableCell>{row.sales}</TableCell>
+                        <TableCell>{row.conversion}%</TableCell>
+                        <TableCell>${row.epc}</TableCell>
+                        <TableCell>${row.earnings}</TableCell>
+                      </TableRow>
+                    ))}
+                  </>
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-4">
+                      No matching records found
+                    </TableCell>
+                  </TableRow>
+                )}
                 <TableRow className="bg-muted/50 font-medium">
                   <TableCell colSpan={2}>Totals</TableCell>
-                  <TableCell>0</TableCell>
-                  <TableCell>0</TableCell>
-                  <TableCell>0.00%</TableCell>
-                  <TableCell>$0.00</TableCell>
-                  <TableCell>$0.00</TableCell>
+                  <TableCell>{reportData.reduce((sum, row) => sum + row.clicks, 0)}</TableCell>
+                  <TableCell>{reportData.reduce((sum, row) => sum + row.sales, 0)}</TableCell>
+                  <TableCell>
+                    {(reportData.reduce((sum, row) => sum + parseFloat(row.conversion), 0) / Math.max(reportData.length, 1)).toFixed(2)}%
+                  </TableCell>
+                  <TableCell>
+                    ${(reportData.reduce((sum, row) => sum + parseFloat(row.epc), 0) / Math.max(reportData.length, 1)).toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    ${reportData.reduce((sum, row) => sum + parseFloat(row.earnings), 0).toFixed(2)}
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
-          </div>
-
-          <div className="flex justify-end gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span>Customized Columns</span>
-              <div className="w-8 h-4 bg-gray-200 rounded-full relative cursor-pointer">
-                <div className="absolute right-0 w-4 h-4 bg-white rounded-full shadow" />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span>Filtering</span>
-              <div className="w-8 h-4 bg-gray-200 rounded-full relative cursor-pointer">
-                <div className="absolute right-0 w-4 h-4 bg-white rounded-full shadow" />
-              </div>
-            </div>
           </div>
         </div>
       </Card>

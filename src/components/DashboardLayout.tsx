@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Menu, X, BarChart2, Link, Settings, LogOut, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -8,6 +9,12 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    navigate("/login");
+  };
 
   const navItems = [
     { icon: BarChart2, label: "Dashboard", href: "/" },
@@ -18,7 +25,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed top-0 left-0 z-40 h-screen w-64 transform transition-transform duration-300 ease-in-out",
@@ -27,7 +33,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         <div className="h-full glass-card border-r">
           <div className="flex items-center justify-between p-4">
-            <h1 className="text-xl font-semibold">Affiliate Dashboard</h1>
+            <h1 className="text-xl font-semibold text-green-600">SoftDigi</h1>
             <button
               onClick={() => setIsSidebarOpen(false)}
               className="lg:hidden p-2 rounded-lg hover:bg-secondary"
@@ -48,7 +54,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             ))}
           </nav>
           <div className="absolute bottom-0 w-full p-4">
-            <button className="nav-link w-full text-destructive">
+            <button onClick={handleLogout} className="nav-link w-full text-destructive">
               <LogOut className="h-5 w-5" />
               <span>Logout</span>
             </button>
@@ -56,7 +62,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Main content */}
       <div
         className={cn(
           "transition-all duration-300",
