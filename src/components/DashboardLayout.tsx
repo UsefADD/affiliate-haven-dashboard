@@ -11,7 +11,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navItems = [
     { icon: BarChart2, label: "Dashboard", href: "/" },
-    { icon: Link, label: "Affiliate Links", href: "/links" },
+    { icon: Link, label: "Campaigns", href: "/campaigns" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ];
 
