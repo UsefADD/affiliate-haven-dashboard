@@ -11,19 +11,45 @@ import { useState } from "react";
 const mockCampaigns: Campaign[] = [
   {
     id: 8,
-    name: "HOME SERVICES - SENSITIVE Choice Home Warranty",
+    name: "EMAIL - Summer Sale Promotion",
     payout: "$30.00 per lead",
     availability: "Approved",
-    links: ["https://example.com/link1", "https://example.com/link2"],
-    creatives: ["Banner 300x250", "Banner 728x90"]
+    links: ["https://example.com/summer-sale"],
+    creatives: [
+      {
+        type: "email",
+        content: "Summer Sale Email Template",
+        details: {
+          fromName: "Special Offers",
+          subject: "Don't Miss Our Biggest Summer Sale!"
+        }
+      },
+      {
+        type: "image",
+        content: "/placeholder.svg"
+      }
+    ]
   },
   {
     id: 501,
-    name: "ECOMM - 1Tac - TC1200",
+    name: "EMAIL - Black Friday Preview",
     payout: "$60.00 per action",
     availability: "Approved",
-    links: ["https://example.com/link3"],
-    creatives: ["Video Ad", "Social Media Banner"]
+    links: ["https://example.com/black-friday"],
+    creatives: [
+      {
+        type: "email",
+        content: "Black Friday Email Template",
+        details: {
+          fromName: "Exclusive Deals",
+          subject: "Early Access: Black Friday Deals Inside"
+        }
+      },
+      {
+        type: "image",
+        content: "/placeholder.svg"
+      }
+    ]
   },
 ];
 
@@ -39,7 +65,7 @@ export default function Campaigns() {
     <DashboardLayout>
       <Card className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Campaigns</h2>
+          <h2 className="text-2xl font-bold">Email Marketing Campaigns</h2>
           <div className="flex gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
@@ -100,7 +126,7 @@ export default function Campaigns() {
           <DialogHeader>
             <DialogTitle>Campaign Details</DialogTitle>
             <DialogDescription>
-              View campaign information, links, and creative assets
+              View campaign information, email templates, and creative assets
             </DialogDescription>
           </DialogHeader>
           
@@ -135,12 +161,38 @@ export default function Campaigns() {
               </div>
 
               <div>
-                <h4 className="text-sm font-medium mb-2">Creative Assets</h4>
-                <div className="space-y-2">
+                <h4 className="text-sm font-medium mb-2">Email Marketing Assets</h4>
+                <div className="space-y-4">
                   {selectedCampaign.creatives?.map((creative, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                      <span className="text-sm">{creative}</span>
-                      <Button variant="ghost" size="sm">Download</Button>
+                    <div key={index} className="p-4 bg-muted rounded-md">
+                      {creative.type === "email" && creative.details && (
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-sm text-muted-foreground">From Name</p>
+                            <p className="font-medium">{creative.details.fromName}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Subject Line</p>
+                            <p className="font-medium">{creative.details.subject}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Template</p>
+                            <p className="font-medium">{creative.content}</p>
+                          </div>
+                        </div>
+                      )}
+                      {creative.type === "image" && (
+                        <div>
+                          <img 
+                            src={creative.content} 
+                            alt="Campaign Creative" 
+                            className="w-full h-auto rounded-md"
+                          />
+                          <Button variant="ghost" size="sm" className="mt-2">
+                            Download
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
