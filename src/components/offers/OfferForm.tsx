@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { ImageUploader } from "./ImageUploader";
+import { AffiliateLinksManager } from "./AffiliateLinksManager";
 
 const offerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -32,9 +34,10 @@ interface OfferFormProps {
   onSubmit: (data: OfferFormData) => void;
   isSubmitting?: boolean;
   isAdmin?: boolean;
+  editingOffer?: boolean;
 }
 
-export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false }: OfferFormProps) {
+export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false, editingOffer = false }: OfferFormProps) {
   const form = useForm<OfferFormData>({
     resolver: zodResolver(offerSchema),
     defaultValues: initialData || {
@@ -153,6 +156,27 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
               </FormItem>
             )}
           />
+        )}
+
+        {isAdmin && editingOffer && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <FormLabel>Offer Image</FormLabel>
+            </div>
+            <ImageUploader
+              onUpload={(url) => {
+                const currentCreatives = form.getValues("creatives") || [];
+                form.setValue("creatives", [
+                  ...currentCreatives,
+                  {
+                    type: "image",
+                    content: url,
+                    images: [url],
+                  },
+                ]);
+              }}
+            />
+          </div>
         )}
 
         <div className="space-y-4">
@@ -356,6 +380,12 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
             </div>
           ))}
         </div>
+
+        {isAdmin && editingOffer && (
+          <div className="mt-4">
+            <AffiliateLinksManager offerId={editingOffer.id} />
+          </div>
+        )}
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {initialData ? 'Update' : 'Create'} Offer

@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      affiliate_links: {
+        Row: {
+          affiliate_id: string | null
+          created_at: string
+          id: string
+          offer_id: string | null
+          tracking_url: string
+        }
+        Insert: {
+          affiliate_id?: string | null
+          created_at?: string
+          id?: string
+          offer_id?: string | null
+          tracking_url: string
+        }
+        Update: {
+          affiliate_id?: string | null
+          created_at?: string
+          id?: string
+          offer_id?: string | null
+          tracking_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_links_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_links_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           affiliate_id: string

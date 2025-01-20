@@ -1,6 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Check, X, Pencil } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface Offer {
   id: string;
@@ -47,7 +48,20 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
         <TableBody>
           {offers.map((offer) => (
             <TableRow key={offer.id}>
-              <TableCell className="font-medium">{offer.name}</TableCell>
+              <TableCell className="font-medium">
+                {offer.creatives?.some(c => c.type === "image") && (
+                  <div className="w-20 mb-2">
+                    <AspectRatio ratio={16/9}>
+                      <img
+                        src={offer.creatives.find(c => c.type === "image")?.content}
+                        alt={offer.name}
+                        className="rounded-md object-cover"
+                      />
+                    </AspectRatio>
+                  </div>
+                )}
+                {offer.name}
+              </TableCell>
               <TableCell>{offer.description || 'N/A'}</TableCell>
               <TableCell>${offer.payout}</TableCell>
               <TableCell>{offer.links?.length || 0} links</TableCell>
