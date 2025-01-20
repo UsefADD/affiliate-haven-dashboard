@@ -17,6 +17,7 @@ interface Profile {
   company: string | null;
   email: string | null;
   created_at: string;
+  subdomain: string | null;
 }
 
 export default function Users() {
@@ -57,7 +58,6 @@ export default function Users() {
       setIsSubmitting(true);
       console.log("Creating new user:", data);
 
-      // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password!,
@@ -81,7 +81,6 @@ export default function Users() {
       }
 
       if (authData.user) {
-        // Update profile
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
@@ -90,6 +89,7 @@ export default function Users() {
             company: data.company,
             role: data.role,
             email: data.email,
+            subdomain: data.subdomain,
           })
           .eq('id', authData.user.id);
 
@@ -122,7 +122,6 @@ export default function Users() {
       setIsSubmitting(true);
       console.log("Updating user:", data);
 
-      // Update password if provided
       if (data.password) {
         const { error: passwordError } = await supabase.auth.updateUser({
           password: data.password
@@ -131,7 +130,6 @@ export default function Users() {
         if (passwordError) throw passwordError;
       }
 
-      // Update profile
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -139,6 +137,7 @@ export default function Users() {
           last_name: data.last_name,
           company: data.company,
           role: data.role,
+          subdomain: data.subdomain,
         })
         .eq('id', selectedUser.id);
 
@@ -231,6 +230,7 @@ export default function Users() {
                 <TableHead>Email</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Subdomain</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -245,6 +245,7 @@ export default function Users() {
                   <TableCell>{user.email || 'N/A'}</TableCell>
                   <TableCell>{user.company || 'N/A'}</TableCell>
                   <TableCell className="capitalize">{user.role || 'N/A'}</TableCell>
+                  <TableCell>{user.subdomain || 'N/A'}</TableCell>
                   <TableCell className="text-right">
                     <Button 
                       variant="ghost" 

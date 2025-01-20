@@ -13,6 +13,7 @@ const userSchema = z.object({
   last_name: z.string().min(1, "Last name is required"),
   company: z.string().optional(),
   role: z.enum(["admin", "affiliate"]),
+  subdomain: z.string().optional(),
 });
 
 export type UserFormData = z.infer<typeof userSchema>;
@@ -34,6 +35,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting, mode }: UserForm
       last_name: initialData?.last_name || "",
       company: initialData?.company || "",
       role: initialData?.role || "affiliate",
+      subdomain: initialData?.subdomain || "",
     },
   });
 
@@ -113,6 +115,23 @@ export function UserForm({ initialData, onSubmit, isSubmitting, mode }: UserForm
               <FormLabel>Company</FormLabel>
               <FormControl>
                 <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="subdomain"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Subdomain</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder="e.g., fast"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
