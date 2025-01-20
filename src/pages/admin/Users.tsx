@@ -5,7 +5,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Pencil, UserX } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { User } from "@supabase/supabase-js";
 
 interface Profile {
   id: string;
@@ -13,14 +12,11 @@ interface Profile {
   first_name: string | null;
   last_name: string | null;
   company: string | null;
-}
-
-interface UserWithProfile extends Profile {
-  email: string;
+  email: string | null;
 }
 
 export default function Users() {
-  const [users, setUsers] = useState<UserWithProfile[]>([]);
+  const [users, setUsers] = useState<Profile[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -29,6 +25,7 @@ export default function Users() {
 
   const fetchUsers = async () => {
     try {
+      console.log("Fetching users...");
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select(`
@@ -36,24 +33,17 @@ export default function Users() {
           role,
           first_name,
           last_name,
-          company
+          company,
+          email
         `);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+      }
 
-      // Fetch corresponding user emails
-      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) throw authError;
-
-      const authUsers = authData.users as User[];
-      
-      const usersWithEmail = profiles?.map(profile => ({
-        ...profile,
-        email: authUsers.find(user => user.id === profile.id)?.email || 'N/A'
-      }));
-
-      setUsers(usersWithEmail || []);
+      console.log("Fetched users:", profiles);
+      setUsers(profiles || []);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -94,7 +84,7 @@ export default function Users() {
                       ? `${user.first_name} ${user.last_name}`
                       : 'N/A'}
                   </TableCell>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.email || 'N/A'}</TableCell>
                   <TableCell>{user.company || 'N/A'}</TableCell>
                   <TableCell className="capitalize">{user.role}</TableCell>
                   <TableCell className="text-right">
