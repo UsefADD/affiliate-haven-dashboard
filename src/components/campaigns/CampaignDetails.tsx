@@ -2,7 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Campaign } from "@/types/campaign";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CampaignDetailsProps {
   campaign: Campaign | null;
@@ -14,6 +15,33 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
   const [selectedFromName, setSelectedFromName] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<string>("");
+  const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subdomain')
+          .eq('id', user.id)
+          .single();
+        setUserProfile(profile);
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
+  const getFormattedTrackingUrl = () => {
+    if (!trackingUrl || !userProfile?.subdomain) return trackingUrl;
+    try {
+      const url = new URL(trackingUrl.startsWith('http') ? trackingUrl : `https://${trackingUrl}`);
+      return `https://${userProfile.subdomain}.${url.hostname}${url.pathname}${url.search}`;
+    } catch (error) {
+      console.error('Error parsing URL:', error);
+      return trackingUrl;
+    }
+  };
 
   if (!campaign) return null;
 
@@ -47,13 +75,14 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
             <div className="space-y-2">
               <div className="flex items-center justify-between p-2 bg-muted rounded-md">
                 <span className="text-sm truncate mr-2">
-                  {trackingUrl || 'No tracking link assigned'}
+                  {getFormattedTrackingUrl() || 'No tracking link assigned'}
                 </span>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => {
-                    if (trackingUrl) navigator.clipboard.writeText(trackingUrl);
+                    const formattedUrl = getFormattedTrackingUrl();
+                    if (formattedUrl) navigator.clipboard.writeText(formattedUrl);
                   }}
                 >
                   Copy

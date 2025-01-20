@@ -41,6 +41,7 @@ interface OfferListProps {
 export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: OfferListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
+  const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -48,10 +49,26 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
       setCurrentUserId(user?.id || null);
       if (user?.id) {
         fetchAffiliateLinks(user.id);
+        fetchUserProfile(user.id);
       }
     };
     getCurrentUser();
   }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('subdomain')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   const fetchAffiliateLinks = async (userId: string) => {
     try {
@@ -78,7 +95,7 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
   };
 
   const getTrackingUrl = (offer: Offer) => {
-    if (!currentUserId) return null;
+    if (!currentUserId || !userProfile?.subdomain) return null;
     console.log("Getting tracking URL for offer:", offer.id);
     console.log("Current affiliate links:", affiliateLinks);
     console.log("Specific affiliate link:", affiliateLinks[offer.id]);
@@ -90,8 +107,20 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
       return affiliateLink;
     }
     
-    // If no specific affiliate link is found, return the default offer link if available
+    // If no specific affiliate link is found, generate one using the subdomain
     const defaultLink = offer.links && offer.links.length > 0 ? offer.links[0] : null;
+    if (defaultLink) {
+      // Parse the URL and add subdomain
+      try {
+        const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
+        const newUrl = `https://${userProfile.subdomain}.${url.hostname}${url.pathname}${url.search}`;
+        console.log("Generated subdomain URL:", newUrl);
+        return newUrl;
+      } catch (error) {
+        console.error('Error parsing URL:', error);
+        return defaultLink;
+      }
+    }
     console.log("Using default link:", defaultLink);
     return defaultLink;
   };
