@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Check, X, Pencil } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { supabase } from "@/integrations/supabase/client";
-import { AffiliateLinksManager } from "./AffiliateLinksManager";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface AffiliateLink {
   id: string;
@@ -42,7 +40,6 @@ interface OfferListProps {
 
 export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: OfferListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
   const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -159,7 +156,7 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
                   {new Date(offer.created_at).toLocaleDateString()}
                 </TableCell>
                 {isAdmin && (
-                  <TableCell className="text-right space-x-2">
+                  <TableCell className="text-right">
                     <Button 
                       variant="ghost" 
                       size="icon"
@@ -167,23 +164,6 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedOfferId(offer.id)}
-                        >
-                          Manage Links
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Manage Tracking URLs for {offer.name}</DialogTitle>
-                        </DialogHeader>
-                        <AffiliateLinksManager offerId={offer.id} />
-                      </DialogContent>
-                    </Dialog>
                   </TableCell>
                 )}
               </TableRow>

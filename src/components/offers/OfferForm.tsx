@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ImageUploader } from "./ImageUploader";
-import { AffiliateLinksManager } from "./AffiliateLinksManager";
 
 const offerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -34,10 +33,9 @@ interface OfferFormProps {
   onSubmit: (data: OfferFormData) => void;
   isSubmitting?: boolean;
   isAdmin?: boolean;
-  editingOffer?: { id: string } | null;
 }
 
-export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false, editingOffer = null }: OfferFormProps) {
+export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false }: OfferFormProps) {
   const form = useForm<OfferFormData>({
     resolver: zodResolver(offerSchema),
     defaultValues: initialData || {
@@ -156,14 +154,6 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
               </FormItem>
             )}
           />
-        )}
-
-        {isAdmin && editingOffer && (
-          <div className="space-y-4 border rounded-lg p-4">
-            <h3 className="text-lg font-semibold">Manage Affiliate Links</h3>
-            <p className="text-sm text-muted-foreground mb-4">Assign unique tracking links to affiliates for this offer</p>
-            <AffiliateLinksManager offerId={editingOffer.id} />
-          </div>
         )}
 
         <div className="space-y-4">
