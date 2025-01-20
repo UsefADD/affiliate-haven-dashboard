@@ -10,12 +10,53 @@ import Login from "./pages/Login";
 import Users from "./pages/admin/Users";
 import Offers from "./pages/admin/Offers";
 import Leads from "./pages/admin/Leads";
+import AdminDashboard from "./pages/admin/Dashboard";
+import { useEffect, useState } from "react";
+import { supabase } from "./integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requireAdmin?: boolean;
+}
+
+const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-  return isLoggedIn ? <>{children}</> : <Navigate to="/login" />;
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        setIsAuthorized(!requireAdmin || profile?.role === 'admin');
+      } else {
+        setIsAuthorized(false);
+      }
+    };
+
+    if (isLoggedIn) {
+      checkUserRole();
+    } else {
+      setIsAuthorized(false);
+    }
+  }, [requireAdmin]);
+
+  if (isAuthorized === null) {
+    return null; // Loading state
+  }
+
+  if (!isLoggedIn || !isAuthorized) {
+    return <Navigate to="/login" />;
+  }
+
+  return <>{children}</>;
 };
 
 const App = () => (
@@ -50,10 +91,19 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/users"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireAdmin>
                 <Users />
               </ProtectedRoute>
             }
@@ -61,7 +111,7 @@ const App = () => (
           <Route
             path="/admin/offers"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireAdmin>
                 <Offers />
               </ProtectedRoute>
             }
@@ -69,7 +119,7 @@ const App = () => (
           <Route
             path="/admin/leads"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireAdmin>
                 <Leads />
               </ProtectedRoute>
             }

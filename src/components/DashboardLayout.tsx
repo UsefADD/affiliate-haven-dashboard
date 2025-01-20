@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X, BarChart2, Link, Settings, LogOut, FileText, Users, Gift, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardLayoutProps {
@@ -12,6 +12,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -36,19 +37,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     navigate("/login");
   };
 
-  const baseNavItems = [
+  const affiliateNavItems = [
     { icon: BarChart2, label: "Dashboard", href: "/" },
     { icon: Link, label: "Campaigns", href: "/campaigns" },
     { icon: FileText, label: "Reports", href: "/reports" },
   ];
 
   const adminNavItems = [
+    { icon: BarChart2, label: "Dashboard", href: "/admin" },
     { icon: Users, label: "Users", href: "/admin/users" },
     { icon: Gift, label: "Offers", href: "/admin/offers" },
     { icon: FileSpreadsheet, label: "Leads", href: "/admin/leads" },
   ];
 
-  const navItems = isAdmin ? [...baseNavItems, ...adminNavItems] : baseNavItems;
+  const navItems = isAdmin ? adminNavItems : affiliateNavItems;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
@@ -73,7 +75,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <a
                 key={item.label}
                 href={item.href}
-                className="nav-link"
+                className={cn(
+                  "nav-link",
+                  location.pathname === item.href && "bg-secondary"
+                )}
               >
                 <item.icon className="h-5 w-5" />
                 <span>{item.label}</span>
