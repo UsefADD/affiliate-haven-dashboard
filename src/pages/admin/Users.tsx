@@ -22,9 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+type UserRole = "admin" | "affiliate";
+
 interface Profile {
   id: string;
-  role: string | null;
+  role: UserRole | null;
   first_name: string | null;
   last_name: string | null;
   company: string | null;
@@ -38,22 +40,24 @@ interface UserFormData {
   first_name: string;
   last_name: string;
   company: string;
-  role: string;
+  role: UserRole;
 }
+
+const INITIAL_FORM_DATA: UserFormData = {
+  email: "",
+  password: "",
+  first_name: "",
+  last_name: "",
+  company: "",
+  role: "affiliate",
+};
 
 export default function Users() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
-  const [formData, setFormData] = useState<UserFormData>({
-    email: "",
-    password: "",
-    first_name: "",
-    last_name: "",
-    company: "",
-    role: "affiliate",
-  });
+  const [formData, setFormData] = useState<UserFormData>(INITIAL_FORM_DATA);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,21 +69,13 @@ export default function Users() {
       console.log("Fetching users...");
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          role,
-          first_name,
-          last_name,
-          company,
-          email,
-          created_at
-        `);
+        .select('*');
 
       if (error) throw error;
 
       console.log("Fetched users:", profiles);
       setUsers(profiles || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching users:', error);
       toast({
         title: "Error",
@@ -89,15 +85,44 @@ export default function Users() {
     }
   };
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleAddUser = async () => {
     try {
+      if (!validateEmail(formData.email)) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid email address",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        if (authError.message.includes("rate_limit")) {
+          toast({
+            title: "Error",
+            description: "Please wait a moment before trying again",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: authError.message,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
 
       if (authData.user) {
         // Update profile
@@ -121,14 +146,7 @@ export default function Users() {
 
         setIsAddDialogOpen(false);
         fetchUsers();
-        setFormData({
-          email: "",
-          password: "",
-          first_name: "",
-          last_name: "",
-          company: "",
-          role: "affiliate",
-        });
+        setFormData(INITIAL_FORM_DATA);
       }
     } catch (error: any) {
       console.error('Error adding user:', error);
@@ -150,7 +168,7 @@ export default function Users() {
           first_name: formData.first_name,
           last_name: formData.last_name,
           company: formData.company,
-          role: formData.role,
+          role: formData.role as UserRole,
         })
         .eq('id', selectedUser.id);
 
@@ -197,7 +215,7 @@ export default function Users() {
   const openEditDialog = (user: Profile) => {
     setSelectedUser(user);
     setFormData({
-      ...formData,
+      ...INITIAL_FORM_DATA,
       email: user.email || "",
       first_name: user.first_name || "",
       last_name: user.last_name || "",
@@ -269,7 +287,7 @@ export default function Users() {
                   <Label htmlFor="role">Role</Label>
                   <Select
                     value={formData.role}
-                    onValueChange={(value) => setFormData({ ...formData, role: value })}
+                    onValueChange={(value: UserRole) => setFormData({ ...formData, role: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
@@ -322,7 +340,7 @@ export default function Users() {
                 <Label htmlFor="editRole">Role</Label>
                 <Select
                   value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                  onValueChange={(value: UserRole) => setFormData({ ...formData, role: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
