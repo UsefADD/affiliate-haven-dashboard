@@ -1,23 +1,12 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-
-const offerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  payout: z.number().min(0, "Payout must be a positive number"),
-});
+import { OfferForm, OfferFormData } from "@/components/offers/OfferForm";
+import { OfferList } from "@/components/offers/OfferList";
 
 interface Offer {
   id: string;
@@ -32,36 +21,12 @@ export default function Offers() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  
-  const form = useForm<z.infer<typeof offerSchema>>({
-    resolver: zodResolver(offerSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      payout: 0,
-    },
-  });
 
   useEffect(() => {
     fetchOffers();
   }, []);
-
-  useEffect(() => {
-    if (editingOffer) {
-      form.reset({
-        name: editingOffer.name,
-        description: editingOffer.description || "",
-        payout: editingOffer.payout,
-      });
-    } else {
-      form.reset({
-        name: "",
-        description: "",
-        payout: 0,
-      });
-    }
-  }, [editingOffer, form]);
 
   const fetchOffers = async () => {
     try {
@@ -87,8 +52,9 @@ export default function Offers() {
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof offerSchema>) => {
+  const onSubmit = async (values: OfferFormData) => {
     try {
+      setIsSubmitting(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -130,7 +96,6 @@ export default function Offers() {
       
       setIsOpen(false);
       setEditingOffer(null);
-      form.reset();
       fetchOffers();
     } catch (error) {
       console.error('Error creating/updating offer:', error);
@@ -139,6 +104,8 @@ export default function Offers() {
         description: `Failed to ${editingOffer ? 'update' : 'create'} offer`,
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -194,110 +161,24 @@ export default function Offers() {
                   {editingOffer ? 'Update the offer details below.' : 'Fill in the offer details below.'}
                 </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Offer name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Offer description" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="payout"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payout ($)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01" 
-                            placeholder="0.00" 
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full">
-                    {editingOffer ? 'Update' : 'Create'} Offer
-                  </Button>
-                </form>
-              </Form>
+              <OfferForm
+                initialData={editingOffer ? {
+                  name: editingOffer.name,
+                  description: editingOffer.description || '',
+                  payout: editingOffer.payout,
+                } : undefined}
+                onSubmit={onSubmit}
+                isSubmitting={isSubmitting}
+              />
             </DialogContent>
           </Dialog>
         </div>
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Payout</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created At</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {offers.map((offer) => (
-                <TableRow key={offer.id}>
-                  <TableCell className="font-medium">{offer.name}</TableCell>
-                  <TableCell>{offer.description || 'N/A'}</TableCell>
-                  <TableCell>${offer.payout}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleOfferStatus(offer.id, offer.status)}
-                    >
-                      {offer.status ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <X className="h-4 w-4 text-red-500" />
-                      )}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(offer.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleEdit(offer)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <OfferList
+          offers={offers}
+          onEdit={handleEdit}
+          onToggleStatus={toggleOfferStatus}
+        />
       </div>
     </DashboardLayout>
   );
