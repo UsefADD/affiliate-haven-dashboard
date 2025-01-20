@@ -1,0 +1,251 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LeadForm, LeadFormData } from "@/components/leads/LeadForm";
+import { LeadList } from "@/components/leads/LeadList";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Profile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+}
+
+interface Lead {
+  id: string;
+  affiliate_id: string;
+  offer_id: string;
+  status: string;
+  created_at: string;
+  conversion_date: string | null;
+  payout: number;
+  affiliate: {
+    first_name: string | null;
+    last_name: string | null;
+  };
+  offer: {
+    name: string;
+  };
+}
+
+export function AffiliateLeadsManager() {
+  const [selectedAffiliate, setSelectedAffiliate] = useState<string | null>(null);
+  const [affiliates, setAffiliates] = useState<Profile[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchAffiliates();
+  }, []);
+
+  useEffect(() => {
+    if (selectedAffiliate) {
+      fetchAffiliateLeads(selectedAffiliate);
+    }
+  }, [selectedAffiliate]);
+
+  const fetchAffiliates = async () => {
+    try {
+      console.log("Fetching affiliates...");
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .eq('role', 'affiliate');
+
+      if (error) throw error;
+
+      console.log("Fetched affiliates:", data);
+      setAffiliates(data || []);
+    } catch (error) {
+      console.error('Error fetching affiliates:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch affiliates",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchAffiliateLeads = async (affiliateId: string) => {
+    try {
+      console.log("Fetching leads for affiliate:", affiliateId);
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          *,
+          affiliate:profiles!leads_affiliate_id_fkey (
+            first_name,
+            last_name
+          ),
+          offer:offers!leads_offer_id_fkey (
+            name
+          )
+        `)
+        .eq('affiliate_id', affiliateId);
+
+      if (error) throw error;
+
+      console.log("Fetched leads:", data);
+      setLeads(data || []);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch leads",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async (values: LeadFormData) => {
+    if (!selectedAffiliate) return;
+
+    try {
+      setIsSubmitting(true);
+      console.log("Updating lead with values:", values);
+
+      if (editingLead) {
+        const updateData: any = {
+          status: values.status,
+          payout: values.payout,
+        };
+
+        if (values.status === 'converted' && editingLead.status !== 'converted') {
+          updateData.conversion_date = new Date().toISOString();
+        } else if (values.status !== 'converted') {
+          updateData.conversion_date = null;
+        }
+
+        const { error } = await supabase
+          .from('leads')
+          .update(updateData)
+          .eq('id', editingLead.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Lead updated successfully",
+        });
+      }
+      
+      setIsOpen(false);
+      setEditingLead(null);
+      fetchAffiliateLeads(selectedAffiliate);
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update lead",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (lead: Lead) => {
+    setEditingLead(lead);
+    setIsOpen(true);
+  };
+
+  const toggleLeadStatus = async (leadId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'converted' ? 'pending' : 'converted';
+      const updateData: any = {
+        status: newStatus,
+      };
+
+      if (newStatus === 'converted') {
+        updateData.conversion_date = new Date().toISOString();
+      } else {
+        updateData.conversion_date = null;
+      }
+
+      const { error } = await supabase
+        .from('leads')
+        .update(updateData)
+        .eq('id', leadId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Lead status updated",
+      });
+      
+      if (selectedAffiliate) {
+        fetchAffiliateLeads(selectedAffiliate);
+      }
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update lead status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Affiliate Leads Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select
+            value={selectedAffiliate || ""}
+            onValueChange={(value) => setSelectedAffiliate(value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an affiliate" />
+            </SelectTrigger>
+            <SelectContent>
+              {affiliates.map((affiliate) => (
+                <SelectItem key={affiliate.id} value={affiliate.id}>
+                  {affiliate.first_name} {affiliate.last_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {selectedAffiliate && (
+        <>
+          <Dialog open={isOpen} onOpenChange={(open) => {
+            setIsOpen(open);
+            if (!open) setEditingLead(null);
+          }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Lead</DialogTitle>
+              </DialogHeader>
+              <LeadForm
+                initialData={editingLead ? {
+                  status: editingLead.status,
+                  payout: editingLead.payout,
+                } : undefined}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+              />
+            </DialogContent>
+          </Dialog>
+
+          <LeadList
+            leads={leads}
+            onEdit={handleEdit}
+            onToggleStatus={toggleLeadStatus}
+          />
+        </>
+      )}
+    </div>
+  );
+}

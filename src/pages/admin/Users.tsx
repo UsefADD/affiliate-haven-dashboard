@@ -2,31 +2,16 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Pencil, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-type UserRole = "admin" | "affiliate";
+import { UserForm, UserFormData } from "@/components/users/UserForm";
+import { AffiliateLeadsManager } from "@/components/leads/AffiliateLeadsManager";
 
 interface Profile {
   id: string;
-  role: UserRole | null;
+  role: "admin" | "affiliate";
   first_name: string | null;
   last_name: string | null;
   company: string | null;
@@ -34,30 +19,12 @@ interface Profile {
   created_at: string;
 }
 
-interface UserFormData {
-  email: string;
-  password: string;
-  first_name: string;
-  last_name: string;
-  company: string;
-  role: UserRole;
-}
-
-const INITIAL_FORM_DATA: UserFormData = {
-  email: "",
-  password: "",
-  first_name: "",
-  last_name: "",
-  company: "",
-  role: "affiliate",
-};
-
 export default function Users() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
-  const [formData, setFormData] = useState<UserFormData>(INITIAL_FORM_DATA);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -75,7 +42,7 @@ export default function Users() {
 
       console.log("Fetched users:", profiles);
       setUsers(profiles || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching users:', error);
       toast({
         title: "Error",
@@ -85,26 +52,15 @@ export default function Users() {
     }
   };
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleAddUser = async () => {
+  const handleAddUser = async (data: UserFormData) => {
     try {
-      if (!validateEmail(formData.email)) {
-        toast({
-          title: "Error",
-          description: "Please enter a valid email address",
-          variant: "destructive",
-        });
-        return;
-      }
+      setIsSubmitting(true);
+      console.log("Creating new user:", data);
 
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+        email: data.email,
+        password: data.password!,
       });
 
       if (authError) {
@@ -129,11 +85,11 @@ export default function Users() {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            company: formData.company,
-            role: formData.role,
-            email: formData.email,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            company: data.company,
+            role: data.role,
+            email: data.email,
           })
           .eq('id', authData.user.id);
 
@@ -146,33 +102,47 @@ export default function Users() {
 
         setIsAddDialogOpen(false);
         fetchUsers();
-        setFormData(INITIAL_FORM_DATA);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error adding user:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create user",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleEditUser = async () => {
+  const handleEditUser = async (data: UserFormData) => {
     if (!selectedUser) return;
 
     try {
-      const { error } = await supabase
+      setIsSubmitting(true);
+      console.log("Updating user:", data);
+
+      // Update password if provided
+      if (data.password) {
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password: data.password
+        });
+
+        if (passwordError) throw passwordError;
+      }
+
+      // Update profile
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          company: formData.company,
-          role: formData.role as UserRole,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          company: data.company,
+          role: data.role,
         })
         .eq('id', selectedUser.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
       toast({
         title: "Success",
@@ -181,13 +151,15 @@ export default function Users() {
 
       setIsEditDialogOpen(false);
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating user:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update user",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -212,19 +184,6 @@ export default function Users() {
     }
   };
 
-  const openEditDialog = (user: Profile) => {
-    setSelectedUser(user);
-    setFormData({
-      ...INITIAL_FORM_DATA,
-      email: user.email || "",
-      first_name: user.first_name || "",
-      last_name: user.last_name || "",
-      company: user.company || "",
-      role: user.role || "affiliate",
-    });
-    setIsEditDialogOpen(true);
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -241,67 +200,11 @@ export default function Users() {
               <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    value={formData.first_name}
-                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company">Company</Label>
-                  <Input
-                    id="company"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select
-                    value={formData.role}
-                    onValueChange={(value: UserRole) => setFormData({ ...formData, role: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="affiliate">Affiliate</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button onClick={handleAddUser} className="w-full">
-                  Add User
-                </Button>
-              </div>
+              <UserForm
+                mode="create"
+                onSubmit={handleAddUser}
+                isSubmitting={isSubmitting}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -311,50 +214,12 @@ export default function Users() {
             <DialogHeader>
               <DialogTitle>Edit User</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="editFirstName">First Name</Label>
-                <Input
-                  id="editFirstName"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editLastName">Last Name</Label>
-                <Input
-                  id="editLastName"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editCompany">Company</Label>
-                <Input
-                  id="editCompany"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editRole">Role</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value: UserRole) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="affiliate">Affiliate</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleEditUser} className="w-full">
-                Save Changes
-              </Button>
-            </div>
+            <UserForm
+              mode="edit"
+              initialData={selectedUser || undefined}
+              onSubmit={handleEditUser}
+              isSubmitting={isSubmitting}
+            />
           </DialogContent>
         </Dialog>
 
@@ -384,7 +249,10 @@ export default function Users() {
                     <Button 
                       variant="ghost" 
                       size="icon"
-                      onClick={() => openEditDialog(user)}
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setIsEditDialogOpen(true);
+                      }}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -402,6 +270,8 @@ export default function Users() {
             </TableBody>
           </Table>
         </div>
+
+        <AffiliateLeadsManager />
       </div>
     </DashboardLayout>
   );
