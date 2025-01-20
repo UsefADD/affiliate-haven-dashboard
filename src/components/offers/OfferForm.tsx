@@ -159,7 +159,9 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
         )}
 
         {isAdmin && editingOffer && (
-          <div className="mt-4">
+          <div className="space-y-4 border rounded-lg p-4">
+            <h3 className="text-lg font-semibold">Manage Affiliate Links</h3>
+            <p className="text-sm text-muted-foreground mb-4">Assign unique tracking links to affiliates for this offer</p>
             <AffiliateLinksManager offerId={editingOffer.id} />
           </div>
         )}
@@ -237,6 +239,19 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                   </FormItem>
                 )}
               />
+
+              {form.watch(`creatives.${index}.type`) === "image" && (
+                <div className="space-y-4">
+                  <FormLabel>Upload Image</FormLabel>
+                  <ImageUploader
+                    onUpload={(url) => {
+                      form.setValue(`creatives.${index}.content`, url);
+                      const currentImages = form.getValues(`creatives.${index}.images`) || [];
+                      form.setValue(`creatives.${index}.images`, [...currentImages, url]);
+                    }}
+                  />
+                </div>
+              )}
 
               <FormField
                 control={form.control}
