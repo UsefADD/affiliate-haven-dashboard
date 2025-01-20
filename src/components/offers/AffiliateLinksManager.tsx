@@ -26,12 +26,14 @@ export function AffiliateLinksManager({ offerId }: AffiliateLinksManagerProps) {
 
   const fetchAffiliates = async () => {
     try {
+      console.log("Fetching affiliates...");
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
         .eq('role', 'affiliate');
 
       if (error) throw error;
+      console.log("Fetched affiliates:", data);
       setAffiliates(data || []);
     } catch (error) {
       console.error('Error fetching affiliates:', error);
@@ -54,6 +56,12 @@ export function AffiliateLinksManager({ offerId }: AffiliateLinksManagerProps) {
     }
 
     try {
+      console.log("Adding affiliate link:", {
+        offer_id: offerId,
+        affiliate_id: selectedAffiliate,
+        tracking_url: trackingUrl,
+      });
+
       const { error } = await supabase
         .from('affiliate_links')
         .insert({

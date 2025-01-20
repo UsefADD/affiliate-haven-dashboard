@@ -1,7 +1,15 @@
+import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Check, X, Pencil } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { supabase } from "@/integrations/supabase/client";
+
+interface AffiliateLink {
+  id: string;
+  tracking_url: string;
+  affiliate_id: string;
+}
 
 interface Offer {
   id: string;
@@ -20,6 +28,7 @@ interface Offer {
     };
     images?: string[];
   }[];
+  affiliate_links?: AffiliateLink[];
 }
 
 interface OfferListProps {
@@ -30,6 +39,21 @@ interface OfferListProps {
 }
 
 export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: OfferListProps) {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
+
+  const getAffiliateLink = (offer: Offer) => {
+    if (!currentUserId || !offer.affiliate_links) return null;
+    return offer.affiliate_links.find(link => link.affiliate_id === currentUserId)?.tracking_url;
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -38,7 +62,7 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Payout</TableHead>
-            <TableHead>Links</TableHead>
+            {!isAdmin && <TableHead>Your Tracking Link</TableHead>}
             <TableHead>Creatives</TableHead>
             {isAdmin && <TableHead>Status</TableHead>}
             <TableHead>Created At</TableHead>
@@ -64,7 +88,11 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
               </TableCell>
               <TableCell>{offer.description || 'N/A'}</TableCell>
               <TableCell>${offer.payout}</TableCell>
-              <TableCell>{offer.links?.length || 0} links</TableCell>
+              {!isAdmin && (
+                <TableCell>
+                  {getAffiliateLink(offer) || 'No tracking link assigned'}
+                </TableCell>
+              )}
               <TableCell>{offer.creatives?.length || 0} creatives</TableCell>
               {isAdmin && (
                 <TableCell>
