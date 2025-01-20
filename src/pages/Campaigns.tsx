@@ -5,73 +5,29 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Campaign } from "@/types/campaign";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const mockCampaigns: Campaign[] = [
-  {
-    id: 8,
-    name: "EMAIL - Summer Sale Promotion",
-    payout: "$30.00 per lead",
-    availability: "Approved",
-    links: ["https://example.com/summer-sale"],
-    creatives: [
-      {
-        type: "email",
-        content: "Summer Sale Email Template",
-        details: {
-          fromNames: [
-            "Special Offers",
-            "Exclusive Deals",
-            "Summer Savings"
-          ],
-          subjects: [
-            "Don't Miss Our Biggest Summer Sale!",
-            "Limited Time: Summer Deals Inside",
-            "Your Exclusive Summer Savings"
-          ]
-        },
-        images: [
-          "/placeholder.svg",
-          "/placeholder.svg",
-          "/placeholder.svg"
-        ]
-      }
-    ]
-  },
-  {
-    id: 501,
-    name: "EMAIL - Black Friday Preview",
-    payout: "$60.00 per action",
-    availability: "Approved",
-    links: ["https://example.com/black-friday"],
-    creatives: [
-      {
-        type: "email",
-        content: "Black Friday Email Template",
-        details: {
-          fromNames: [
-            "Black Friday Deals",
-            "Early Access Offers",
-            "VIP Deals"
-          ],
-          subjects: [
-            "Early Access: Black Friday Deals Inside",
-            "VIP Preview: Black Friday Savings",
-            "Exclusive Black Friday Access"
-          ]
-        },
-        images: [
-          "/placeholder.svg",
-          "/placeholder.svg",
-          "/placeholder.svg"
-        ]
-      }
-    ]
-  },
-];
+interface Offer {
+  id: string;
+  name: string;
+  description: string | null;
+  payout: number;
+  status: boolean;
+  created_at: string;
+  links?: string[];
+  creatives?: {
+    type: "image" | "email";
+    content: string;
+    details?: {
+      fromNames?: string[];
+      subjects?: string[];
+    };
+    images?: string[];
+  }[];
+}
 
 export default function Campaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -79,9 +35,42 @@ export default function Campaigns() {
   const [selectedFromName, setSelectedFromName] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<string>("");
+  const [offers, setOffers] = useState<Offer[]>([]);
 
-  const filteredCampaigns = mockCampaigns.filter(campaign =>
-    campaign.name.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    fetchOffers();
+  }, []);
+
+  const fetchOffers = async () => {
+    try {
+      console.log("Fetching offers for campaigns page...");
+      const { data, error } = await supabase
+        .from('offers')
+        .select('*')
+        .eq('status', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching offers:", error);
+        throw error;
+      }
+
+      console.log("Fetched offers for campaigns:", data);
+      
+      const typedOffers: Offer[] = data.map(offer => ({
+        ...offer,
+        creatives: offer.creatives as Offer['creatives'] || [],
+        links: offer.links || []
+      }));
+      
+      setOffers(typedOffers);
+    } catch (error) {
+      console.error('Error in fetchOffers:', error);
+    }
+  };
+
+  const filteredOffers = offers.filter(offer =>
+    offer.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -109,30 +98,26 @@ export default function Campaigns() {
                 <TableHead>ID</TableHead>
                 <TableHead>Campaign Name</TableHead>
                 <TableHead>Payout</TableHead>
-                <TableHead>Availability</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCampaigns.map((campaign) => (
-                <TableRow key={campaign.id}>
-                  <TableCell>{campaign.id}</TableCell>
-                  <TableCell>{campaign.name}</TableCell>
-                  <TableCell>{campaign.payout}</TableCell>
+              {filteredOffers.map((offer) => (
+                <TableRow key={offer.id}>
+                  <TableCell>{offer.id}</TableCell>
+                  <TableCell>{offer.name}</TableCell>
+                  <TableCell>${offer.payout}</TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-sm ${
-                      campaign.availability === "Approved" 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}>
-                      {campaign.availability}
+                    <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                      Active
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedCampaign(campaign)}
+                      onClick={() => setSelectedCampaign(offer as unknown as Campaign)}
                     >
                       View Details
                     </Button>

@@ -78,13 +78,17 @@ export default function Index() {
 
   const fetchDashboardStats = async () => {
     try {
-      // Fetch total leads
+      console.log("Fetching dashboard stats...");
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
-        .select('*')
-        .eq('affiliate_id', (await supabase.auth.getUser()).data.user?.id);
+        .select('*');
 
-      if (leadsError) throw leadsError;
+      if (leadsError) {
+        console.error("Error fetching leads:", leadsError);
+        throw leadsError;
+      }
+
+      console.log("Fetched leads:", leadsData);
 
       // Calculate stats
       const totalLeads = leadsData?.length || 0;
