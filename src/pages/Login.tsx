@@ -16,29 +16,44 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    console.log("Attempting login with email:", email);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (authError) {
+        console.error("Auth error:", authError);
+        throw authError;
+      }
 
-      if (data.user) {
+      console.log("Auth successful:", authData);
+
+      if (authData.user) {
         // Check if user is admin
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', data.user.id)
+          .eq('id', authData.user.id)
           .single();
+
+        console.log("Profile data:", profile);
+        
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          throw profileError;
+        }
 
         localStorage.setItem("isLoggedIn", "true");
         
         // Redirect based on role
         if (profile?.role === 'admin') {
+          console.log("Admin user detected, redirecting to admin dashboard");
           navigate("/admin");
         } else {
+          console.log("Regular user detected, redirecting to home");
           navigate("/");
         }
 
@@ -48,6 +63,7 @@ export default function Login() {
         });
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login Failed",
         description: error.message,
