@@ -43,18 +43,46 @@ interface OfferListProps {
 export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: OfferListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
+  const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
+      if (user?.id) {
+        fetchAffiliateLinks(user.id);
+      }
     };
     getCurrentUser();
   }, []);
 
-  const getAffiliateLink = (offer: Offer) => {
-    if (!currentUserId || !offer.affiliate_links) return null;
-    return offer.affiliate_links.find(link => link.affiliate_id === currentUserId)?.tracking_url;
+  const fetchAffiliateLinks = async (userId: string) => {
+    try {
+      console.log("Fetching affiliate links for user:", userId);
+      const { data, error } = await supabase
+        .from('affiliate_links')
+        .select('offer_id, tracking_url')
+        .eq('affiliate_id', userId);
+
+      if (error) throw error;
+
+      console.log("Fetched affiliate links:", data);
+      
+      // Create a map of offer_id to tracking_url
+      const linksMap = data?.reduce((acc, link) => ({
+        ...acc,
+        [link.offer_id]: link.tracking_url
+      }), {});
+
+      setAffiliateLinks(linksMap || {});
+    } catch (error) {
+      console.error('Error fetching affiliate links:', error);
+    }
+  };
+
+  const getTrackingUrl = (offer: Offer) => {
+    if (!currentUserId) return null;
+    return affiliateLinks[offer.id] || (offer.links && offer.links[0]) || null;
   };
 
   return (
@@ -94,7 +122,7 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
                 <TableCell>${offer.payout}</TableCell>
                 {!isAdmin && (
                   <TableCell>
-                    {getAffiliateLink(offer) || 'No tracking link assigned'}
+                    {getTrackingUrl(offer) || 'No tracking link assigned'}
                   </TableCell>
                 )}
                 <TableCell>{offer.creatives?.length || 0} creatives</TableCell>
