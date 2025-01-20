@@ -25,9 +25,10 @@ interface OfferListProps {
   offers: Offer[];
   onEdit: (offer: Offer) => void;
   onToggleStatus: (offerId: string, currentStatus: boolean) => void;
+  isAdmin?: boolean;
 }
 
-export function OfferList({ offers, onEdit, onToggleStatus }: OfferListProps) {
+export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: OfferListProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -38,9 +39,9 @@ export function OfferList({ offers, onEdit, onToggleStatus }: OfferListProps) {
             <TableHead>Payout</TableHead>
             <TableHead>Links</TableHead>
             <TableHead>Creatives</TableHead>
-            <TableHead>Status</TableHead>
+            {isAdmin && <TableHead>Status</TableHead>}
             <TableHead>Created At</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            {isAdmin && <TableHead className="text-right">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -51,31 +52,35 @@ export function OfferList({ offers, onEdit, onToggleStatus }: OfferListProps) {
               <TableCell>${offer.payout}</TableCell>
               <TableCell>{offer.links?.length || 0} links</TableCell>
               <TableCell>{offer.creatives?.length || 0} creatives</TableCell>
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onToggleStatus(offer.id, offer.status)}
-                >
-                  {offer.status ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <X className="h-4 w-4 text-red-500" />
-                  )}
-                </Button>
-              </TableCell>
+              {isAdmin && (
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onToggleStatus(offer.id, offer.status)}
+                  >
+                    {offer.status ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <X className="h-4 w-4 text-red-500" />
+                    )}
+                  </Button>
+                </TableCell>
+              )}
               <TableCell>
                 {new Date(offer.created_at).toLocaleDateString()}
               </TableCell>
-              <TableCell className="text-right">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => onEdit(offer)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TableCell>
+              {isAdmin && (
+                <TableCell className="text-right">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onEdit(offer)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
