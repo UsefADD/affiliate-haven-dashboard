@@ -7,48 +7,107 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Lead {
+  id: string;
+  offer: {
+    name: string;
+    payout: number;
+  };
+  status: string;
+  created_at: string;
+  conversion_date: string | null;
+}
 
 export default function Reports() {
   const [date, setDate] = useState<Date>();
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState("");
-  const [reportData, setReportData] = useState<any[]>([]);
+  const [reportData, setReportData] = useState<Lead[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const fetchLeads = async () => {
+    try {
+      console.log("Fetching leads for reports...");
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          id,
+          status,
+          created_at,
+          conversion_date,
+          offers (
+            name,
+            payout
+          )
+        `)
+        .eq('affiliate_id', user.id);
+
+      if (error) {
+        console.error("Error fetching leads:", error);
+        throw error;
+      }
+
+      console.log("Fetched leads:", data);
+      setReportData(data || []);
+    } catch (error) {
+      console.error('Error in fetchLeads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch leads data",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleRunReport = () => {
     if (!date) {
       toast({
         title: "Date Required",
-        description: "Please select a date to run the report",
+        description: "Please select a date to filter the report",
         variant: "destructive",
       });
       return;
     }
 
-    // This is where you would typically fetch data from your backend
-    // For now, we'll simulate some data based on the selected date
-    const mockData = [
-      {
-        id: "1",
-        campaignName: `Campaign for ${format(date, "MMM d, yyyy")}`,
-        clicks: 150,
-        sales: 12,
-        conversion: "8.00",
-        epc: "2.50",
-        earnings: "375.00"
-      }
-    ];
+    // Filter the existing data based on the selected date
+    const selectedDate = format(date, 'yyyy-MM-dd');
+    const filteredData = reportData.filter(lead => {
+      const leadDate = lead.created_at.split('T')[0];
+      return leadDate === selectedDate;
+    });
 
-    setReportData(mockData);
+    setReportData(filteredData);
     toast({
       title: "Report Generated",
       description: `Showing results for ${format(date, "MMM d, yyyy")}`,
     });
   };
+
+  // Calculate totals
+  const totalLeads = reportData.length;
+  const totalConversions = reportData.filter(lead => lead.status === 'converted').length;
+  const conversionRate = totalLeads ? ((totalConversions / totalLeads) * 100).toFixed(2) : "0.00";
+  const totalEarnings = reportData
+    .filter(lead => lead.status === 'converted')
+    .reduce((sum, lead) => sum + (lead.offer?.payout || 0), 0);
+  const averageEPC = totalLeads ? (totalEarnings / totalLeads).toFixed(2) : "0.00";
 
   return (
     <DashboardLayout>
@@ -89,12 +148,12 @@ export default function Reports() {
             />
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="w-full md:w-[300px]">
-                <SelectValue placeholder="Filter by Category..." />
+                <SelectValue placeholder="Filter by Status..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="social">Social</SelectItem>
-                <SelectItem value="display">Display</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="converted">Converted</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
             <Button 
@@ -109,50 +168,42 @@ export default function Reports() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Campaign Name</TableHead>
-                  <TableHead>Clicks</TableHead>
-                  <TableHead>Sales</TableHead>
-                  <TableHead>Conv</TableHead>
-                  <TableHead>EPC</TableHead>
-                  <TableHead>Earnings</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Campaign</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Conversion Date</TableHead>
+                  <TableHead>Payout</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {reportData.length > 0 ? (
-                  <>
-                    {reportData.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell>{row.id}</TableCell>
-                        <TableCell>{row.campaignName}</TableCell>
-                        <TableCell>{row.clicks}</TableCell>
-                        <TableCell>{row.sales}</TableCell>
-                        <TableCell>{row.conversion}%</TableCell>
-                        <TableCell>${row.epc}</TableCell>
-                        <TableCell>${row.earnings}</TableCell>
-                      </TableRow>
-                    ))}
-                  </>
+                  reportData.map((lead) => (
+                    <TableRow key={lead.id}>
+                      <TableCell>{format(new Date(lead.created_at), 'MMM d, yyyy')}</TableCell>
+                      <TableCell>{lead.offer?.name || 'N/A'}</TableCell>
+                      <TableCell>{lead.status}</TableCell>
+                      <TableCell>
+                        {lead.conversion_date 
+                          ? format(new Date(lead.conversion_date), 'MMM d, yyyy')
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        ${lead.status === 'converted' ? lead.offer?.payout.toFixed(2) : '0.00'}
+                      </TableCell>
+                    </TableRow>
+                  ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4">
+                    <TableCell colSpan={5} className="text-center py-4">
                       No matching records found
                     </TableCell>
                   </TableRow>
                 )}
                 <TableRow className="bg-muted/50 font-medium">
                   <TableCell colSpan={2}>Totals</TableCell>
-                  <TableCell>{reportData.reduce((sum, row) => sum + row.clicks, 0)}</TableCell>
-                  <TableCell>{reportData.reduce((sum, row) => sum + row.sales, 0)}</TableCell>
-                  <TableCell>
-                    {(reportData.reduce((sum, row) => sum + parseFloat(row.conversion), 0) / Math.max(reportData.length, 1)).toFixed(2)}%
-                  </TableCell>
-                  <TableCell>
-                    ${(reportData.reduce((sum, row) => sum + parseFloat(row.epc), 0) / Math.max(reportData.length, 1)).toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    ${reportData.reduce((sum, row) => sum + parseFloat(row.earnings), 0).toFixed(2)}
-                  </TableCell>
+                  <TableCell>{conversionRate}% Conv.</TableCell>
+                  <TableCell>EPC: ${averageEPC}</TableCell>
+                  <TableCell>${totalEarnings.toFixed(2)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
