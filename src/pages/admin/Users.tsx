@@ -4,15 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Pencil, UserX } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
   id: string;
-  role: string;
+  role: string | null;
   first_name: string | null;
   last_name: string | null;
   company: string | null;
   email: string | null;
+  created_at: string;
 }
 
 export default function Users() {
@@ -34,7 +35,8 @@ export default function Users() {
           first_name,
           last_name,
           company,
-          email
+          email,
+          created_at
         `);
 
       if (error) {
@@ -86,7 +88,7 @@ export default function Users() {
                   </TableCell>
                   <TableCell>{user.email || 'N/A'}</TableCell>
                   <TableCell>{user.company || 'N/A'}</TableCell>
-                  <TableCell className="capitalize">{user.role}</TableCell>
+                  <TableCell className="capitalize">{user.role || 'N/A'}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon">
                       <Pencil className="h-4 w-4" />
