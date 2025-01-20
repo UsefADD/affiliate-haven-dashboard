@@ -43,12 +43,12 @@ export function OfferForm({ initialData, onSubmit, isSubmitting }: OfferFormProp
     },
   });
 
-  const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray({
+  const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray<OfferFormData>({
     control: form.control,
     name: "links",
   });
 
-  const { fields: creativeFields, append: appendCreative, remove: removeCreative } = useFieldArray({
+  const { fields: creativeFields, append: appendCreative, remove: removeCreative } = useFieldArray<OfferFormData>({
     control: form.control,
     name: "creatives",
   });
