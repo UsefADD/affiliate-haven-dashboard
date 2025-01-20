@@ -4,27 +4,57 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isAffiliate, setIsAffiliate] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add your login logic here
-    if (username && password) {
-      // Simulate login success
-      localStorage.setItem("isLoggedIn", "true");
-      navigate("/");
-    } else {
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Check if user is admin
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        localStorage.setItem("isLoggedIn", "true");
+        
+        // Redirect based on role
+        if (profile?.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
+
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+      }
+    } catch (error: any) {
       toast({
         title: "Login Failed",
-        description: "Please enter both username and password",
+        description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -33,19 +63,22 @@ export default function Login() {
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-green-600">SoftDigi</h1>
+          <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
         
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium mb-2">
-              Username
+            <label htmlFor="email" className="block text-sm font-medium mb-2">
+              Email
             </label>
             <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full"
+              placeholder="Enter your email"
+              required
             />
           </div>
           
@@ -59,32 +92,17 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full"
+              placeholder="Enter your password"
+              required
             />
           </div>
 
-          <div className="flex rounded-md overflow-hidden border">
-            <button
-              type="button"
-              onClick={() => setIsAffiliate(true)}
-              className={`flex-1 py-2 text-center ${
-                isAffiliate ? "bg-green-600 text-white" : "bg-white"
-              }`}
-            >
-              Affiliate
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsAffiliate(false)}
-              className={`flex-1 py-2 text-center ${
-                !isAffiliate ? "bg-green-600 text-white" : "bg-white"
-              }`}
-            >
-              Advertiser
-            </button>
-          </div>
-
-          <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
-            Login
+          <Button 
+            type="submit" 
+            className="w-full bg-green-600 hover:bg-green-700"
+            disabled={isLoading}
+          >
+            {isLoading ? "Signing in..." : "Sign in"}
           </Button>
 
           <div className="text-center space-y-2">
