@@ -1,61 +1,113 @@
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const leadSchema = z.object({
+const formSchema = z.object({
   status: z.string(),
-  payout: z.number().min(0, "Payout must be a positive number"),
+  payout: z.number().min(0),
+  offer_id: z.string().uuid(),
 });
 
-export type LeadFormData = z.infer<typeof leadSchema>;
+export type LeadFormData = z.infer<typeof formSchema>;
 
-interface LeadFormProps {
-  initialData?: LeadFormData;
-  onSubmit: (data: LeadFormData) => void;
-  isSubmitting?: boolean;
+interface Offer {
+  id: string;
+  name: string;
+  payout: number;
 }
 
-export function LeadForm({ initialData, onSubmit, isSubmitting }: LeadFormProps) {
+interface LeadFormProps {
+  initialData?: Partial<LeadFormData>;
+  onSubmit: (values: LeadFormData) => void;
+  isSubmitting: boolean;
+  offers: Offer[];
+}
+
+export function LeadForm({ initialData, onSubmit, isSubmitting, offers }: LeadFormProps) {
   const form = useForm<LeadFormData>({
-    resolver: zodResolver(leadSchema),
-    defaultValues: initialData || {
-      status: "pending",
-      payout: 0,
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      status: initialData?.status || 'pending',
+      payout: initialData?.payout || 0,
+      offer_id: initialData?.offer_id || '',
     },
   });
 
+  const handleOfferChange = (offerId: string) => {
+    const selectedOffer = offers.find(offer => offer.id === offerId);
+    if (selectedOffer) {
+      form.setValue('payout', selectedOffer.payout);
+    }
+    form.setValue('offer_id', offerId);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="offer_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Offer</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={handleOfferChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an offer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {offers.map((offer) => (
+                    <SelectItem key={offer.id} value={offer.id}>
+                      {offer.name} (${offer.payout})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="status"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="converted">Converted</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-col space-y-1"
+                >
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="pending" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Pending
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="converted" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Converted
+                    </FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="payout"
@@ -63,20 +115,19 @@ export function LeadForm({ initialData, onSubmit, isSubmitting }: LeadFormProps)
             <FormItem>
               <FormLabel>Payout ($)</FormLabel>
               <FormControl>
-                <Input 
-                  type="number" 
-                  step="0.01" 
-                  placeholder="0.00" 
+                <Input
+                  type="number"
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  disabled
                 />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {initialData ? 'Update' : 'Create'} Lead
+
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save Lead"}
         </Button>
       </form>
     </Form>
