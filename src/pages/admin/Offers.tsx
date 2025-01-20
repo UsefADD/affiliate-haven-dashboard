@@ -52,7 +52,6 @@ export default function Offers() {
       }
       console.log("Fetched offers:", data);
       
-      // Convert the database response to match our Offer type
       const typedOffers: Offer[] = data.map(offer => ({
         ...offer,
         creatives: offer.creatives as Offer['creatives'] || [],
@@ -85,6 +84,7 @@ export default function Offers() {
             name: values.name,
             description: values.description,
             payout: values.payout,
+            status: values.status,
             links: values.links,
             creatives: values.creatives,
           })
@@ -103,6 +103,7 @@ export default function Offers() {
             name: values.name,
             description: values.description,
             payout: values.payout,
+            status: values.status,
             links: values.links,
             creatives: values.creatives,
             created_by: user.id,
@@ -128,31 +129,6 @@ export default function Offers() {
       });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const toggleOfferStatus = async (offerId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('offers')
-        .update({ status: !currentStatus })
-        .eq('id', offerId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Offer status updated",
-      });
-      
-      fetchOffers();
-    } catch (error) {
-      console.error('Error updating offer status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update offer status",
-        variant: "destructive",
-      });
     }
   };
 
@@ -185,11 +161,13 @@ export default function Offers() {
                   name: editingOffer.name,
                   description: editingOffer.description || '',
                   payout: editingOffer.payout,
+                  status: editingOffer.status,
                   links: editingOffer.links || [],
                   creatives: editingOffer.creatives || [],
                 } : undefined}
                 onSubmit={onSubmit}
                 isSubmitting={isSubmitting}
+                isAdmin={true}
               />
             </DialogContent>
           </Dialog>
@@ -198,7 +176,7 @@ export default function Offers() {
         <OfferList
           offers={offers}
           onEdit={handleEdit}
-          onToggleStatus={toggleOfferStatus}
+          isAdmin={true}
         />
       </div>
     </DashboardLayout>

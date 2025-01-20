@@ -1,4 +1,4 @@
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const offerSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   payout: z.number().min(0, "Payout must be a positive number"),
+  status: z.boolean().optional(),
   links: z.array(z.string()).optional(),
   creatives: z.array(z.object({
     type: z.enum(["image", "email"]),
@@ -29,29 +31,55 @@ interface OfferFormProps {
   initialData?: OfferFormData;
   onSubmit: (data: OfferFormData) => void;
   isSubmitting?: boolean;
+  isAdmin?: boolean;
 }
 
-export function OfferForm({ initialData, onSubmit, isSubmitting }: OfferFormProps) {
+export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false }: OfferFormProps) {
   const form = useForm<OfferFormData>({
     resolver: zodResolver(offerSchema),
     defaultValues: initialData || {
       name: "",
       description: "",
       payout: 0,
+      status: true,
       links: [],
       creatives: [],
     },
   });
 
-  const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray({
-    control: form.control,
-    name: "links",
-  });
+  const appendLink = () => {
+    const currentLinks = form.getValues("links") || [];
+    form.setValue("links", [...currentLinks, ""]);
+  };
 
-  const { fields: creativeFields, append: appendCreative, remove: removeCreative } = useFieldArray({
-    control: form.control,
-    name: "creatives",
-  });
+  const removeLink = (index: number) => {
+    const currentLinks = form.getValues("links") || [];
+    form.setValue(
+      "links",
+      currentLinks.filter((_, i) => i !== index)
+    );
+  };
+
+  const appendCreative = () => {
+    const currentCreatives = form.getValues("creatives") || [];
+    form.setValue("creatives", [
+      ...currentCreatives,
+      {
+        type: "email",
+        content: "",
+        details: { fromNames: [], subjects: [] },
+        images: [],
+      },
+    ]);
+  };
+
+  const removeCreative = (index: number) => {
+    const currentCreatives = form.getValues("creatives") || [];
+    form.setValue(
+      "creatives",
+      currentCreatives.filter((_, i) => i !== index)
+    );
+  };
 
   return (
     <Form {...form}>
@@ -104,6 +132,29 @@ export function OfferForm({ initialData, onSubmit, isSubmitting }: OfferFormProp
           )}
         />
 
+        {isAdmin && (
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Active Status</FormLabel>
+                  <div className="text-sm text-muted-foreground">
+                    Enable or disable this offer for affiliates
+                  </div>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        )}
+
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <FormLabel>Tracking Links</FormLabel>
@@ -111,14 +162,14 @@ export function OfferForm({ initialData, onSubmit, isSubmitting }: OfferFormProp
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendLink("")}
+              onClick={appendLink}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Link
             </Button>
           </div>
-          {linkFields.map((field, index) => (
-            <div key={field.id} className="flex items-center gap-2">
+          {(form.watch("links") || []).map((_, index) => (
+            <div key={index} className="flex items-center gap-2">
               <FormField
                 control={form.control}
                 name={`links.${index}`}
@@ -150,19 +201,14 @@ export function OfferForm({ initialData, onSubmit, isSubmitting }: OfferFormProp
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendCreative({
-                type: "email",
-                content: "",
-                details: { fromNames: [], subjects: [] },
-                images: [],
-              })}
+              onClick={appendCreative}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Creative
             </Button>
           </div>
-          {creativeFields.map((field, index) => (
-            <div key={field.id} className="space-y-4 p-4 border rounded-lg">
+          {(form.watch("creatives") || []).map((_, index) => (
+            <div key={index} className="space-y-4 p-4 border rounded-lg">
               <FormField
                 control={form.control}
                 name={`creatives.${index}.type`}
