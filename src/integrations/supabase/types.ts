@@ -39,6 +39,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "leads_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leads_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false

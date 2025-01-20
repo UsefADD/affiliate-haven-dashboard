@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LeadForm, LeadFormData } from "@/components/leads/LeadForm";
@@ -40,12 +40,18 @@ export default function Leads() {
       const { data, error } = await supabase
         .from('leads')
         .select(`
-          *,
-          affiliate:profiles!leads_affiliate_id_fkey(
+          id,
+          affiliate_id,
+          offer_id,
+          status,
+          created_at,
+          conversion_date,
+          payout,
+          affiliate:profiles!leads_affiliate_id_fkey (
             first_name,
             last_name
           ),
-          offer:offers!leads_offer_id_fkey(
+          offer:offers!leads_offer_id_fkey (
             name
           )
         `)
@@ -55,8 +61,21 @@ export default function Leads() {
         console.error("Error fetching leads:", error);
         throw error;
       }
+      
       console.log("Fetched leads:", data);
-      setLeads(data || []);
+      // Ensure the data matches our Lead interface
+      const typedLeads = data?.map(lead => ({
+        ...lead,
+        affiliate: {
+          first_name: lead.affiliate?.first_name || null,
+          last_name: lead.affiliate?.last_name || null
+        },
+        offer: {
+          name: lead.offer?.name || 'Unknown Offer'
+        }
+      })) as Lead[];
+      
+      setLeads(typedLeads || []);
     } catch (error) {
       console.error('Error fetching leads:', error);
       toast({
