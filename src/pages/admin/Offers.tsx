@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +31,7 @@ interface Offer {
 export default function Offers() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const { toast } = useToast();
   
   const form = useForm<z.infer<typeof offerSchema>>({
@@ -46,14 +47,35 @@ export default function Offers() {
     fetchOffers();
   }, []);
 
+  useEffect(() => {
+    if (editingOffer) {
+      form.reset({
+        name: editingOffer.name,
+        description: editingOffer.description || "",
+        payout: editingOffer.payout,
+      });
+    } else {
+      form.reset({
+        name: "",
+        description: "",
+        payout: 0,
+      });
+    }
+  }, [editingOffer, form]);
+
   const fetchOffers = async () => {
     try {
+      console.log("Fetching offers...");
       const { data, error } = await supabase
         .from('offers')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching offers:", error);
+        throw error;
+      }
+      console.log("Fetched offers:", data);
       setOffers(data || []);
     } catch (error) {
       console.error('Error fetching offers:', error);
@@ -70,30 +92,51 @@ export default function Offers() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
-        .from('offers')
-        .insert({
-          name: values.name,
-          description: values.description,
-          payout: values.payout,
-          created_by: user.id,
+      console.log("Creating/updating offer with values:", values);
+
+      if (editingOffer) {
+        const { error } = await supabase
+          .from('offers')
+          .update({
+            name: values.name,
+            description: values.description,
+            payout: values.payout,
+          })
+          .eq('id', editingOffer.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Offer updated successfully",
         });
+      } else {
+        const { error } = await supabase
+          .from('offers')
+          .insert({
+            name: values.name,
+            description: values.description,
+            payout: values.payout,
+            created_by: user.id,
+          });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Offer created successfully",
-      });
+        toast({
+          title: "Success",
+          description: "Offer created successfully",
+        });
+      }
       
       setIsOpen(false);
+      setEditingOffer(null);
       form.reset();
       fetchOffers();
     } catch (error) {
-      console.error('Error creating offer:', error);
+      console.error('Error creating/updating offer:', error);
       toast({
         title: "Error",
-        description: "Failed to create offer",
+        description: `Failed to ${editingOffer ? 'update' : 'create'} offer`,
         variant: "destructive",
       });
     }
@@ -124,12 +167,20 @@ export default function Offers() {
     }
   };
 
+  const handleEdit = (offer: Offer) => {
+    setEditingOffer(offer);
+    setIsOpen(true);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Offers Management</h1>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <Dialog open={isOpen} onOpenChange={(open) => {
+            setIsOpen(open);
+            if (!open) setEditingOffer(null);
+          }}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
@@ -138,7 +189,10 @@ export default function Offers() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New Offer</DialogTitle>
+                <DialogTitle>{editingOffer ? 'Edit' : 'Create New'} Offer</DialogTitle>
+                <DialogDescription>
+                  {editingOffer ? 'Update the offer details below.' : 'Fill in the offer details below.'}
+                </DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -187,7 +241,9 @@ export default function Offers() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">Create Offer</Button>
+                  <Button type="submit" className="w-full">
+                    {editingOffer ? 'Update' : 'Create'} Offer
+                  </Button>
                 </form>
               </Form>
             </DialogContent>
@@ -229,11 +285,12 @@ export default function Offers() {
                     {new Date(offer.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleEdit(offer)}
+                    >
                       <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive">
-                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
