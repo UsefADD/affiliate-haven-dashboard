@@ -82,7 +82,13 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
 
   const getTrackingUrl = (offer: Offer) => {
     if (!currentUserId) return null;
-    return affiliateLinks[offer.id] || (offer.links && offer.links[0]) || null;
+    // First check if there's a specific affiliate link for this offer
+    const affiliateLink = affiliateLinks[offer.id];
+    if (affiliateLink) {
+      return affiliateLink;
+    }
+    // If no specific affiliate link is found, return the default offer link if available
+    return offer.links && offer.links.length > 0 ? offer.links[0] : null;
   };
 
   return (
