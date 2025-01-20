@@ -137,6 +137,31 @@ export default function Offers() {
     setIsOpen(true);
   };
 
+  const handleToggleStatus = async (offerId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('offers')
+        .update({ status: !currentStatus })
+        .eq('id', offerId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Offer ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      });
+
+      fetchOffers();
+    } catch (error) {
+      console.error('Error toggling offer status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update offer status",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -176,6 +201,7 @@ export default function Offers() {
         <OfferList
           offers={offers}
           onEdit={handleEdit}
+          onToggleStatus={handleToggleStatus}
           isAdmin={true}
         />
       </div>
