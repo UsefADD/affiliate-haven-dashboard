@@ -34,10 +34,10 @@ interface OfferFormProps {
   onSubmit: (data: OfferFormData) => void;
   isSubmitting?: boolean;
   isAdmin?: boolean;
-  editingOffer?: boolean;
+  editingOffer?: { id: string } | null;
 }
 
-export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false, editingOffer = false }: OfferFormProps) {
+export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false, editingOffer = null }: OfferFormProps) {
   const form = useForm<OfferFormData>({
     resolver: zodResolver(offerSchema),
     defaultValues: initialData || {
