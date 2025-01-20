@@ -68,13 +68,13 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
 
       console.log("Fetched affiliate links:", data);
       
-      // Create a map of offer_id to tracking_url
       const linksMap = data?.reduce((acc, link) => ({
         ...acc,
         [link.offer_id]: link.tracking_url
-      }), {});
+      }), {}) || {};
 
-      setAffiliateLinks(linksMap || {});
+      console.log("Processed affiliate links map:", linksMap);
+      setAffiliateLinks(linksMap);
     } catch (error) {
       console.error('Error fetching affiliate links:', error);
     }
@@ -82,13 +82,21 @@ export function OfferList({ offers, onEdit, onToggleStatus, isAdmin = false }: O
 
   const getTrackingUrl = (offer: Offer) => {
     if (!currentUserId) return null;
+    console.log("Getting tracking URL for offer:", offer.id);
+    console.log("Current affiliate links:", affiliateLinks);
+    console.log("Specific affiliate link:", affiliateLinks[offer.id]);
+    
     // First check if there's a specific affiliate link for this offer
     const affiliateLink = affiliateLinks[offer.id];
     if (affiliateLink) {
+      console.log("Using affiliate-specific link:", affiliateLink);
       return affiliateLink;
     }
+    
     // If no specific affiliate link is found, return the default offer link if available
-    return offer.links && offer.links.length > 0 ? offer.links[0] : null;
+    const defaultLink = offer.links && offer.links.length > 0 ? offer.links[0] : null;
+    console.log("Using default link:", defaultLink);
+    return defaultLink;
   };
 
   return (
