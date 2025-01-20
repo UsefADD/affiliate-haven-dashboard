@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -43,11 +43,13 @@ export function OfferForm({ initialData, onSubmit, isSubmitting }: OfferFormProp
     },
   });
 
-  const { fields: linkFields, append: appendLink, remove: removeLink } = form.useFieldArray({
+  const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray({
+    control: form.control,
     name: "links",
   });
 
-  const { fields: creativeFields, append: appendCreative, remove: removeCreative } = form.useFieldArray({
+  const { fields: creativeFields, append: appendCreative, remove: removeCreative } = useFieldArray({
+    control: form.control,
     name: "creatives",
   });
 

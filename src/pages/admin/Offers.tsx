@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -51,7 +51,15 @@ export default function Offers() {
         throw error;
       }
       console.log("Fetched offers:", data);
-      setOffers(data || []);
+      
+      // Convert the database response to match our Offer type
+      const typedOffers: Offer[] = data.map(offer => ({
+        ...offer,
+        creatives: offer.creatives as Offer['creatives'] || [],
+        links: offer.links || []
+      }));
+      
+      setOffers(typedOffers);
     } catch (error) {
       console.error('Error fetching offers:', error);
       toast({
@@ -171,9 +179,6 @@ export default function Offers() {
             <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingOffer ? 'Edit' : 'Create New'} Offer</DialogTitle>
-                <DialogDescription>
-                  {editingOffer ? 'Update the offer details below.' : 'Fill in the offer details below.'}
-                </DialogDescription>
               </DialogHeader>
               <OfferForm
                 initialData={editingOffer ? {
