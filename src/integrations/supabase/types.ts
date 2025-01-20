@@ -58,8 +58,10 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          creatives: Json | null
           description: string | null
           id: string
+          links: string[] | null
           name: string
           payout: number
           status: boolean | null
@@ -67,8 +69,10 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          creatives?: Json | null
           description?: string | null
           id?: string
+          links?: string[] | null
           name: string
           payout: number
           status?: boolean | null
@@ -76,8 +80,10 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          creatives?: Json | null
           description?: string | null
           id?: string
+          links?: string[] | null
           name?: string
           payout?: number
           status?: boolean | null

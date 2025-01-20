@@ -15,6 +15,16 @@ interface Offer {
   payout: number;
   status: boolean;
   created_at: string;
+  links?: string[];
+  creatives?: {
+    type: "image" | "email";
+    content: string;
+    details?: {
+      fromNames?: string[];
+      subjects?: string[];
+    };
+    images?: string[];
+  }[];
 }
 
 export default function Offers() {
@@ -67,6 +77,8 @@ export default function Offers() {
             name: values.name,
             description: values.description,
             payout: values.payout,
+            links: values.links,
+            creatives: values.creatives,
           })
           .eq('id', editingOffer.id);
 
@@ -83,6 +95,8 @@ export default function Offers() {
             name: values.name,
             description: values.description,
             payout: values.payout,
+            links: values.links,
+            creatives: values.creatives,
             created_by: user.id,
           });
 
@@ -154,7 +168,7 @@ export default function Offers() {
                 Create Offer
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingOffer ? 'Edit' : 'Create New'} Offer</DialogTitle>
                 <DialogDescription>
@@ -166,6 +180,8 @@ export default function Offers() {
                   name: editingOffer.name,
                   description: editingOffer.description || '',
                   payout: editingOffer.payout,
+                  links: editingOffer.links || [],
+                  creatives: editingOffer.creatives || [],
                 } : undefined}
                 onSubmit={onSubmit}
                 isSubmitting={isSubmitting}

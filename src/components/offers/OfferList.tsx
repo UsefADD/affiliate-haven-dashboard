@@ -9,6 +9,16 @@ interface Offer {
   payout: number;
   status: boolean;
   created_at: string;
+  links?: string[];
+  creatives?: {
+    type: "image" | "email";
+    content: string;
+    details?: {
+      fromNames?: string[];
+      subjects?: string[];
+    };
+    images?: string[];
+  }[];
 }
 
 interface OfferListProps {
@@ -26,6 +36,8 @@ export function OfferList({ offers, onEdit, onToggleStatus }: OfferListProps) {
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Payout</TableHead>
+            <TableHead>Links</TableHead>
+            <TableHead>Creatives</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Created At</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -37,6 +49,8 @@ export function OfferList({ offers, onEdit, onToggleStatus }: OfferListProps) {
               <TableCell className="font-medium">{offer.name}</TableCell>
               <TableCell>{offer.description || 'N/A'}</TableCell>
               <TableCell>${offer.payout}</TableCell>
+              <TableCell>{offer.links?.length || 0} links</TableCell>
+              <TableCell>{offer.creatives?.length || 0} creatives</TableCell>
               <TableCell>
                 <Button
                   variant="ghost"
