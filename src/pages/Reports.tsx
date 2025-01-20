@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Lead {
   id: string;
-  offer: {
+  offers: {
     name: string;
     payout: number;
   };
@@ -52,7 +52,7 @@ export default function Reports() {
           status,
           created_at,
           conversion_date,
-          offers (
+          offers:offer_id (
             name,
             payout
           )
@@ -106,7 +106,7 @@ export default function Reports() {
   const conversionRate = totalLeads ? ((totalConversions / totalLeads) * 100).toFixed(2) : "0.00";
   const totalEarnings = reportData
     .filter(lead => lead.status === 'converted')
-    .reduce((sum, lead) => sum + (lead.offer?.payout || 0), 0);
+    .reduce((sum, lead) => sum + (lead.offers?.payout || 0), 0);
   const averageEPC = totalLeads ? (totalEarnings / totalLeads).toFixed(2) : "0.00";
 
   return (
@@ -180,7 +180,7 @@ export default function Reports() {
                   reportData.map((lead) => (
                     <TableRow key={lead.id}>
                       <TableCell>{format(new Date(lead.created_at), 'MMM d, yyyy')}</TableCell>
-                      <TableCell>{lead.offer?.name || 'N/A'}</TableCell>
+                      <TableCell>{lead.offers?.name || 'N/A'}</TableCell>
                       <TableCell>{lead.status}</TableCell>
                       <TableCell>
                         {lead.conversion_date 
@@ -188,7 +188,7 @@ export default function Reports() {
                           : 'N/A'}
                       </TableCell>
                       <TableCell>
-                        ${lead.status === 'converted' ? lead.offer?.payout.toFixed(2) : '0.00'}
+                        ${lead.status === 'converted' ? lead.offers?.payout.toFixed(2) : '0.00'}
                       </TableCell>
                     </TableRow>
                   ))
