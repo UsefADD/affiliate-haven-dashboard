@@ -9,6 +9,7 @@ import Reports from "./pages/Reports";
 import Login from "./pages/Login";
 import Users from "./pages/admin/Users";
 import Offers from "./pages/admin/Offers";
+import Leads from "./pages/admin/Leads";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Offers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/leads"
+            element={
+              <ProtectedRoute>
+                <Leads />
               </ProtectedRoute>
             }
           />
