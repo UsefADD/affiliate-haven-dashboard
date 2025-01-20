@@ -61,23 +61,43 @@ export function UserForm({ initialData, onSubmit, isSubmitting, mode }: UserForm
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{mode === "create" ? "Password" : "New Password (optional)"}</FormLabel>
-              <FormControl>
-                <Input 
-                  type="password" 
-                  placeholder={mode === "create" ? "Enter password" : "Leave blank to keep current password"}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {mode === "create" ? (
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="password" 
+                    placeholder="Enter password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ) : (
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>New Password (optional)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="password" 
+                    placeholder="Leave blank to keep current password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

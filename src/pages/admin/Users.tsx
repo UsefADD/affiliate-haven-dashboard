@@ -122,7 +122,8 @@ export default function Users() {
       setIsSubmitting(true);
       console.log("Updating user:", data);
 
-      if (data.password) {
+      // Only update password if one was provided
+      if (data.password && data.password.trim() !== '') {
         const { error: passwordError } = await supabase.auth.updateUser({
           password: data.password
         });
