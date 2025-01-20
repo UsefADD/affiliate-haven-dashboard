@@ -23,8 +23,16 @@ interface Lead {
   };
 }
 
+interface Offer {
+  id: string;
+  name: string;
+  payout: number;
+  status: boolean;
+}
+
 export default function Leads() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,7 +40,33 @@ export default function Leads() {
 
   useEffect(() => {
     fetchLeads();
+    fetchOffers();
   }, []);
+
+  const fetchOffers = async () => {
+    try {
+      console.log("Fetching offers...");
+      const { data, error } = await supabase
+        .from('offers')
+        .select('id, name, payout, status')
+        .eq('status', true);
+
+      if (error) {
+        console.error("Error fetching offers:", error);
+        throw error;
+      }
+      
+      console.log("Fetched offers:", data);
+      setOffers(data || []);
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch offers",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchLeads = async () => {
     try {
@@ -63,7 +97,6 @@ export default function Leads() {
       }
       
       console.log("Fetched leads:", data);
-      // Ensure the data matches our Lead interface
       const typedLeads = data?.map(lead => ({
         ...lead,
         affiliate: {
@@ -95,6 +128,7 @@ export default function Leads() {
         const updateData: any = {
           status: values.status,
           payout: values.payout,
+          offer_id: values.offer_id,
         };
 
         if (values.status === 'converted' && editingLead.status !== 'converted') {
@@ -191,9 +225,11 @@ export default function Leads() {
               initialData={editingLead ? {
                 status: editingLead.status,
                 payout: editingLead.payout,
+                offer_id: editingLead.offer_id,
               } : undefined}
               onSubmit={onSubmit}
               isSubmitting={isSubmitting}
+              offers={offers}
             />
           </DialogContent>
         </Dialog>
