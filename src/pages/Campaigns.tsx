@@ -36,10 +36,63 @@ export default function Campaigns() {
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+      if (user?.id) {
+        fetchAffiliateLinks(user.id);
+      }
+    };
+    getCurrentUser();
     fetchOffers();
   }, []);
+
+  const fetchAffiliateLinks = async (userId: string) => {
+    try {
+      console.log("Fetching affiliate links for user:", userId);
+      const { data, error } = await supabase
+        .from('affiliate_links')
+        .select('offer_id, tracking_url')
+        .eq('affiliate_id', userId);
+
+      if (error) throw error;
+
+      console.log("Fetched affiliate links:", data);
+      
+      const linksMap = data?.reduce((acc, link) => ({
+        ...acc,
+        [link.offer_id]: link.tracking_url
+      }), {}) || {};
+
+      console.log("Processed affiliate links map:", linksMap);
+      setAffiliateLinks(linksMap);
+    } catch (error) {
+      console.error('Error fetching affiliate links:', error);
+    }
+  };
+
+  const getTrackingUrl = (offer: Offer) => {
+    if (!currentUserId) return null;
+    console.log("Getting tracking URL for offer:", offer.id);
+    console.log("Current affiliate links:", affiliateLinks);
+    console.log("Specific affiliate link:", affiliateLinks[offer.id]);
+    
+    // First check if there's a specific affiliate link for this offer
+    const affiliateLink = affiliateLinks[offer.id];
+    if (affiliateLink) {
+      console.log("Using affiliate-specific link:", affiliateLink);
+      return affiliateLink;
+    }
+    
+    // If no specific affiliate link is found, return the default offer link if available
+    const defaultLink = offer.links && offer.links.length > 0 ? offer.links[0] : null;
+    console.log("Using default link:", defaultLink);
+    return defaultLink;
+  };
 
   const fetchOffers = async () => {
     try {
@@ -155,16 +208,23 @@ export default function Campaigns() {
               </div>
 
               <div>
-                <h4 className="text-sm font-medium mb-2">Affiliate Links</h4>
+                <h4 className="text-sm font-medium mb-2">Your Tracking Link</h4>
                 <div className="space-y-2">
-                  {selectedCampaign.links?.map((link, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                      <span className="text-sm truncate mr-2">{link}</span>
-                      <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(link)}>
-                        Copy
-                      </Button>
-                    </div>
-                  ))}
+                  <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+                    <span className="text-sm truncate mr-2">
+                      {getTrackingUrl(selectedCampaign as unknown as Offer) || 'No tracking link assigned'}
+                    </span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        const link = getTrackingUrl(selectedCampaign as unknown as Offer);
+                        if (link) navigator.clipboard.writeText(link);
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
                 </div>
               </div>
 
