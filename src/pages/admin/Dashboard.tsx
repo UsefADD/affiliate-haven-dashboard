@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Users, Gift, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AffiliateApplicationsManager } from "@/components/admin/AffiliateApplicationsManager";
 
 interface DashboardStats {
   totalOffers: number;
@@ -115,6 +116,10 @@ export default function AdminDashboard() {
               </Card>
             </Link>
           ))}
+        </div>
+
+        <div className="mt-8">
+          <AffiliateApplicationsManager />
         </div>
       </div>
     </DashboardLayout>
