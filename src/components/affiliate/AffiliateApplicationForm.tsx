@@ -481,4 +481,4 @@ export function AffiliateApplicationForm({ onSuccess, onCancel }: AffiliateAppli
       </form>
     </Form>
   );
-});
+}
