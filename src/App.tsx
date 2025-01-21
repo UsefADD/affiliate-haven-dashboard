@@ -13,6 +13,7 @@ import Leads from "./pages/admin/Leads";
 import AdminDashboard from "./pages/admin/Dashboard";
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
+import { Session } from '@supabase/supabase-js';
 
 const queryClient = new QueryClient();
 
@@ -23,36 +24,72 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (!session) {
+        setIsAuthorized(false);
+        return;
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", _event, session);
+      setSession(session);
+      if (!session) {
+        setIsAuthorized(false);
+        return;
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const checkUserRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
+      if (!session?.user) {
+        setIsAuthorized(false);
+        return;
+      }
+
+      try {
+        console.log("Checking user role for:", session.user.id);
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', user.id)
-          .single();
+          .eq('id', session.user.id)
+          .maybeSingle();
         
+        if (error) {
+          console.error("Error fetching profile:", error);
+          setIsAuthorized(false);
+          return;
+        }
+
+        console.log("User profile:", profile);
         setIsAuthorized(!requireAdmin || profile?.role === 'admin');
-      } else {
+      } catch (error) {
+        console.error("Error in checkUserRole:", error);
         setIsAuthorized(false);
       }
     };
 
-    if (isLoggedIn) {
+    if (session?.user) {
       checkUserRole();
-    } else {
-      setIsAuthorized(false);
     }
-  }, [requireAdmin]);
+  }, [session, requireAdmin]);
 
   if (isAuthorized === null) {
     return null; // Loading state
   }
 
-  if (!isLoggedIn || !isAuthorized) {
+  if (!session || !isAuthorized) {
     return <Navigate to="/login" />;
   }
 

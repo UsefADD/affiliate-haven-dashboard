@@ -37,7 +37,7 @@ export default function Login() {
           .from('profiles')
           .select('role')
           .eq('id', authData.user.id)
-          .single();
+          .maybeSingle();
 
         console.log("Profile data:", profile);
         
@@ -45,8 +45,6 @@ export default function Login() {
           console.error("Profile fetch error:", profileError);
           throw profileError;
         }
-
-        localStorage.setItem("isLoggedIn", "true");
         
         // Redirect based on role
         if (profile?.role === 'admin') {
