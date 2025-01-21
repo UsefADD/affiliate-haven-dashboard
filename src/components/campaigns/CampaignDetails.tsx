@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Campaign } from "@/types/campaign";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface CampaignDetailsProps {
   campaign: Campaign | null;
@@ -12,10 +13,8 @@ interface CampaignDetailsProps {
 }
 
 export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDetailsProps) {
-  const [selectedFromName, setSelectedFromName] = useState<string>("");
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
-  const [selectedImage, setSelectedImage] = useState<string>("");
   const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -40,6 +39,33 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
     } catch (error) {
       console.error('Error parsing URL:', error);
       return trackingUrl;
+    }
+  };
+
+  const handleDownload = async (imageUrl: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `creative-${Date.now()}.${blob.type.split('/')[1]}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Success",
+        description: "Image downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download image",
+        variant: "destructive",
+      });
     }
   };
 
@@ -98,69 +124,57 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
                 <div key={index} className="p-4 bg-muted rounded-md">
                   {creative.type === "email" && creative.details && (
                     <div className="space-y-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Select "From" Name</p>
-                        <Select onValueChange={setSelectedFromName} value={selectedFromName}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Choose a from name..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {creative.details.fromNames?.map((name, idx) => (
-                              <SelectItem key={idx} value={name}>
+                      {creative.details.fromNames && creative.details.fromNames.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Available "From" Names:</p>
+                          <div className="space-y-1">
+                            {creative.details.fromNames.map((name, idx) => (
+                              <div key={idx} className="text-sm p-2 bg-background rounded">
                                 {name}
-                              </SelectItem>
+                              </div>
                             ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Select Subject Line</p>
-                        <Select onValueChange={setSelectedSubject} value={selectedSubject}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Choose a subject line..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {creative.details.subjects?.map((subject, idx) => (
-                              <SelectItem key={idx} value={subject}>
-                                {subject}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Select Creative Image</p>
-                        <div className="grid grid-cols-2 gap-4">
-                          {creative.images?.map((image, idx) => (
-                            <div 
-                              key={idx} 
-                              className={`relative cursor-pointer rounded-lg overflow-hidden ${
-                                selectedImage === image ? 'ring-2 ring-primary' : ''
-                              }`}
-                              onClick={() => setSelectedImage(image)}
-                            >
-                              <img 
-                                src={image} 
-                                alt={`Creative ${idx + 1}`} 
-                                className="w-full h-auto"
-                              />
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="absolute bottom-2 right-2"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Add download logic here
-                                }}
-                              >
-                                Download
-                              </Button>
-                            </div>
-                          ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
+                      
+                      {creative.details.subjects && creative.details.subjects.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Available Subject Lines:</p>
+                          <div className="space-y-1">
+                            {creative.details.subjects.map((subject, idx) => (
+                              <div key={idx} className="text-sm p-2 bg-background rounded">
+                                {subject}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {creative.images && creative.images.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Creative Images:</p>
+                          <div className="grid grid-cols-2 gap-4">
+                            {creative.images.map((image, idx) => (
+                              <div key={idx} className="relative rounded-lg overflow-hidden group">
+                                <img 
+                                  src={image} 
+                                  alt={`Creative ${idx + 1}`} 
+                                  className="w-full h-auto"
+                                />
+                                <Button 
+                                  variant="secondary"
+                                  size="sm"
+                                  className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => handleDownload(image)}
+                                >
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Download
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
