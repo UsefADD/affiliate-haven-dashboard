@@ -78,9 +78,28 @@ export function AffiliateApplicationForm({ onSuccess, onCancel }: AffiliateAppli
     console.log("Submitting application data:", data);
     setIsSubmitting(true);
     try {
+      // Ensure all required fields are present in the data object
+      const applicationData = {
+        ...data,
+        address: data.address,
+        city: data.city,
+        country: data.country,
+        current_advertisers: data.current_advertisers,
+        email: data.email,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        pay_to: data.pay_to,
+        payment_method: data.payment_method,
+        phone: data.phone,
+        state: data.state,
+        telegram: data.telegram,
+        zip_postal: data.zip_postal,
+        known_contacts: data.known_contacts,
+      };
+
       const { error } = await supabase
         .from("affiliate_applications")
-        .insert(data); // Changed from [data] to data since we're inserting a single record
+        .insert(applicationData);
 
       if (error) throw error;
 
@@ -462,4 +481,4 @@ export function AffiliateApplicationForm({ onSuccess, onCancel }: AffiliateAppli
       </form>
     </Form>
   );
-}
+});
