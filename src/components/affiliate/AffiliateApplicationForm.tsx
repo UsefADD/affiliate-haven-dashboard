@@ -80,10 +80,23 @@ export function AffiliateApplicationForm({ onSuccess, onCancel }: AffiliateAppli
     console.log("Submitting application data:", data);
     setIsSubmitting(true);
     try {
-      // Ensure all required fields are present in the data object
+      // Ensure all required fields are present and handle optional fields
       const submissionData = {
-        ...data,
-        // Add empty string for optional fields if they're undefined
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        zip_postal: data.zip_postal,
+        country: data.country,
+        telegram: data.telegram,
+        payment_method: data.payment_method,
+        pay_to: data.pay_to,
+        known_contacts: data.known_contacts,
+        current_advertisers: data.current_advertisers,
+        // Optional fields with default empty strings
         company: data.company || "",
         apt_suite: data.apt_suite || "",
         im: data.im || "",
