@@ -14,6 +14,7 @@ const offerSchema = z.object({
   description: z.string().optional(),
   payout: z.number().min(0, "Payout must be a positive number"),
   status: z.boolean().optional(),
+  is_top_offer: z.boolean().optional(),
   links: z.array(z.string()).optional(),
   creatives: z.array(z.object({
     type: z.enum(["image", "email"]),
@@ -43,6 +44,7 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
       description: "",
       payout: 0,
       status: true,
+      is_top_offer: false,
       links: [],
       creatives: [],
     },
@@ -134,26 +136,49 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
         />
 
         {isAdmin && (
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">Active Status</FormLabel>
-                  <div className="text-sm text-muted-foreground">
-                    Enable or disable this offer for affiliates
+          <>
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Active Status</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Enable or disable this offer for affiliates
+                    </div>
                   </div>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_top_offer"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Top Offer</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Mark this as a top offer to feature it on the affiliate dashboard
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </>
         )}
 
         <div className="space-y-4">

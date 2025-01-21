@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus } from "lucide-react";
+import { Plus, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { OfferForm, OfferFormData } from "@/components/offers/OfferForm";
 import { OfferList } from "@/components/offers/OfferList";
@@ -16,6 +16,7 @@ interface Offer {
   status: boolean;
   created_at: string;
   links?: string[];
+  is_top_offer?: boolean;
   creatives?: {
     type: "image" | "email";
     content: string;
@@ -87,6 +88,7 @@ export default function Offers() {
             status: values.status,
             links: values.links,
             creatives: values.creatives,
+            is_top_offer: values.is_top_offer,
           })
           .eq('id', editingOffer.id);
 
@@ -106,6 +108,7 @@ export default function Offers() {
             status: values.status,
             links: values.links,
             creatives: values.creatives,
+            is_top_offer: values.is_top_offer,
             created_by: user.id,
           });
 
@@ -162,6 +165,31 @@ export default function Offers() {
     }
   };
 
+  const handleToggleTopOffer = async (offerId: string, currentTopStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('offers')
+        .update({ is_top_offer: !currentTopStatus })
+        .eq('id', offerId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Offer ${!currentTopStatus ? 'marked as top' : 'removed from top offers'} successfully`,
+      });
+
+      fetchOffers();
+    } catch (error) {
+      console.error('Error toggling top offer status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update top offer status",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -189,6 +217,7 @@ export default function Offers() {
                   status: editingOffer.status,
                   links: editingOffer.links || [],
                   creatives: editingOffer.creatives || [],
+                  is_top_offer: editingOffer.is_top_offer,
                 } : undefined}
                 onSubmit={onSubmit}
                 isSubmitting={isSubmitting}
@@ -202,6 +231,7 @@ export default function Offers() {
           offers={offers}
           onEdit={handleEdit}
           onToggleStatus={handleToggleStatus}
+          onToggleTopOffer={handleToggleTopOffer}
           isAdmin={true}
         />
       </div>
