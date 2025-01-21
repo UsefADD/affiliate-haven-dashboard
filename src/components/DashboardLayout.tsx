@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
-import { Menu, X, BarChart2, Link, Settings, LogOut, FileText, Users, Gift, FileSpreadsheet } from "lucide-react";
+import { Menu, X, BarChart2, Link, Settings, LogOut, FileText, Users, Gift, FileSpreadsheet, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -11,6 +18,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,11 +28,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('*')
           .eq('id', user.id)
           .single();
         
         setIsAdmin(profile?.role === 'admin');
+        setProfile(profile);
       }
     };
 
@@ -51,6 +60,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   const navItems = isAdmin ? adminNavItems : affiliateNavItems;
+
+  const getInitials = (firstName?: string, lastName?: string) => {
+    if (!firstName && !lastName) return "U";
+    return `${(firstName?.[0] || "").toUpperCase()}${(lastName?.[0] || "").toUpperCase()}`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
@@ -110,8 +124,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </button>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-muted-foreground">
-                Welcome back, {isAdmin ? 'Admin' : 'Affiliate'}
+                Welcome back, {profile?.first_name || (isAdmin ? 'Admin' : 'Affiliate')}
               </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar>
+                      <AvatarFallback>
+                        {getInitials(profile?.first_name, profile?.last_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <UserRound className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
