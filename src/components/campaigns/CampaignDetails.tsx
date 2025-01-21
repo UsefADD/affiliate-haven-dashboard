@@ -91,7 +91,7 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Payout</p>
-                <p className="font-medium">{campaign.payout}</p>
+                <p className="font-medium">${campaign.payout}</p>
               </div>
             </div>
           </div>
@@ -149,32 +149,35 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
 
-                      {creative.images && creative.images.length > 0 && (
-                        <div>
-                          <p className="text-sm font-medium mb-2">Creative Images:</p>
-                          <div className="grid grid-cols-2 gap-4">
-                            {creative.images.map((image, idx) => (
-                              <div key={idx} className="relative rounded-lg overflow-hidden group">
-                                <img 
-                                  src={image} 
-                                  alt={`Creative ${idx + 1}`} 
-                                  className="w-full h-auto"
-                                />
-                                <Button 
-                                  variant="secondary"
-                                  size="sm"
-                                  className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => handleDownload(image)}
-                                >
-                                  <Download className="h-4 w-4 mr-1" />
-                                  Download
-                                </Button>
-                              </div>
-                            ))}
+                  {/* Display images section - now supports multiple images */}
+                  {creative.images && creative.images.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium mb-2">Creative Images:</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        {creative.images.map((image, idx) => (
+                          <div key={idx} className="relative group rounded-lg overflow-hidden">
+                            <img 
+                              src={image} 
+                              alt={`Creative ${idx + 1}`} 
+                              className="w-full h-auto object-cover rounded-lg transition-transform duration-200 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                              <Button 
+                                variant="secondary"
+                                size="sm"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                onClick={() => handleDownload(image)}
+                              >
+                                <Download className="h-4 w-4 mr-1" />
+                                Download
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
