@@ -9,6 +9,90 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      affiliate_applications: {
+        Row: {
+          address: string
+          apt_suite: string | null
+          city: string
+          company: string | null
+          country: string
+          created_at: string
+          current_advertisers: string
+          email: string
+          first_name: string
+          id: string
+          im: string | null
+          im_type: string | null
+          known_contacts: string
+          last_name: string
+          marketing_comments: string | null
+          pay_to: string
+          payment_method: string
+          phone: string
+          site_marketing: string | null
+          state: string
+          status: string | null
+          telegram: string
+          title: string | null
+          website_url: string | null
+          zip_postal: string
+        }
+        Insert: {
+          address: string
+          apt_suite?: string | null
+          city: string
+          company?: string | null
+          country: string
+          created_at?: string
+          current_advertisers: string
+          email: string
+          first_name: string
+          id?: string
+          im?: string | null
+          im_type?: string | null
+          known_contacts: string
+          last_name: string
+          marketing_comments?: string | null
+          pay_to: string
+          payment_method: string
+          phone: string
+          site_marketing?: string | null
+          state: string
+          status?: string | null
+          telegram: string
+          title?: string | null
+          website_url?: string | null
+          zip_postal: string
+        }
+        Update: {
+          address?: string
+          apt_suite?: string | null
+          city?: string
+          company?: string | null
+          country?: string
+          created_at?: string
+          current_advertisers?: string
+          email?: string
+          first_name?: string
+          id?: string
+          im?: string | null
+          im_type?: string | null
+          known_contacts?: string
+          last_name?: string
+          marketing_comments?: string | null
+          pay_to?: string
+          payment_method?: string
+          phone?: string
+          site_marketing?: string | null
+          state?: string
+          status?: string | null
+          telegram?: string
+          title?: string | null
+          website_url?: string | null
+          zip_postal?: string
+        }
+        Relationships: []
+      }
       affiliate_links: {
         Row: {
           affiliate_id: string | null
