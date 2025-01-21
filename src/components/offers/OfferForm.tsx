@@ -224,54 +224,6 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <FormLabel>Tracking Links</FormLabel>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const currentLinks = form.getValues("links") || [];
-                form.setValue("links", [...currentLinks, ""]);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Link
-            </Button>
-          </div>
-          {(form.watch("links") || []).map((_, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <FormField
-                control={form.control}
-                name={`links.${index}`}
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input placeholder="Enter tracking link" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  const currentLinks = form.getValues("links") || [];
-                  form.setValue(
-                    "links",
-                    currentLinks.filter((_, i) => i !== index)
-                  );
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
             <FormLabel>Creatives</FormLabel>
             <Button
               type="button"
@@ -282,10 +234,10 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                 form.setValue("creatives", [
                   ...currentCreatives,
                   {
-                    type: "email",
+                    type: "image",
                     content: "",
                     details: { fromNames: [], subjects: [] },
-                    images: [],
+                    images: uploadedImages,
                   },
                 ]);
               }}
@@ -316,36 +268,32 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                 )}
               />
 
-              {form.watch(`creatives.${index}.type`) === "image" && (
-                <div className="space-y-4">
-                  <div>
-                    <FormLabel>Images ({uploadedImages.length}/{MAX_IMAGES})</FormLabel>
-                    <div className="mt-2 grid grid-cols-2 gap-4">
-                      {uploadedImages.map((url, imgIndex) => (
-                        <div key={imgIndex} className="relative group">
-                          <img
-                            src={url}
-                            alt={`Uploaded ${imgIndex + 1}`}
-                            className="w-full h-32 object-cover rounded-md"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeImage(imgIndex)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      {uploadedImages.length < MAX_IMAGES && (
-                        <ImageUploader onUpload={handleImageUpload} />
-                      )}
+              <div>
+                <FormLabel>Images ({uploadedImages.length}/{MAX_IMAGES})</FormLabel>
+                <div className="mt-2 grid grid-cols-2 gap-4">
+                  {uploadedImages.map((url, imgIndex) => (
+                    <div key={imgIndex} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Uploaded ${imgIndex + 1}`}
+                        className="w-full h-32 object-cover rounded-md"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeImage(imgIndex)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </div>
+                  ))}
+                  {uploadedImages.length < MAX_IMAGES && (
+                    <ImageUploader onUpload={handleImageUpload} />
+                  )}
                 </div>
-              )}
+              </div>
 
               <FormField
                 control={form.control}
