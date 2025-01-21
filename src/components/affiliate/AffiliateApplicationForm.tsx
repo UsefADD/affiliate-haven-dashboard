@@ -75,11 +75,12 @@ export function AffiliateApplicationForm({ onSuccess, onCancel }: AffiliateAppli
   });
 
   const onSubmit = async (data: ApplicationFormData) => {
+    console.log("Submitting application data:", data);
     setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from("affiliate_applications")
-        .insert([data]);
+        .insert(data); // Changed from [data] to data since we're inserting a single record
 
       if (error) throw error;
 
