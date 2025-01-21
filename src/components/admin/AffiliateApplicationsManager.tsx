@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AffiliateApplication {
   id: string;
@@ -15,11 +17,30 @@ interface AffiliateApplication {
   company: string | null;
   status: string;
   created_at: string;
+  phone: string;
+  address: string;
+  apt_suite: string | null;
+  city: string;
+  state: string;
+  zip_postal: string;
+  country: string;
+  telegram: string;
+  im: string | null;
+  im_type: string | null;
+  title: string | null;
+  website_url: string | null;
+  payment_method: string;
+  pay_to: string;
+  marketing_comments: string | null;
+  site_marketing: string | null;
+  known_contacts: string;
+  current_advertisers: string;
 }
 
 export function AffiliateApplicationsManager() {
   const [applications, setApplications] = useState<AffiliateApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedApplication, setSelectedApplication] = useState<AffiliateApplication | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,75 +110,141 @@ export function AffiliateApplicationsManager() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Affiliate Applications</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="text-center py-4">Loading applications...</div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {applications.length === 0 ? (
+    <>
+      <Dialog open={!!selectedApplication} onOpenChange={() => setSelectedApplication(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Application Details</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[80vh]">
+            {selectedApplication && (
+              <div className="space-y-4 p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold">Personal Information</h3>
+                    <p><span className="font-medium">Name:</span> {selectedApplication.first_name} {selectedApplication.last_name}</p>
+                    <p><span className="font-medium">Email:</span> {selectedApplication.email}</p>
+                    <p><span className="font-medium">Phone:</span> {selectedApplication.phone}</p>
+                    <p><span className="font-medium">Company:</span> {selectedApplication.company || 'N/A'}</p>
+                    <p><span className="font-medium">Title:</span> {selectedApplication.title || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Contact Details</h3>
+                    <p><span className="font-medium">Telegram:</span> {selectedApplication.telegram}</p>
+                    <p><span className="font-medium">IM:</span> {selectedApplication.im || 'N/A'}</p>
+                    <p><span className="font-medium">IM Type:</span> {selectedApplication.im_type || 'N/A'}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold">Address</h3>
+                  <p>{selectedApplication.address}</p>
+                  {selectedApplication.apt_suite && <p>Apt/Suite: {selectedApplication.apt_suite}</p>}
+                  <p>{selectedApplication.city}, {selectedApplication.state} {selectedApplication.zip_postal}</p>
+                  <p>{selectedApplication.country}</p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold">Business Information</h3>
+                  <p><span className="font-medium">Website:</span> {selectedApplication.website_url || 'N/A'}</p>
+                  <p><span className="font-medium">Payment Method:</span> {selectedApplication.payment_method}</p>
+                  <p><span className="font-medium">Pay To:</span> {selectedApplication.pay_to}</p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold">Additional Information</h3>
+                  <p><span className="font-medium">Known Contacts:</span> {selectedApplication.known_contacts}</p>
+                  <p><span className="font-medium">Current Advertisers:</span> {selectedApplication.current_advertisers}</p>
+                  {selectedApplication.marketing_comments && (
+                    <p><span className="font-medium">Marketing Comments:</span> {selectedApplication.marketing_comments}</p>
+                  )}
+                  {selectedApplication.site_marketing && (
+                    <p><span className="font-medium">Site Marketing:</span> {selectedApplication.site_marketing}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Affiliate Applications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-4">Loading applications...</div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4">
-                      No applications found
-                    </TableCell>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
-                  applications.map((app) => (
-                    <TableRow key={app.id}>
-                      <TableCell>
-                        {format(new Date(app.created_at), 'MMM d, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        {app.first_name} {app.last_name}
-                      </TableCell>
-                      <TableCell>{app.email}</TableCell>
-                      <TableCell>{app.company || 'N/A'}</TableCell>
-                      <TableCell>{getStatusBadge(app.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {app.status === 'pending' && (
-                            <>
-                              <Button
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700"
-                                onClick={() => updateApplicationStatus(app.id, 'approved')}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => updateApplicationStatus(app.id, 'rejected')}
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {applications.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4">
+                        No applications found
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  ) : (
+                    applications.map((app) => (
+                      <TableRow key={app.id}>
+                        <TableCell>
+                          {format(new Date(app.created_at), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          {app.first_name} {app.last_name}
+                        </TableCell>
+                        <TableCell>{app.email}</TableCell>
+                        <TableCell>{app.company || 'N/A'}</TableCell>
+                        <TableCell>{getStatusBadge(app.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedApplication(app)}
+                            >
+                              View Details
+                            </Button>
+                            {app.status === 'pending' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700"
+                                  onClick={() => updateApplicationStatus(app.id, 'approved')}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => updateApplicationStatus(app.id, 'rejected')}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }
