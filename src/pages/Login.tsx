@@ -7,12 +7,14 @@ import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { AffiliateApplicationForm } from "@/components/affiliate/AffiliateApplicationForm";
+import { ForgotPassword } from "@/components/auth/ForgotPassword";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -73,6 +75,10 @@ export default function Login() {
     }
   };
 
+  if (showForgotPassword) {
+    return <ForgotPassword />;
+  }
+
   return (
     <>
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/30">
@@ -122,13 +128,18 @@ export default function Login() {
             </Button>
 
             <div className="text-center space-y-2">
-              <a href="#" className="text-sm text-green-600 hover:underline block">
-                Forgot Password?
-              </a>
               <Button
                 type="button"
                 variant="link"
                 className="text-sm text-green-600 hover:underline"
+                onClick={() => setShowForgotPassword(true)}
+              >
+                Forgot Password?
+              </Button>
+              <Button
+                type="button"
+                variant="link"
+                className="text-sm text-green-600 hover:underline block mx-auto"
                 onClick={() => setShowApplicationForm(true)}
               >
                 Affiliate Application
