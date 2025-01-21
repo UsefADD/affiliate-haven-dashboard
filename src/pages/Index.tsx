@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OfferList } from "@/components/offers/OfferList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, TrendingUp, Users } from "lucide-react";
+import { DollarSign, TrendingUp, Users, Star } from "lucide-react";
 
 interface Offer {
   id: string;
@@ -51,11 +51,12 @@ export default function Index() {
 
   const fetchOffers = async () => {
     try {
-      console.log("Fetching offers for affiliate dashboard...");
+      console.log("Fetching top offers for affiliate dashboard...");
       const { data, error } = await supabase
         .from('offers')
         .select('*')
         .eq('status', true)
+        .eq('is_top_offer', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -63,7 +64,7 @@ export default function Index() {
         throw error;
       }
 
-      console.log("Fetched offers:", data);
+      console.log("Fetched top offers:", data);
       
       const typedOffers: Offer[] = data.map(offer => ({
         ...offer,
@@ -194,14 +195,17 @@ export default function Index() {
           </CardContent>
         </Card>
 
-        {/* Available Offers */}
+        {/* Top Offers */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-green-600">Available Offers</h2>
+          <div className="flex items-center space-x-2">
+            <Star className="h-6 w-6 text-green-600" />
+            <h2 className="text-2xl font-bold text-green-600">Top Offers</h2>
+          </div>
           <Card className="bg-white/80 backdrop-blur-sm border border-green-100">
             <CardContent className="p-6">
               {offers.length === 0 ? (
                 <div className="text-center py-10">
-                  <p className="text-muted-foreground">No active offers available at the moment.</p>
+                  <p className="text-muted-foreground">No top offers available at the moment.</p>
                 </div>
               ) : (
                 <OfferList

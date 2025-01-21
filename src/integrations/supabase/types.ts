@@ -184,6 +184,7 @@ export type Database = {
           creatives: Json | null
           description: string | null
           id: string
+          is_top_offer: boolean | null
           links: string[] | null
           name: string
           payout: number
@@ -195,6 +196,7 @@ export type Database = {
           creatives?: Json | null
           description?: string | null
           id?: string
+          is_top_offer?: boolean | null
           links?: string[] | null
           name: string
           payout: number
@@ -206,6 +208,7 @@ export type Database = {
           creatives?: Json | null
           description?: string | null
           id?: string
+          is_top_offer?: boolean | null
           links?: string[] | null
           name?: string
           payout?: number
