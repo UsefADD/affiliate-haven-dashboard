@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Users, Gift, FileSpreadsheet } from "lucide-react";
+import { BarChart, Users, Gift, FileSpreadsheet, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AffiliateApplicationsManager } from "@/components/admin/AffiliateApplicationsManager";
 
@@ -29,14 +29,12 @@ export default function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      // Fetch total offers and active offers
       const { data: offers, error: offersError } = await supabase
         .from('offers')
         .select('status');
       
       if (offersError) throw offersError;
 
-      // Fetch total affiliates (users with affiliate role)
       const { data: affiliates, error: affiliatesError } = await supabase
         .from('profiles')
         .select('role')
@@ -44,7 +42,6 @@ export default function AdminDashboard() {
       
       if (affiliatesError) throw affiliatesError;
 
-      // Fetch total leads
       const { data: leads, error: leadsError } = await supabase
         .from('leads')
         .select('id');
@@ -74,42 +71,56 @@ export default function AdminDashboard() {
       value: stats.totalOffers,
       description: `${stats.activeOffers} active`,
       icon: Gift,
-      link: "/admin/offers"
+      link: "/admin/offers",
+      color: "bg-purple-500"
     },
     {
       title: "Total Affiliates",
       value: stats.totalAffiliates,
       description: "Registered affiliates",
       icon: Users,
-      link: "/admin/users"
+      link: "/admin/users",
+      color: "bg-blue-500"
     },
     {
       title: "Total Leads",
       value: stats.totalLeads,
       description: "All time leads",
       icon: FileSpreadsheet,
-      link: "/admin/leads"
+      link: "/admin/leads",
+      color: "bg-orange-500"
     }
   ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      <div className="space-y-8 animate-fade-in">
+        {/* Header Section */}
+        <div className="relative bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-8 text-white mb-8">
+          <div className="absolute inset-0 bg-black/10 rounded-lg"></div>
+          <div className="relative">
+            <h1 className="text-3xl font-bold mb-2">Welcome to Admin Dashboard</h1>
+            <p className="text-white/80">Manage your affiliate network and track performance</p>
+          </div>
+        </div>
         
-        <div className="grid gap-4 md:grid-cols-3">
+        {/* Stats Cards */}
+        <div className="grid gap-6 md:grid-cols-3">
           {cards.map((card, index) => (
-            <Link key={index} to={card.link} className="block">
-              <Card className="hover:bg-muted/50 transition-colors">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
+            <Link key={index} to={card.link} className="block transform hover:scale-105 transition-all duration-300">
+              <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow">
+                <div className={`absolute inset-0 opacity-10 ${card.color}`}></div>
+                <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-lg font-semibold">
                     {card.title}
                   </CardTitle>
-                  <card.icon className="h-4 w-4 text-muted-foreground" />
+                  <div className={`p-2 rounded-full ${card.color} bg-opacity-20`}>
+                    <card.icon className={`h-5 w-5 ${card.color} text-white`} />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{card.value}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="relative">
+                  <div className="text-3xl font-bold mb-1">{card.value}</div>
+                  <p className="text-sm text-muted-foreground">
                     {card.description}
                   </p>
                 </CardContent>
@@ -118,7 +129,12 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        <div className="mt-8">
+        {/* Applications Section */}
+        <div className="mt-8 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-lg p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <TrendingUp className="h-5 w-5 text-purple-500" />
+            <h2 className="text-xl font-semibold">Recent Applications</h2>
+          </div>
           <AffiliateApplicationsManager />
         </div>
       </div>
