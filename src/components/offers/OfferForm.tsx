@@ -318,13 +318,32 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
 
               {form.watch(`creatives.${index}.type`) === "image" && (
                 <div className="space-y-4">
-                  <FormLabel>Upload Image</FormLabel>
-                  <ImageUploader
-                    onUpload={(url) => {
-                      handleImageUpload(url);
-                      form.setValue(`creatives.${index}.content`, url);
-                    }}
-                  />
+                  <div>
+                    <FormLabel>Images ({uploadedImages.length}/{MAX_IMAGES})</FormLabel>
+                    <div className="mt-2 grid grid-cols-2 gap-4">
+                      {uploadedImages.map((url, imgIndex) => (
+                        <div key={imgIndex} className="relative group">
+                          <img
+                            src={url}
+                            alt={`Uploaded ${imgIndex + 1}`}
+                            className="w-full h-32 object-cover rounded-md"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeImage(imgIndex)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      {uploadedImages.length < MAX_IMAGES && (
+                        <ImageUploader onUpload={handleImageUpload} />
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
