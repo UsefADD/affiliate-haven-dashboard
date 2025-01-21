@@ -5,9 +5,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ImagePlus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ImageUploader } from "./ImageUploader";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+
+const MAX_IMAGES = 5;
 
 const offerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -37,6 +41,11 @@ interface OfferFormProps {
 }
 
 export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false }: OfferFormProps) {
+  const [uploadedImages, setUploadedImages] = useState<string[]>(
+    initialData?.creatives?.[0]?.images || []
+  );
+  const { toast } = useToast();
+  
   const form = useForm<OfferFormData>({
     resolver: zodResolver(offerSchema),
     defaultValues: initialData || {
@@ -46,41 +55,73 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
       status: true,
       is_top_offer: false,
       links: [],
-      creatives: [],
-    },
-  });
-
-  const appendLink = () => {
-    const currentLinks = form.getValues("links") || [];
-    form.setValue("links", [...currentLinks, ""]);
-  };
-
-  const removeLink = (index: number) => {
-    const currentLinks = form.getValues("links") || [];
-    form.setValue(
-      "links",
-      currentLinks.filter((_, i) => i !== index)
-    );
-  };
-
-  const appendCreative = () => {
-    const currentCreatives = form.getValues("creatives") || [];
-    form.setValue("creatives", [
-      ...currentCreatives,
-      {
+      creatives: [{
         type: "email",
         content: "",
         details: { fromNames: [], subjects: [] },
         images: [],
-      },
-    ]);
+      }],
+    },
+  });
+
+  const handleImageUpload = (url: string) => {
+    if (uploadedImages.length >= MAX_IMAGES) {
+      toast({
+        title: "Error",
+        description: `Maximum ${MAX_IMAGES} images allowed`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newImages = [...uploadedImages, url];
+    setUploadedImages(newImages);
+
+    // Update the form's creative images
+    const currentCreatives = form.getValues("creatives") || [];
+    const updatedCreatives = currentCreatives.map(creative => ({
+      ...creative,
+      images: newImages
+    }));
+    form.setValue("creatives", updatedCreatives);
   };
 
-  const removeCreative = (index: number) => {
+  const removeImage = (indexToRemove: number) => {
+    const newImages = uploadedImages.filter((_, index) => index !== indexToRemove);
+    setUploadedImages(newImages);
+
+    // Update the form's creative images
     const currentCreatives = form.getValues("creatives") || [];
+    const updatedCreatives = currentCreatives.map(creative => ({
+      ...creative,
+      images: newImages
+    }));
+    form.setValue("creatives", updatedCreatives);
+  };
+
+  const appendFromName = (creativeIndex: number) => {
+    const currentFromNames = form.getValues(`creatives.${creativeIndex}.details.fromNames`) || [];
+    form.setValue(`creatives.${creativeIndex}.details.fromNames`, [...currentFromNames, ""]);
+  };
+
+  const removeFromName = (creativeIndex: number, nameIndex: number) => {
+    const currentFromNames = form.getValues(`creatives.${creativeIndex}.details.fromNames`) || [];
     form.setValue(
-      "creatives",
-      currentCreatives.filter((_, i) => i !== index)
+      `creatives.${creativeIndex}.details.fromNames`,
+      currentFromNames.filter((_, i) => i !== nameIndex)
+    );
+  };
+
+  const appendSubject = (creativeIndex: number) => {
+    const currentSubjects = form.getValues(`creatives.${creativeIndex}.details.subjects`) || [];
+    form.setValue(`creatives.${creativeIndex}.details.subjects`, [...currentSubjects, ""]);
+  };
+
+  const removeSubject = (creativeIndex: number, subjectIndex: number) => {
+    const currentSubjects = form.getValues(`creatives.${creativeIndex}.details.subjects`) || [];
+    form.setValue(
+      `creatives.${creativeIndex}.details.subjects`,
+      currentSubjects.filter((_, i) => i !== subjectIndex)
     );
   };
 
@@ -188,7 +229,10 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
               type="button"
               variant="outline"
               size="sm"
-              onClick={appendLink}
+              onClick={() => {
+                const currentLinks = form.getValues("links") || [];
+                form.setValue("links", [...currentLinks, ""]);
+              }}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Link
@@ -212,7 +256,13 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => removeLink(index)}
+                onClick={() => {
+                  const currentLinks = form.getValues("links") || [];
+                  form.setValue(
+                    "links",
+                    currentLinks.filter((_, i) => i !== index)
+                  );
+                }}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -227,7 +277,18 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
               type="button"
               variant="outline"
               size="sm"
-              onClick={appendCreative}
+              onClick={() => {
+                const currentCreatives = form.getValues("creatives") || [];
+                form.setValue("creatives", [
+                  ...currentCreatives,
+                  {
+                    type: "email",
+                    content: "",
+                    details: { fromNames: [], subjects: [] },
+                    images: [],
+                  },
+                ]);
+              }}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Creative
@@ -260,9 +321,8 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                   <FormLabel>Upload Image</FormLabel>
                   <ImageUploader
                     onUpload={(url) => {
+                      handleImageUpload(url);
                       form.setValue(`creatives.${index}.content`, url);
-                      const currentImages = form.getValues(`creatives.${index}.images`) || [];
-                      form.setValue(`creatives.${index}.images`, [...currentImages, url]);
                     }}
                   />
                 </div>
@@ -291,10 +351,7 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          const currentFromNames = form.getValues(`creatives.${index}.details.fromNames`) || [];
-                          form.setValue(`creatives.${index}.details.fromNames`, [...currentFromNames, ""]);
-                        }}
+                        onClick={() => appendFromName(index)}
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         Add Name
@@ -318,13 +375,7 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
-                            const currentFromNames = form.getValues(`creatives.${index}.details.fromNames`) || [];
-                            form.setValue(
-                              `creatives.${index}.details.fromNames`,
-                              currentFromNames.filter((_, i) => i !== nameIndex)
-                            );
-                          }}
+                          onClick={() => removeFromName(index, nameIndex)}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -339,10 +390,7 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          const currentSubjects = form.getValues(`creatives.${index}.details.subjects`) || [];
-                          form.setValue(`creatives.${index}.details.subjects`, [...currentSubjects, ""]);
-                        }}
+                        onClick={() => appendSubject(index)}
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         Add Subject
@@ -366,13 +414,7 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
-                            const currentSubjects = form.getValues(`creatives.${index}.details.subjects`) || [];
-                            form.setValue(
-                              `creatives.${index}.details.subjects`,
-                              currentSubjects.filter((_, i) => i !== subjectIndex)
-                            );
-                          }}
+                          onClick={() => removeSubject(index, subjectIndex)}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -387,7 +429,13 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                 variant="ghost"
                 size="sm"
                 className="mt-2"
-                onClick={() => removeCreative(index)}
+                onClick={() => {
+                  const currentCreatives = form.getValues("creatives") || [];
+                  form.setValue(
+                    "creatives",
+                    currentCreatives.filter((_, i) => i !== index)
+                  );
+                }}
               >
                 <X className="h-4 w-4 mr-2" />
                 Remove Creative
