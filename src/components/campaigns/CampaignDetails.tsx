@@ -74,15 +74,15 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
 
   return (
     <Dialog open={!!campaign} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="max-w-[600px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="px-6 py-4">
           <DialogTitle>Campaign Details</DialogTitle>
           <DialogDescription>
             View campaign information, email templates, and creative assets
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 p-6">
+        <ScrollArea className="flex-1 px-6 pb-6">
           <div className="space-y-6">
             <div>
               <h4 className="text-sm font-medium mb-2">Campaign Information</h4>
@@ -154,7 +154,6 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
                       </div>
                     )}
 
-                    {/* Display images section */}
                     {creative.images && creative.images.length > 0 && (
                       <div className="mt-4">
                         <p className="text-sm font-medium mb-2">Creative Images:</p>
