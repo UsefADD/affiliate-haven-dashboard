@@ -152,7 +152,7 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
                     </div>
                   )}
 
-                  {/* Display images section - now supports multiple images */}
+                  {/* Display images section */}
                   {creative.images && creative.images.length > 0 && (
                     <div className="mt-4">
                       <p className="text-sm font-medium mb-2">Creative Images:</p>
