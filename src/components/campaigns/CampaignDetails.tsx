@@ -74,7 +74,7 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
 
   return (
     <Dialog open={!!campaign} onOpenChange={onClose}>
-      <DialogContent className="max-w-[600px] h-[80vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-[800px] h-[80vh] flex flex-col overflow-hidden">
         <DialogHeader className="px-6 py-4">
           <DialogTitle>Campaign Details</DialogTitle>
           <DialogDescription>
