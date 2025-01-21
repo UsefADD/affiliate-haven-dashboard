@@ -80,9 +80,23 @@ export function AffiliateApplicationForm({ onSuccess, onCancel }: AffiliateAppli
     console.log("Submitting application data:", data);
     setIsSubmitting(true);
     try {
+      // Ensure all required fields are present in the data object
+      const submissionData = {
+        ...data,
+        // Add empty string for optional fields if they're undefined
+        company: data.company || "",
+        apt_suite: data.apt_suite || "",
+        im: data.im || "",
+        im_type: data.im_type || "",
+        title: data.title || "",
+        website_url: data.website_url || "",
+        marketing_comments: data.marketing_comments || "",
+        site_marketing: data.site_marketing || "",
+      };
+
       const { error } = await supabase
         .from("affiliate_applications")
-        .insert(data);
+        .insert(submissionData);
 
       if (error) throw error;
 
