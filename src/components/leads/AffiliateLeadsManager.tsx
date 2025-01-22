@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { LeadForm, LeadFormData } from "@/components/leads/LeadForm";
 import { LeadList } from "@/components/leads/LeadList";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -47,6 +48,8 @@ export function AffiliateLeadsManager() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -242,6 +245,43 @@ export function AffiliateLeadsManager() {
     }
   };
 
+  const handleDelete = (lead: Lead) => {
+    setLeadToDelete(lead);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!leadToDelete) return;
+
+    try {
+      console.log("Deleting lead:", leadToDelete.id);
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', leadToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Lead deleted successfully",
+      });
+
+      setDeleteDialogOpen(false);
+      setLeadToDelete(null);
+      if (selectedAffiliate) {
+        fetchAffiliateLeads(selectedAffiliate);
+      }
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete lead",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -299,11 +339,31 @@ export function AffiliateLeadsManager() {
       </Card>
 
       {selectedAffiliate && (
-        <LeadList
-          leads={leads}
-          onEdit={handleEdit}
-          onToggleStatus={toggleLeadStatus}
-        />
+        <>
+          <LeadList
+            leads={leads}
+            onEdit={handleEdit}
+            onToggleStatus={toggleLeadStatus}
+            onDelete={handleDelete}
+          />
+
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the lead.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Check, X, Pencil } from "lucide-react";
+import { Check, X, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface Lead {
@@ -24,9 +24,10 @@ interface LeadListProps {
   leads: Lead[];
   onEdit: (lead: Lead) => void;
   onToggleStatus: (leadId: string, currentStatus: string) => void;
+  onDelete: (lead: Lead) => void;
 }
 
-export function LeadList({ leads, onEdit, onToggleStatus }: LeadListProps) {
+export function LeadList({ leads, onEdit, onToggleStatus, onDelete }: LeadListProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -70,13 +71,21 @@ export function LeadList({ leads, onEdit, onToggleStatus }: LeadListProps) {
                   ? format(new Date(lead.conversion_date), 'MMM d, yyyy')
                   : 'N/A'}
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right space-x-2">
                 <Button 
                   variant="ghost" 
                   size="icon"
                   onClick={() => onEdit(lead)}
                 >
                   <Pencil className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => onDelete(lead)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </TableCell>
             </TableRow>
