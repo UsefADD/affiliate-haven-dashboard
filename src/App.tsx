@@ -29,10 +29,26 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsAuthenticated(!!session);
+        console.log("Checking authentication status...");
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session error:", error);
+          throw error;
+        }
+
+        if (!session) {
+          console.log("No active session found");
+          localStorage.removeItem("isLoggedIn");
+          setIsAuthenticated(false);
+          return;
+        }
+
+        console.log("Active session found:", session.user.id);
+        setIsAuthenticated(true);
       } catch (error) {
         console.error('Auth check error:', error);
+        localStorage.removeItem("isLoggedIn");
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -41,11 +57,22 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
+      
+      if (event === 'SIGNED_OUT' || !session) {
+        localStorage.removeItem("isLoggedIn");
+        setIsAuthenticated(false);
+        return;
+      }
+
+      setIsAuthenticated(true);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log("Cleaning up auth subscription");
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (isLoading) {
