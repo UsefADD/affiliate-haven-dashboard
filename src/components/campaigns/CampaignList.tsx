@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Copy, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Offer } from "@/types/offer";
 
-export function CampaignList({ campaigns, profile }: { campaigns: any[]; profile: any }) {
-  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+export function CampaignList({ campaigns, profile }: { campaigns: Offer[]; profile: any }) {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,7 +29,7 @@ export function CampaignList({ campaigns, profile }: { campaigns: any[]; profile
     }
   };
 
-  const getTrackingUrl = (campaign: any) => {
+  const getTrackingUrl = (campaign: Offer) => {
     if (!profile?.subdomain) {
       console.log("No subdomain found for affiliate");
       return '';
