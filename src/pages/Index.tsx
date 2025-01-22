@@ -211,6 +211,7 @@ export default function Index() {
                 <OfferList
                   offers={offers}
                   onEdit={() => {}}
+                  onDelete={() => {}}
                   onToggleStatus={() => {}}
                   isAdmin={false}
                 />

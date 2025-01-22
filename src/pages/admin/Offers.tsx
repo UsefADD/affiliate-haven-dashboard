@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Star } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { OfferForm, OfferFormData } from "@/components/offers/OfferForm";
 import { OfferList } from "@/components/offers/OfferList";
@@ -36,6 +36,7 @@ export default function Offers() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState<Offer | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,8 +55,8 @@ export default function Offers() {
         console.error("Error fetching offers:", error);
         throw error;
       }
-      console.log("Fetched offers:", data);
       
+      console.log("Fetched offers:", data);
       const typedOffers: Offer[] = data.map(offer => ({
         ...offer,
         creatives: offer.creatives as Offer['creatives'] || [],
@@ -145,6 +146,7 @@ export default function Offers() {
 
   const handleDelete = async (offer: Offer) => {
     setOfferToDelete(offer);
+    setDeleteError(null);
     setDeleteDialogOpen(true);
   };
 
@@ -152,6 +154,21 @@ export default function Offers() {
     if (!offerToDelete) return;
 
     try {
+      // First check if the offer has any leads
+      const { data: leads, error: leadsError } = await supabase
+        .from('leads')
+        .select('id')
+        .eq('offer_id', offerToDelete.id)
+        .limit(1);
+
+      if (leadsError) throw leadsError;
+
+      if (leads && leads.length > 0) {
+        setDeleteError("Cannot delete this offer because it has associated leads. Please delete the leads first.");
+        return;
+      }
+
+      // If no leads, proceed with deletion
       const { error } = await supabase
         .from('offers')
         .delete()
@@ -164,17 +181,13 @@ export default function Offers() {
         description: "Offer deleted successfully",
       });
 
+      setDeleteDialogOpen(false);
+      setOfferToDelete(null);
+      setDeleteError(null);
       fetchOffers();
     } catch (error) {
       console.error('Error deleting offer:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete offer",
-        variant: "destructive",
-      });
-    } finally {
-      setDeleteDialogOpen(false);
-      setOfferToDelete(null);
+      setDeleteError("Failed to delete offer. Please try again.");
     }
   };
 
@@ -278,16 +291,29 @@ export default function Offers() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the offer
-                "{offerToDelete?.name}" and remove all associated data.
+              <AlertDialogDescription className="space-y-2">
+                {deleteError ? (
+                  <p className="text-red-500">{deleteError}</p>
+                ) : (
+                  <p>
+                    This action cannot be undone. This will permanently delete the offer
+                    "{offerToDelete?.name}" and remove all associated data.
+                  </p>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-                Delete
-              </AlertDialogAction>
+              <AlertDialogCancel onClick={() => {
+                setDeleteError(null);
+                setDeleteDialogOpen(false);
+              }}>
+                Cancel
+              </AlertDialogCancel>
+              {!deleteError && (
+                <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+                  Delete
+                </AlertDialogAction>
+              )}
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
