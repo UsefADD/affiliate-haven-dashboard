@@ -125,8 +125,10 @@ export function CampaignDetails({ campaign, onClose, trackingUrl: propTrackingUr
               <Button onClick={handleCopyToClipboard} variant="outline">
                 <Copy className="h-4 w-4" />
               </Button>
-              <Button as="a" href={formattedTrackingUrl} target="_blank" variant="outline">
-                <ExternalLink className="h-4 w-4" />
+              <Button asChild variant="outline">
+                <a href={formattedTrackingUrl || ''} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4" />
+                </a>
               </Button>
             </div>
           </div>
