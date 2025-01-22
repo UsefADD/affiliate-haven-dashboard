@@ -5,7 +5,7 @@ export interface Offer {
   payout: number;
   status: boolean;
   created_at: string;
-  links?: string[];
+  created_by: string;
   creatives?: {
     type: "image" | "email";
     content: string;
@@ -15,4 +15,8 @@ export interface Offer {
     };
     images?: string[];
   }[];
+  links?: string[];
+  is_top_offer?: boolean;
+  leads_count?: number;
+  last_conversion_date?: string;
 }

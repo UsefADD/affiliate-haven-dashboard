@@ -2,6 +2,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { Campaign } from "@/types/campaign";
 import { Offer } from "@/types/offer";
+import { format } from "date-fns";
 
 interface CampaignListProps {
   campaigns: Offer[];
@@ -14,23 +15,27 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>ID</TableHead>
             <TableHead>Campaign Name</TableHead>
             <TableHead>Payout</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>Total Leads</TableHead>
+            <TableHead>Last Conversion</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {campaigns.map((campaign) => (
             <TableRow key={campaign.id}>
-              <TableCell>{campaign.id}</TableCell>
-              <TableCell>{campaign.name}</TableCell>
+              <TableCell className="font-medium">{campaign.name}</TableCell>
               <TableCell>${campaign.payout}</TableCell>
               <TableCell>
-                <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800">
-                  Active
-                </span>
+                {campaign.leads_count || 0} leads
+              </TableCell>
+              <TableCell>
+                {campaign.last_conversion_date ? (
+                  format(new Date(campaign.last_conversion_date), "MMM d, yyyy HH:mm:ss")
+                ) : (
+                  "No conversions yet"
+                )}
               </TableCell>
               <TableCell className="text-right">
                 <Button

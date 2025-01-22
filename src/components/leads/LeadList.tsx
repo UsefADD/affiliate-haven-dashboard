@@ -35,10 +35,9 @@ export function LeadList({ leads, onEdit, onToggleStatus, onDelete }: LeadListPr
           <TableRow>
             <TableHead>Affiliate</TableHead>
             <TableHead>Offer</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Payout</TableHead>
             <TableHead>Created At</TableHead>
             <TableHead>Conversion Date</TableHead>
+            <TableHead>Payout</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -50,27 +49,14 @@ export function LeadList({ leads, onEdit, onToggleStatus, onDelete }: LeadListPr
               </TableCell>
               <TableCell>{lead.offer.name}</TableCell>
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onToggleStatus(lead.id, lead.status)}
-                >
-                  {lead.status === 'converted' ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <X className="h-4 w-4 text-red-500" />
-                  )}
-                </Button>
-              </TableCell>
-              <TableCell>${lead.payout}</TableCell>
-              <TableCell>
-                {format(new Date(lead.created_at), 'MMM d, yyyy')}
+                {format(new Date(lead.created_at), 'MMM d, yyyy HH:mm:ss')}
               </TableCell>
               <TableCell>
                 {lead.conversion_date 
-                  ? format(new Date(lead.conversion_date), 'MMM d, yyyy')
+                  ? format(new Date(lead.conversion_date), 'MMM d, yyyy HH:mm:ss')
                   : 'N/A'}
               </TableCell>
+              <TableCell>${lead.payout}</TableCell>
               <TableCell className="text-right space-x-2">
                 <Button 
                   variant="ghost" 
