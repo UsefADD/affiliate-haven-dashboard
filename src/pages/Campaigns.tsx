@@ -34,20 +34,53 @@ export default function Campaigns() {
         return;
       }
 
-      const { data, error } = await supabase
+      // First check for specific affiliate link
+      const { data: affiliateLink, error: linkError } = await supabase
         .from('affiliate_links')
         .select('tracking_url')
         .eq('offer_id', campaignId)
         .eq('affiliate_id', user.id)
         .single();
 
-      if (error) {
-        console.error("Error fetching tracking URL:", error);
-        throw error;
+      if (affiliateLink?.tracking_url) {
+        console.log("Found specific affiliate link:", affiliateLink.tracking_url);
+        setTrackingUrl(affiliateLink.tracking_url);
+        return;
       }
 
-      console.log("Fetched tracking URL:", data?.tracking_url);
-      setTrackingUrl(data?.tracking_url || null);
+      // If no specific link, check for subdomain and offer links
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subdomain')
+        .eq('id', user.id)
+        .single();
+
+      const { data: offer } = await supabase
+        .from('offers')
+        .select('links')
+        .eq('id', campaignId)
+        .single();
+
+      if (profile?.subdomain && offer?.links?.[0]) {
+        try {
+          const defaultLink = offer.links[0];
+          const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
+          const newUrl = `https://${profile.subdomain}.${url.hostname}${url.pathname}${url.search}`;
+          console.log("Generated subdomain URL:", newUrl);
+          setTrackingUrl(newUrl);
+          return;
+        } catch (error) {
+          console.error('Error generating tracking URL:', error);
+        }
+      }
+
+      // Fallback to first offer link
+      if (offer?.links?.[0]) {
+        setTrackingUrl(offer.links[0]);
+        return;
+      }
+
+      setTrackingUrl(null);
     } catch (error) {
       console.error('Error in fetchTrackingUrl:', error);
       setTrackingUrl(null);
@@ -126,7 +159,7 @@ export default function Campaigns() {
         </div>
         
         <div className="mb-6 bg-white/50 backdrop-blur-sm rounded-lg p-4 border shadow-sm">
-          <SearchBar value={searchQuery} onSearch={handleSearch} />
+          <SearchBar onSearch={handleSearch} value={searchQuery} />
         </div>
 
         <CampaignList
