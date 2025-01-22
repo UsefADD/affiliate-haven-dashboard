@@ -46,6 +46,9 @@ export default function Offers() {
   const fetchOffers = async () => {
     try {
       console.log("Fetching offers...");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
       const { data, error } = await supabase
         .from('offers')
         .select('*')
@@ -59,6 +62,7 @@ export default function Offers() {
       console.log("Fetched offers:", data);
       const typedOffers: Offer[] = data.map(offer => ({
         ...offer,
+        created_by: offer.created_by || user.id, // Ensure created_by is always set
         creatives: offer.creatives as Offer['creatives'] || [],
         links: offer.links || []
       }));

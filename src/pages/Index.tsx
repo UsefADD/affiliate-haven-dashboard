@@ -5,25 +5,7 @@ import OfferList from "@/components/offers/OfferList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, Users, Star } from "lucide-react";
-
-interface Offer {
-  id: string;
-  name: string;
-  description: string | null;
-  payout: number;
-  status: boolean;
-  created_at: string;
-  links?: string[];
-  creatives?: {
-    type: "image" | "email";
-    content: string;
-    details?: {
-      fromNames?: string[];
-      subjects?: string[];
-    };
-    images?: string[];
-  }[];
-}
+import { Offer } from "@/types/offer";
 
 interface DashboardStats {
   totalLeads: number;
@@ -79,6 +61,9 @@ export default function Index() {
   const fetchOffers = async () => {
     try {
       console.log("Fetching top offers for affiliate dashboard...");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
       const { data, error } = await supabase
         .from('offers')
         .select('*')
@@ -96,6 +81,7 @@ export default function Index() {
       
       const typedOffers: Offer[] = data.map(offer => ({
         ...offer,
+        created_by: offer.created_by || user.id, // Ensure created_by is always set
         creatives: offer.creatives as Offer['creatives'] || [],
         links: offer.links || []
       }));
@@ -256,7 +242,7 @@ export default function Index() {
                   offers={offers}
                   onEdit={() => {}}
                   onDelete={() => {}}
-                  onToggleStatus={() => {}}
+                  onToggleStatus={async () => {}} // Make it return a Promise
                   isAdmin={false}
                 />
               )}
