@@ -110,7 +110,13 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
                     size="sm" 
                     onClick={() => {
                       const formattedUrl = getFormattedTrackingUrl();
-                      if (formattedUrl) navigator.clipboard.writeText(formattedUrl);
+                      if (formattedUrl) {
+                        navigator.clipboard.writeText(formattedUrl);
+                        toast({
+                          title: "Success",
+                          description: "Tracking link copied to clipboard",
+                        });
+                      }
                     }}
                   >
                     Copy

@@ -77,7 +77,6 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
     const newImages = [...uploadedImages, url];
     setUploadedImages(newImages);
 
-    // Update the form's creative images
     const currentCreatives = form.getValues("creatives") || [];
     const updatedCreatives = currentCreatives.map(creative => ({
       ...creative,
@@ -90,13 +89,25 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
     const newImages = uploadedImages.filter((_, index) => index !== indexToRemove);
     setUploadedImages(newImages);
 
-    // Update the form's creative images
     const currentCreatives = form.getValues("creatives") || [];
     const updatedCreatives = currentCreatives.map(creative => ({
       ...creative,
       images: newImages
     }));
     form.setValue("creatives", updatedCreatives);
+  };
+
+  const appendTrackingLink = () => {
+    const currentLinks = form.getValues("links") || [];
+    form.setValue("links", [...currentLinks, ""]);
+  };
+
+  const removeTrackingLink = (indexToRemove: number) => {
+    const currentLinks = form.getValues("links") || [];
+    form.setValue(
+      "links",
+      currentLinks.filter((_, index) => index !== indexToRemove)
+    );
   };
 
   const appendFromName = (creativeIndex: number) => {
@@ -219,6 +230,45 @@ export function OfferForm({ initialData, onSubmit, isSubmitting, isAdmin = false
                 </FormItem>
               )}
             />
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <FormLabel>Tracking Links</FormLabel>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={appendTrackingLink}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Link
+                </Button>
+              </div>
+              {(form.watch("links") || []).map((link, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`links.${index}`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input placeholder="Enter tracking link" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeTrackingLink(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </>
         )}
 
