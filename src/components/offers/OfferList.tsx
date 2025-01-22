@@ -107,7 +107,7 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
     const affiliateLink = affiliateLinks[offer.id];
     if (affiliateLink) {
       console.log("Using affiliate-specific link:", affiliateLink);
-      return affiliateLink;
+      return `/track/${offer.id}/${currentUserId}?target=${encodeURIComponent(affiliateLink)}`;
     }
     
     // If no specific affiliate link is found, generate one using the subdomain
@@ -118,14 +118,15 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
         const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
         const newUrl = `https://${userProfile.subdomain}.${url.hostname}${url.pathname}${url.search}`;
         console.log("Generated subdomain URL:", newUrl);
-        return newUrl;
+        return `/track/${offer.id}/${currentUserId}?target=${encodeURIComponent(newUrl)}`;
       } catch (error) {
         console.error('Error parsing URL:', error);
-        return defaultLink;
+        if (defaultLink) {
+          return `/track/${offer.id}/${currentUserId}?target=${encodeURIComponent(defaultLink)}`;
+        }
       }
     }
-    console.log("Using default link:", defaultLink);
-    return defaultLink;
+    return null;
   };
 
   return (
