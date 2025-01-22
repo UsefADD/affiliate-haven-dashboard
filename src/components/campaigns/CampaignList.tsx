@@ -13,31 +13,34 @@ export function CampaignList({ campaigns, profile }: { campaigns: Offer[]; profi
   const { toast } = useToast();
   const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
 
-  const fetchAffiliateLink = async (campaign: Offer) => {
+  const generateTrackingUrl = async (campaign: Offer) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      console.log("Fetching affiliate link for campaign:", campaign.id);
-      const { data: linkData, error: linkError } = await supabase
+      console.log("Generating tracking URL for campaign:", campaign.id);
+      const trackingUrl = `${window.location.origin}/track/${campaign.id}/${user.id}`;
+      console.log("Generated tracking URL:", trackingUrl);
+      
+      // Store the tracking URL in the database
+      const { error: linkError } = await supabase
         .from('affiliate_links')
-        .select('tracking_url')
-        .eq('offer_id', campaign.id)
-        .eq('affiliate_id', user.id)
-        .single();
+        .upsert({
+          offer_id: campaign.id,
+          affiliate_id: user.id,
+          tracking_url: trackingUrl
+        }, {
+          onConflict: 'offer_id,affiliate_id'
+        });
 
       if (linkError) {
-        if (linkError.code === 'PGRST116' && profile?.subdomain) {
-          console.log("No existing affiliate link, generating URL with subdomain");
-          return `https://${profile.subdomain}.trackoffers.net/track/${campaign.id}/${user.id}`;
-        }
-        return null;
+        console.error("Error storing tracking URL:", linkError);
+        throw linkError;
       }
 
-      console.log("Found existing affiliate link:", linkData.tracking_url);
-      return linkData.tracking_url;
+      return trackingUrl;
     } catch (error) {
-      console.error('Error fetching affiliate link:', error);
+      console.error('Error generating tracking URL:', error);
       return null;
     }
   };
@@ -47,7 +50,7 @@ export function CampaignList({ campaigns, profile }: { campaigns: Offer[]; profi
       let trackingUrl = affiliateLinks[campaign.id];
       
       if (!trackingUrl) {
-        trackingUrl = await fetchAffiliateLink(campaign);
+        trackingUrl = await generateTrackingUrl(campaign);
         if (trackingUrl) {
           setAffiliateLinks(prev => ({ ...prev, [campaign.id]: trackingUrl }));
         }

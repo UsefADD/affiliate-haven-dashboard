@@ -14,13 +14,13 @@ interface CampaignDetailsProps {
 
 export function CampaignDetails({ campaignId, isOpen, onClose }: CampaignDetailsProps) {
   const [campaign, setCampaign] = useState<any>(null);
-  const [affiliateLink, setAffiliateLink] = useState<string | null>(null);
+  const [trackingUrl, setTrackingUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen && campaignId) {
       fetchCampaignDetails();
-      fetchAffiliateLink();
+      generateTrackingUrl();
     }
   }, [isOpen, campaignId]);
 
@@ -41,50 +41,42 @@ export function CampaignDetails({ campaignId, isOpen, onClose }: CampaignDetails
     }
   };
 
-  const fetchAffiliateLink = async () => {
+  const generateTrackingUrl = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log("Fetching affiliate link for campaign:", campaignId);
-      const { data: linkData, error: linkError } = await supabase
+      console.log("Generating tracking URL for campaign:", campaignId);
+      const newTrackingUrl = `${window.location.origin}/track/${campaignId}/${user.id}`;
+      
+      // Store the tracking URL in the database
+      const { error: linkError } = await supabase
         .from('affiliate_links')
-        .select('tracking_url')
-        .eq('offer_id', campaignId)
-        .eq('affiliate_id', user.id)
-        .single();
+        .upsert({
+          offer_id: campaignId,
+          affiliate_id: user.id,
+          tracking_url: newTrackingUrl
+        }, {
+          onConflict: 'offer_id,affiliate_id'
+        });
 
       if (linkError) {
-        if (linkError.code === 'PGRST116') {
-          console.log("No existing affiliate link found");
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('subdomain')
-            .eq('id', user.id)
-            .single();
-
-          if (profileData?.subdomain) {
-            const generatedUrl = `https://${profileData.subdomain}.trackoffers.net/track/${campaignId}/${user.id}`;
-            console.log("Generated tracking URL:", generatedUrl);
-            setAffiliateLink(generatedUrl);
-          }
-        } else {
-          throw linkError;
-        }
-      } else if (linkData) {
-        console.log("Found existing affiliate link:", linkData.tracking_url);
-        setAffiliateLink(linkData.tracking_url);
+        console.error("Error storing tracking URL:", linkError);
+        throw linkError;
       }
+
+      console.log("Generated tracking URL:", newTrackingUrl);
+      setTrackingUrl(newTrackingUrl);
     } catch (error) {
-      console.error('Error fetching affiliate link:', error);
+      console.error('Error generating tracking URL:', error);
     }
   };
 
   const handleCopyToClipboard = async () => {
-    if (!affiliateLink) return;
+    if (!trackingUrl) return;
 
     try {
-      await navigator.clipboard.writeText(affiliateLink);
+      await navigator.clipboard.writeText(trackingUrl);
       toast({
         title: "Success",
         description: "Tracking URL copied to clipboard",
@@ -128,15 +120,15 @@ export function CampaignDetails({ campaignId, isOpen, onClose }: CampaignDetails
             <h3 className="text-lg font-semibold mb-2">Your Tracking URL</h3>
             <div className="flex items-center gap-2">
               <div className="flex-1 p-2 bg-muted rounded-md">
-                <code className="text-sm">{affiliateLink}</code>
+                <code className="text-sm">{trackingUrl}</code>
               </div>
               <Button onClick={handleCopyToClipboard} variant="outline">
                 <Copy className="h-4 w-4" />
               </Button>
-              {affiliateLink && (
+              {trackingUrl && (
                 <Button variant="outline" asChild>
                   <a 
-                    href={affiliateLink} 
+                    href={trackingUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >

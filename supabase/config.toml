@@ -1,1 +1,2 @@
-project_id = "ibjnokzepukzuzveseik"
+[functions.track]
+verify_jwt = false
