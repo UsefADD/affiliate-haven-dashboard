@@ -16,11 +16,10 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: 'implicit',
-    debug: true // Enable debug mode for authentication
   }
 });
 
-// Test database access
+// Test database connection
 (async () => {
   try {
     console.log('Testing database connection...');
@@ -30,7 +29,12 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       .limit(1);
 
     if (error) {
-      console.error('Database access error:', error);
+      console.error('Database access error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
     } else {
       console.log('Database connection successful. Sample data:', data);
     }
