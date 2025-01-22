@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Campaign } from "@/types/campaign";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Download } from "lucide-react";
+import { Download, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -40,6 +40,26 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
     } catch (error) {
       console.error('Error parsing URL:', error);
       return trackingUrl;
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    const formattedUrl = getFormattedTrackingUrl();
+    if (formattedUrl) {
+      try {
+        await navigator.clipboard.writeText(formattedUrl);
+        toast({
+          title: "Success",
+          description: "Tracking link copied to clipboard",
+        });
+      } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        toast({
+          title: "Error",
+          description: "Failed to copy tracking link",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -107,18 +127,10 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
                   </span>
                   <Button 
                     variant="ghost" 
-                    size="sm" 
-                    onClick={() => {
-                      const formattedUrl = getFormattedTrackingUrl();
-                      if (formattedUrl) {
-                        navigator.clipboard.writeText(formattedUrl);
-                        toast({
-                          title: "Success",
-                          description: "Tracking link copied to clipboard",
-                        });
-                      }
-                    }}
+                    size="sm"
+                    onClick={handleCopyToClipboard}
                   >
+                    <Copy className="h-4 w-4 mr-1" />
                     Copy
                   </Button>
                 </div>
