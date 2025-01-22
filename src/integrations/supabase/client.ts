@@ -15,7 +15,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
+    flowType: 'implicit',
     debug: true // Enable debug mode for authentication
   }
 });
@@ -23,6 +23,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // Test database access
 (async () => {
   try {
+    console.log('Testing database connection...');
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -31,7 +32,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     if (error) {
       console.error('Database access error:', error);
     } else {
-      console.log('Database connection successful', data);
+      console.log('Database connection successful. Sample data:', data);
     }
   } catch (error) {
     console.error('Database connection error:', error);
