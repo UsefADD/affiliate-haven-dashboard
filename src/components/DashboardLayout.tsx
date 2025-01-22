@@ -24,27 +24,58 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
 
   useEffect(() => {
-    const checkUserRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        setIsAdmin(profile?.role === 'admin');
-        setProfile(profile);
-      }
-    };
-
     checkUserRole();
-  }, []);
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  const checkUserRole = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('No active session found');
+        navigate('/login');
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        throw error;
+      }
+      
+      setIsAdmin(profile?.role === 'admin');
+      setProfile(profile);
+    } catch (error) {
+      console.error('Session error:', error);
+      localStorage.removeItem("isLoggedIn");
+      navigate('/login');
+    }
+  };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem("isLoggedIn");
-    navigate("/login");
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem("isLoggedIn");
+      navigate("/login");
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const affiliateNavItems = [
