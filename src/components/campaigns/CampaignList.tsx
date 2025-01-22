@@ -2,7 +2,6 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { Campaign } from "@/types/campaign";
 import { Offer } from "@/types/offer";
-import { format } from "date-fns";
 
 interface CampaignListProps {
   campaigns: Offer[];
@@ -17,8 +16,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
           <TableRow>
             <TableHead>Campaign Name</TableHead>
             <TableHead>Payout</TableHead>
-            <TableHead>Total Leads</TableHead>
-            <TableHead>Last Conversion</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -28,14 +26,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
               <TableCell className="font-medium">{campaign.name}</TableCell>
               <TableCell>${campaign.payout}</TableCell>
               <TableCell>
-                {campaign.leads_count || 0} leads
-              </TableCell>
-              <TableCell>
-                {campaign.last_conversion_date ? (
-                  format(new Date(campaign.last_conversion_date), "MMM d, yyyy HH:mm:ss")
-                ) : (
-                  "No conversions yet"
-                )}
+                {campaign.status ? "Approved" : "Pending"}
               </TableCell>
               <TableCell className="text-right">
                 <Button
