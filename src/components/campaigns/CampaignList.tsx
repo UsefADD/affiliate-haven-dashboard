@@ -66,13 +66,14 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
     if (userProfile?.subdomain && offer.links && offer.links.length > 0) {
       try {
         const defaultLink = offer.links[0];
+        // Check if the link already starts with http/https, if not add https://
         const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
         
         // Extract the base domain (remove any existing subdomains)
         const domainParts = url.hostname.split('.');
         const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
         
-        // Construct new URL with single subdomain
+        // Construct new URL with user's subdomain
         const newUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
         console.log("Generated subdomain URL for offer", offer.id, ":", newUrl);
         return newUrl;
@@ -82,9 +83,11 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       }
     }
 
-    // If no specific link and no subdomain, use the first offer link
+    // If no specific link and no subdomain, use the first offer link directly
     if (offer.links && offer.links.length > 0) {
-      return offer.links[0];
+      const link = offer.links[0];
+      // Ensure the link starts with http/https
+      return link.startsWith('http') ? link : `https://${link}`;
     }
 
     return null;
