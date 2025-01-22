@@ -36,7 +36,13 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
     if (!trackingUrl || !userProfile?.subdomain) return trackingUrl;
     try {
       const url = new URL(trackingUrl.startsWith('http') ? trackingUrl : `https://${trackingUrl}`);
-      return `https://${userProfile.subdomain}.${url.hostname}${url.pathname}${url.search}`;
+      
+      // Extract the base domain (remove any existing subdomains)
+      const domainParts = url.hostname.split('.');
+      const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
+      
+      // Construct new URL with single subdomain
+      return `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
     } catch (error) {
       console.error('Error parsing URL:', error);
       return trackingUrl;
