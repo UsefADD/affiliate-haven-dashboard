@@ -72,7 +72,7 @@ export default function Campaigns() {
       
       const typedOffers: Offer[] = data.map(offer => ({
         ...offer,
-        creatives: offer.creatives as Offer['creatives'] || [],
+        creatives: offer.creatives || [],
         links: offer.links || [],
         created_by: offer.created_by || '',
         status: offer.status ?? true,
@@ -107,23 +107,23 @@ export default function Campaigns() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <SearchBar value={searchQuery} onSearch={handleSearch} />
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Campaigns</h1>
+          <p className="text-muted-foreground">
+            View and manage your active campaigns
+          </p>
         </div>
+        
+        <div className="mb-6 bg-white/50 backdrop-blur-sm rounded-lg p-4 border shadow-sm">
+          <SearchBar value={searchQuery} onChange={handleSearch} />
+        </div>
+
         <CampaignList
-          campaigns={filteredOffers.map(offer => ({
-            id: offer.id,
-            name: offer.name,
-            description: offer.description || '',
-            payout: offer.payout,
-            creatives: offer.creatives || [],
-            status: offer.status,
-            created_at: offer.created_at,
-            created_by: offer.created_by,
-          }))}
+          campaigns={filteredOffers}
           onViewDetails={handleCampaignSelect}
         />
+
         <CampaignDetails
           campaign={selectedCampaign}
           onClose={handleCloseDetails}
