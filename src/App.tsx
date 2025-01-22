@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useParams, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { ClickTracker } from "@/components/tracking/ClickTracker";
 import Campaigns from "@/pages/Campaigns";
