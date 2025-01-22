@@ -1,35 +1,48 @@
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export function TrackingRedirect() {
   const { offerId, affiliateId } = useParams();
+  const [searchParams] = useSearchParams();
+  const targetUrl = searchParams.get('target');
 
   useEffect(() => {
     const handleRedirect = async () => {
       try {
-        // Call the tracking endpoint
-        const response = await fetch(`/functions/v1/track/${offerId}/${affiliateId}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to track click');
+        if (!offerId || !affiliateId || !targetUrl) {
+          console.error("Missing required tracking parameters");
+          window.location.href = '/';
+          return;
         }
 
-        // Get the redirect URL from the Location header
-        const redirectUrl = response.headers.get('Location');
-        if (redirectUrl) {
-          window.location.href = redirectUrl;
-        } else {
-          throw new Error('No redirect URL provided');
+        console.log("Recording click for:", { offerId, affiliateId, targetUrl });
+
+        // Record the click
+        const { error: clickError } = await supabase
+          .from('affiliate_clicks')
+          .insert({
+            offer_id: offerId,
+            affiliate_id: affiliateId,
+            ip_address: "Tracked on client",
+            user_agent: navigator.userAgent,
+            referrer: document.referrer
+          });
+
+        if (clickError) {
+          console.error("Error recording click:", clickError);
         }
+
+        // Redirect to the target URL
+        window.location.href = decodeURIComponent(targetUrl);
       } catch (error) {
-        console.error('Error handling redirect:', error);
-        // Redirect to homepage on error
+        console.error('Error in click tracking:', error);
         window.location.href = '/';
       }
     };
 
     handleRedirect();
-  }, [offerId, affiliateId]);
+  }, [offerId, affiliateId, targetUrl]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

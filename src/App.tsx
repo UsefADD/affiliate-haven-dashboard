@@ -1,36 +1,32 @@
-import { BrowserRouter as Router, Routes, Route, useParams, useLocation } from "react-router-dom";
-import { Toaster } from "@/components/ui/toaster";
-import { ClickTracker } from "@/components/tracking/ClickTracker";
-import Campaigns from "@/pages/Campaigns";
+import { Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import Profile from "@/pages/Profile";
+import Campaigns from "@/pages/Campaigns";
 import Reports from "@/pages/Reports";
-import Offers from "@/pages/admin/Offers";
+import AdminDashboard from "@/pages/admin/Dashboard";
+import AdminOffers from "@/pages/admin/Offers";
+import AdminUsers from "@/pages/admin/Users";
+import AdminLeads from "@/pages/admin/Leads";
+import AdminClicks from "@/pages/admin/Clicks";
+import { TrackingRedirect } from "@/components/tracking/TrackingRedirect";
 
-function TrackingRoute() {
-  const { offerId = '', affiliateId = '' } = useParams();
-  const location = useLocation();
-  const targetUrl = new URLSearchParams(location.search).get('target') || '';
-  
+function App() {
   return (
-    <ClickTracker 
-      offerId={offerId}
-      affiliateId={affiliateId}
-      targetUrl={targetUrl}
-    />
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/campaigns" element={<Campaigns />} />
+      <Route path="/reports" element={<Reports />} />
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/admin/offers" element={<AdminOffers />} />
+      <Route path="/admin/users" element={<AdminUsers />} />
+      <Route path="/admin/leads" element={<AdminLeads />} />
+      <Route path="/admin/clicks" element={<AdminClicks />} />
+      <Route path="/track/:offerId/:affiliateId" element={<TrackingRedirect />} />
+    </Routes>
   );
 }
 
-export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/campaigns" element={<Campaigns />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/admin/offers" element={<Offers />} />
-        <Route path="/track/:offerId/:affiliateId" element={<TrackingRoute />} />
-      </Routes>
-      <Toaster />
-    </Router>
-  );
-}
+export default App;
