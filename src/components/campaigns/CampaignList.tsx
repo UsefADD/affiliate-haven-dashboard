@@ -35,7 +35,6 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
               <TableCell>
                 <Badge 
                   variant={campaign.status ? "success" : "secondary"}
-                  className={`${campaign.status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
                 >
                   {campaign.status ? "Approved" : "Pending"}
                 </Badge>
@@ -44,7 +43,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onViewDetails(campaign)}
+                  onClick={() => onViewDetails(campaign as Campaign)}
                   className="hover:bg-primary/10 text-primary"
                 >
                   <Eye className="h-4 w-4 mr-2" />

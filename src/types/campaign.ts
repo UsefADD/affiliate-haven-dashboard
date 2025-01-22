@@ -1,8 +1,11 @@
 export interface Campaign {
-  id: number;
+  id: string;
   name: string;
-  payout: string;
-  availability: "Approved" | "Pending" | "Rejected";
+  payout: number;
+  status: boolean;
+  description?: string | null;
+  created_at: string;
+  created_by: string;
   links?: string[];
   creatives?: {
     type: "image" | "email";
