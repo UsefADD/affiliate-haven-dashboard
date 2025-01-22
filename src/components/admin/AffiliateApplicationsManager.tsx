@@ -75,21 +75,23 @@ export function AffiliateApplicationsManager() {
     try {
       console.log("Creating new user for application:", application);
       
-      // Create new user with temporary password
-      const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
+      // First, sign up the new user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: application.email,
         password: 'SoftDigi',
-        email_confirm: true,
-        user_metadata: {
-          first_name: application.first_name,
-          last_name: application.last_name,
-        },
+        options: {
+          data: {
+            first_name: application.first_name,
+            last_name: application.last_name,
+            force_password_change: true
+          }
+        }
       });
 
       if (signUpError) throw signUpError;
 
-      if (authData.user) {
-        console.log("User created successfully:", authData.user);
+      if (signUpData.user) {
+        console.log("User created successfully:", signUpData.user);
 
         // Update the user's profile
         const { error: profileError } = await supabase
@@ -101,17 +103,9 @@ export function AffiliateApplicationsManager() {
             role: 'affiliate',
             email: application.email,
           })
-          .eq('id', authData.user.id);
+          .eq('id', signUpData.user.id);
 
         if (profileError) throw profileError;
-
-        // Force password change on next login
-        const { error: updateUserError } = await supabase.auth.admin.updateUserById(
-          authData.user.id,
-          { user_metadata: { force_password_change: true } }
-        );
-
-        if (updateUserError) throw updateUserError;
 
         // Update application status
         const { error: statusError } = await supabase
@@ -123,7 +117,7 @@ export function AffiliateApplicationsManager() {
 
         toast({
           title: "Application Approved",
-          description: "User account created successfully",
+          description: "User account created successfully. They will need to verify their email and change their password on first login.",
         });
 
         fetchApplications();
