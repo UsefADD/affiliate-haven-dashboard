@@ -39,13 +39,43 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Generate tracking URL in the format /track/{offerId}/{affiliateId}
-      const baseUrl = window.location.origin;
-      return `${baseUrl}/track/${campaign.id}/${user.id}`;
+      // First check for specific affiliate link
+      const { data: affiliateLink } = await supabase
+        .from('affiliate_links')
+        .select('tracking_url')
+        .eq('offer_id', campaign.id)
+        .eq('affiliate_id', user.id)
+        .single();
+
+      if (affiliateLink?.tracking_url) {
+        return affiliateLink.tracking_url;
+      }
+
+      // If no specific link but user has subdomain and campaign has links
+      if (userProfile?.subdomain && campaign.links && campaign.links.length > 0) {
+        const defaultLink = campaign.links[0];
+        let pathAndQuery = '';
+        try {
+          const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
+          pathAndQuery = url.pathname + url.search;
+        } catch (e) {
+          pathAndQuery = defaultLink;
+        }
+        
+        return `https://${userProfile.subdomain}.trackoffers.net${pathAndQuery}`;
+      }
+
+      // Fallback to first campaign link
+      if (campaign.links && campaign.links.length > 0) {
+        const link = campaign.links[0];
+        return link.startsWith('http') ? link : `https://${link}`;
+      }
+
+      return null;
     };
 
     getFormattedTrackingUrl().then(url => setFormattedTrackingUrl(url));
-  }, [campaign]);
+  }, [campaign, userProfile]);
 
   const handleCopyToClipboard = async () => {
     if (formattedTrackingUrl) {
