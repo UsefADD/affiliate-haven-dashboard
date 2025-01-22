@@ -47,7 +47,7 @@ export function CampaignDetails({ campaignId, isOpen, onClose }: CampaignDetails
       if (!user) return;
 
       console.log("Generating tracking URL for campaign:", campaignId);
-      const newTrackingUrl = `${window.location.origin}/track/${campaignId}/${user.id}`;
+      const newTrackingUrl = `${window.location.origin}/track/${campaignId}/${user.id}?target=${encodeURIComponent(campaign?.links?.[0] || '')}`;
       
       // Store the tracking URL in the database
       const { error: linkError } = await supabase

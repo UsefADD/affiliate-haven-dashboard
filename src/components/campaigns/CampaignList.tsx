@@ -19,7 +19,7 @@ export function CampaignList({ campaigns, profile }: { campaigns: Offer[]; profi
       if (!user) return null;
 
       console.log("Generating tracking URL for campaign:", campaign.id);
-      const trackingUrl = `${window.location.origin}/track/${campaign.id}/${user.id}`;
+      const trackingUrl = `${window.location.origin}/track/${campaign.id}/${user.id}?target=${encodeURIComponent(campaign.links?.[0] || '')}`;
       console.log("Generated tracking URL:", trackingUrl);
       
       // Store the tracking URL in the database
