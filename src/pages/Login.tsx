@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { AffiliateApplicationForm } from "@/components/affiliate/AffiliateApplicationForm";
@@ -49,13 +49,31 @@ export default function Login() {
           console.error("Profile fetch error:", profileError);
           throw profileError;
         }
-        
-        if (profile?.role === 'admin') {
-          console.log("Admin user detected, redirecting to admin dashboard");
-          navigate("/admin");
-        } else {
-          console.log("Regular user detected, redirecting to home");
+
+        // If no profile exists, create one with default role 'affiliate'
+        if (!profile) {
+          const { error: createProfileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              email: authData.user.email,
+              role: 'affiliate'
+            });
+
+          if (createProfileError) {
+            console.error("Profile creation error:", createProfileError);
+            throw createProfileError;
+          }
+
           navigate("/");
+        } else {
+          if (profile.role === 'admin') {
+            console.log("Admin user detected, redirecting to admin dashboard");
+            navigate("/admin");
+          } else {
+            console.log("Regular user detected, redirecting to home");
+            navigate("/");
+          }
         }
 
         toast({
