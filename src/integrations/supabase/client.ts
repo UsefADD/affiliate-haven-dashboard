@@ -6,7 +6,8 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 console.log('Initializing Supabase client with:', {
   url: supabaseUrl ? 'URL exists' : 'URL missing',
-  key: supabaseAnonKey ? 'Key exists' : 'Key missing'
+  key: supabaseAnonKey ? 'Key exists' : 'Key missing',
+  keyLength: supabaseAnonKey?.length
 });
 
 export const supabase = createClient<Database>(
@@ -22,7 +23,7 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Test the connection
+// Test the connection and auth configuration
 supabase.auth.getSession().then(({ data, error }) => {
   if (error) {
     console.error('Supabase connection error:', error);
@@ -30,5 +31,18 @@ supabase.auth.getSession().then(({ data, error }) => {
     console.log('Supabase connection successful, session:', data.session ? 'exists' : 'none');
   }
 });
+
+// Test a simple query to verify database access
+supabase
+  .from('profiles')
+  .select('count')
+  .limit(1)
+  .then(({ error }) => {
+    if (error) {
+      console.error('Database access error:', error);
+    } else {
+      console.log('Database access successful');
+    }
+  });
 
 console.log('Supabase client initialized successfully');
