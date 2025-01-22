@@ -70,6 +70,7 @@ export default function Login() {
           navigate("/");
         } else {
           console.log("Profile found with role:", profile.role);
+          // Check the role and redirect accordingly
           if (profile.role === 'admin') {
             console.log("Admin user detected, redirecting to admin dashboard");
             navigate("/admin");
