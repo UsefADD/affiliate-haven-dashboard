@@ -121,15 +121,15 @@ export default function Users() {
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({
+          .upsert({
+            id: authData.user.id,
             first_name: data.first_name,
             last_name: data.last_name,
             company: data.company,
             role: data.role,
             email: data.email,
             subdomain: data.subdomain,
-          })
-          .eq('id', authData.user.id);
+          });
 
         if (profileError) throw profileError;
 
