@@ -39,7 +39,7 @@ export default function Login() {
       if (authData.user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('*')
           .eq('id', authData.user.id)
           .maybeSingle();
 
@@ -52,6 +52,7 @@ export default function Login() {
 
         // If no profile exists, create one with default role 'affiliate'
         if (!profile) {
+          console.log("No profile found, creating new profile");
           const { error: createProfileError } = await supabase
             .from('profiles')
             .insert({
@@ -65,8 +66,10 @@ export default function Login() {
             throw createProfileError;
           }
 
+          console.log("New affiliate profile created, redirecting to home");
           navigate("/");
         } else {
+          console.log("Profile found with role:", profile.role);
           if (profile.role === 'admin') {
             console.log("Admin user detected, redirecting to admin dashboard");
             navigate("/admin");
