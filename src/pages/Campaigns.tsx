@@ -6,25 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CampaignList } from "@/components/campaigns/CampaignList";
 import { CampaignDetails } from "@/components/campaigns/CampaignDetails";
 import { SearchBar } from "@/components/campaigns/SearchBar";
-
-interface Offer {
-  id: string;
-  name: string;
-  description: string | null;
-  payout: number;
-  status: boolean;
-  created_at: string;
-  links?: string[];
-  creatives?: {
-    type: "image" | "email";
-    content: string;
-    details?: {
-      fromNames?: string[];
-      subjects?: string[];
-    };
-    images?: string[];
-  }[];
-}
+import { Offer } from "@/types/offer";
 
 export default function Campaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -91,9 +73,13 @@ export default function Campaigns() {
   const fetchOffers = async () => {
     try {
       console.log("Fetching offers for campaigns page...");
-      const { data, error } = await supabase
+      const { data: offersData, error } = await supabase
         .from('offers')
-        .select('*')
+        .select(`
+          *,
+          leads:leads(count),
+          last_conversion:leads(conversion_date)
+        `)
         .eq('status', true)
         .order('created_at', { ascending: false });
 
@@ -102,12 +88,14 @@ export default function Campaigns() {
         throw error;
       }
 
-      console.log("Fetched offers for campaigns:", data);
+      console.log("Fetched offers for campaigns:", offersData);
       
-      const typedOffers: Offer[] = data.map(offer => ({
+      const typedOffers: Offer[] = offersData.map(offer => ({
         ...offer,
         creatives: offer.creatives as Offer['creatives'] || [],
-        links: offer.links || []
+        links: offer.links || [],
+        leads_count: offer.leads?.[0]?.count || 0,
+        last_conversion_date: offer.last_conversion?.[0]?.conversion_date || null
       }));
       
       setOffers(typedOffers);
