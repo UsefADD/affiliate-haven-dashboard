@@ -113,14 +113,16 @@ export default function Campaigns() {
         </div>
         <CampaignList
           campaigns={filteredOffers.map(offer => ({
-            id: parseInt(offer.id),
+            id: offer.id,
             name: offer.name,
             description: offer.description || '',
-            payout: offer.payout.toString(),
+            payout: offer.payout,
             creatives: offer.creatives || [],
+            status: offer.status,
+            created_at: offer.created_at,
+            created_by: offer.created_by,
           }))}
-          onSelect={handleCampaignSelect}
-          isLoading={isLoading}
+          onViewDetails={handleCampaignSelect}
         />
         <CampaignDetails
           campaign={selectedCampaign}
