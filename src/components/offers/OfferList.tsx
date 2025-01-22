@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Campaign } from "@/types/campaign";
 import { Offer } from "@/types/offer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +14,7 @@ interface OfferListProps {
   onToggleStatus?: (offerId: string, currentStatus: boolean) => Promise<void>;
   onToggleTopOffer?: (offerId: string, currentTopStatus: boolean) => Promise<void>;
   isAdmin?: boolean;
-  onViewDetails?: (campaign: Campaign) => void;
+  onViewDetails?: (offer: Offer) => void;
 }
 
 export default function OfferList({ 
@@ -74,15 +73,6 @@ export default function OfferList({
     fetchAffiliateLinks();
   }, [toast]);
 
-  const getTrackingUrl = async (offer: Offer) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    // Generate tracking URL in the format /track/{offerId}/{affiliateId}
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/track/${offer.id}/${user.id}`;
-  };
-
   return (
     <div className="rounded-lg border bg-white/50 backdrop-blur-sm shadow-sm">
       <Table>
@@ -96,21 +86,21 @@ export default function OfferList({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {offers.map((campaign) => (
+          {offers.map((offer) => (
             <TableRow 
-              key={campaign.id}
+              key={offer.id}
               className="hover:bg-muted/30 transition-colors"
             >
-              <TableCell className="font-mono text-sm">{campaign.id.split('-')[0]}</TableCell>
-              <TableCell className="font-medium">{campaign.name}</TableCell>
+              <TableCell className="font-mono text-sm">{offer.id.split('-')[0]}</TableCell>
+              <TableCell className="font-medium">{offer.name}</TableCell>
               <TableCell className="text-green-600 font-semibold">
-                ${campaign.payout}
+                ${offer.payout}
               </TableCell>
               <TableCell>
                 <Badge 
-                  variant={campaign.status ? "success" : "secondary"}
+                  variant={offer.status ? "success" : "secondary"}
                 >
-                  {campaign.status ? "Approved" : "Pending"}
+                  {offer.status ? "Approved" : "Pending"}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
@@ -120,7 +110,7 @@ export default function OfferList({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onEdit(campaign)}
+                        onClick={() => onEdit(offer)}
                         className="hover:bg-primary/10 text-primary"
                       >
                         Edit
@@ -130,7 +120,7 @@ export default function OfferList({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDelete(campaign)}
+                        onClick={() => onDelete(offer)}
                         className="hover:bg-destructive/10 text-destructive"
                       >
                         Delete
@@ -141,7 +131,7 @@ export default function OfferList({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onViewDetails?.(campaign as Campaign)}
+                    onClick={() => onViewDetails?.(offer)}
                     className="hover:bg-primary/10 text-primary"
                   >
                     <Eye className="h-4 w-4 mr-2" />
