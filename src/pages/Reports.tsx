@@ -218,7 +218,7 @@ export default function Reports() {
                 {Object.entries(campaignStats).length > 0 ? (
                   Object.entries(campaignStats).map(([key, stats]) => (
                     <TableRow key={key}>
-                      <TableCell>{stats.id}</TableCell>
+                      <TableCell className="font-mono text-sm">{stats.id.split('-')[0]}</TableCell>
                       <TableCell>{stats.name}</TableCell>
                       <TableCell>{stats.totalLeads}</TableCell>
                       <TableCell>{stats.conversions}</TableCell>
