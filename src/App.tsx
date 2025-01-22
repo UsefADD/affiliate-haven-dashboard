@@ -6,6 +6,20 @@ import Index from "@/pages/Index";
 import Reports from "@/pages/Reports";
 import Offers from "@/pages/admin/Offers";
 
+function TrackingRoute() {
+  const { offerId = '', affiliateId = '' } = useParams();
+  const location = useLocation();
+  const targetUrl = new URLSearchParams(location.search).get('target') || '';
+  
+  return (
+    <ClickTracker 
+      offerId={offerId}
+      affiliateId={affiliateId}
+      targetUrl={targetUrl}
+    />
+  );
+}
+
 export default function App() {
   return (
     <Router>
@@ -14,16 +28,7 @@ export default function App() {
         <Route path="/campaigns" element={<Campaigns />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/admin/offers" element={<Offers />} />
-        <Route 
-          path="/track/:offerId/:affiliateId" 
-          element={
-            <ClickTracker 
-              offerId={useParams().offerId || ''} 
-              affiliateId={useParams().affiliateId || ''} 
-              targetUrl={new URLSearchParams(useLocation().search).get('target') || ''}
-            />
-          } 
-        />
+        <Route path="/track/:offerId/:affiliateId" element={<TrackingRoute />} />
       </Routes>
       <Toaster />
     </Router>
