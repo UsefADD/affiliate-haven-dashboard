@@ -33,20 +33,13 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
   }, []);
 
   const getFormattedTrackingUrl = () => {
-    if (!trackingUrl || !userProfile?.subdomain) return trackingUrl;
-    try {
-      const url = new URL(trackingUrl.startsWith('http') ? trackingUrl : `https://${trackingUrl}`);
-      
-      // Extract the base domain (remove any existing subdomains)
-      const domainParts = url.hostname.split('.');
-      const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
-      
-      // Construct new URL with single subdomain
-      return `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-    } catch (error) {
-      console.error('Error parsing URL:', error);
-      return trackingUrl;
-    }
+    if (!campaign) return null;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // Generate tracking URL in the format /track/{offerId}/{affiliateId}
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/track/${campaign.id}/${user.id}`;
   };
 
   const handleCopyToClipboard = async () => {
