@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, startOfDay, endOfDay, isEqual } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -29,6 +29,7 @@ export default function Reports() {
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState("");
   const [reportData, setReportData] = useState<Lead[]>([]);
+  const [filteredData, setFilteredData] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -70,6 +71,7 @@ export default function Reports() {
 
       console.log("Fetched leads:", data);
       setReportData(data || []);
+      setFilteredData(data || []);
     } catch (error) {
       console.error('Error in fetchLeads:', error);
       toast({
@@ -92,15 +94,21 @@ export default function Reports() {
       return;
     }
 
+    console.log("Selected date:", date);
     const selectedStartDate = startOfDay(date);
     const selectedEndDate = endOfDay(date);
+    
+    console.log("Filtering between:", selectedStartDate, "and", selectedEndDate);
 
-    const filteredData = reportData.filter(lead => {
+    const filtered = reportData.filter(lead => {
       const leadDate = new Date(lead.created_at);
+      console.log("Lead date:", leadDate);
       return leadDate >= selectedStartDate && leadDate <= selectedEndDate;
     });
 
-    setReportData(filteredData);
+    console.log("Filtered data:", filtered);
+    setFilteredData(filtered);
+    
     toast({
       title: "Report Generated",
       description: `Showing results for ${format(date, "MMM d, yyyy")}`,
@@ -108,7 +116,7 @@ export default function Reports() {
   };
 
   // Calculate totals
-  const campaignStats = reportData.reduce((acc, lead) => {
+  const campaignStats = filteredData.reduce((acc, lead) => {
     const campaignId = lead.offers.id;
     const campaignName = lead.offers.name;
     const key = `${campaignId} - ${campaignName}`;
