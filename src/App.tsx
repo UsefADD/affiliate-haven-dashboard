@@ -29,9 +29,16 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("Checking authentication status...");
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Starting authentication check...");
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+
         if (!session) {
           console.log("No active session found");
           setIsAuthenticated(false);
@@ -66,12 +73,14 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
       if (event === 'SIGNED_OUT' || !session) {
+        console.log("User signed out or session expired");
         setIsAuthenticated(false);
         setIsLoading(false);
         return;
       }
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        console.log("User signed in or token refreshed");
         setIsAuthenticated(true);
         setIsLoading(false);
       }
@@ -93,10 +102,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  console.log("Protected route state:", { isAuthenticated, isLoading });
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
+  console.log("App component rendering");
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
