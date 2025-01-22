@@ -59,7 +59,8 @@ export default function Reports() {
             payout
           )
         `)
-        .eq('affiliate_id', user.id);
+        .eq('affiliate_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching leads:", error);
@@ -90,7 +91,6 @@ export default function Reports() {
       return;
     }
 
-    // Filter the existing data based on the selected date
     const selectedDate = format(date, 'yyyy-MM-dd');
     const filteredData = reportData.filter(lead => {
       const leadDate = lead.created_at.split('T')[0];
@@ -105,13 +105,28 @@ export default function Reports() {
   };
 
   // Calculate totals
-  const totalLeads = reportData.length;
-  const totalConversions = reportData.filter(lead => lead.status === 'converted').length;
-  const conversionRate = totalLeads ? ((totalConversions / totalLeads) * 100).toFixed(2) : "0.00";
-  const totalEarnings = reportData
-    .filter(lead => lead.status === 'converted')
-    .reduce((sum, lead) => sum + (lead.offers?.payout || 0), 0);
-  const averageEPC = totalLeads ? (totalEarnings / totalLeads).toFixed(2) : "0.00";
+  const campaignStats = reportData.reduce((acc, lead) => {
+    const campaignName = lead.offers.name;
+    if (!acc[campaignName]) {
+      acc[campaignName] = {
+        totalLeads: 0,
+        conversions: 0,
+        lastConversion: null,
+        earnings: 0
+      };
+    }
+    
+    acc[campaignName].totalLeads++;
+    if (lead.status === 'converted') {
+      acc[campaignName].conversions++;
+      acc[campaignName].earnings += lead.offers.payout;
+      if (!acc[campaignName].lastConversion || new Date(lead.conversion_date!) > new Date(acc[campaignName].lastConversion!)) {
+        acc[campaignName].lastConversion = lead.conversion_date;
+      }
+    }
+    
+    return acc;
+  }, {} as Record<string, { totalLeads: number; conversions: number; lastConversion: string | null; earnings: number }>);
 
   if (isLoading) {
     return (
@@ -163,21 +178,11 @@ export default function Reports() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full md:w-[300px]"
             />
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-full md:w-[300px]">
-                <SelectValue placeholder="Filter by Status..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="converted">Converted</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
             <Button 
               className="bg-green-600 hover:bg-green-700 ml-auto"
               onClick={handleRunReport}
             >
-              Run
+              Run Report
             </Button>
           </div>
 
@@ -185,28 +190,26 @@ export default function Reports() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
                   <TableHead>Campaign</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Conversion Date</TableHead>
-                  <TableHead>Payout</TableHead>
+                  <TableHead>Total Leads</TableHead>
+                  <TableHead>Conversions</TableHead>
+                  <TableHead>Last Conversion</TableHead>
+                  <TableHead>Total Earnings</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reportData.length > 0 ? (
-                  reportData.map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell>{format(new Date(lead.created_at), 'MMM d, yyyy')}</TableCell>
-                      <TableCell>{lead.offers?.name || 'N/A'}</TableCell>
-                      <TableCell>{lead.status}</TableCell>
+                {Object.entries(campaignStats).length > 0 ? (
+                  Object.entries(campaignStats).map(([campaign, stats]) => (
+                    <TableRow key={campaign}>
+                      <TableCell>{campaign}</TableCell>
+                      <TableCell>{stats.totalLeads}</TableCell>
+                      <TableCell>{stats.conversions}</TableCell>
                       <TableCell>
-                        {lead.conversion_date 
-                          ? format(new Date(lead.conversion_date), 'MMM d, yyyy')
+                        {stats.lastConversion 
+                          ? format(new Date(stats.lastConversion), 'MMM d, yyyy HH:mm:ss')
                           : 'N/A'}
                       </TableCell>
-                      <TableCell>
-                        ${lead.status === 'converted' ? lead.offers?.payout.toFixed(2) : '0.00'}
-                      </TableCell>
+                      <TableCell>${stats.earnings.toFixed(2)}</TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -216,12 +219,6 @@ export default function Reports() {
                     </TableCell>
                   </TableRow>
                 )}
-                <TableRow className="bg-muted/50 font-medium">
-                  <TableCell colSpan={2}>Totals</TableCell>
-                  <TableCell>{conversionRate}% Conv.</TableCell>
-                  <TableCell>EPC: ${averageEPC}</TableCell>
-                  <TableCell>${totalEarnings.toFixed(2)}</TableCell>
-                </TableRow>
               </TableBody>
             </Table>
           </div>
