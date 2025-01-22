@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Menu, X, BarChart2, Link, Settings, LogOut, FileText, Users, Gift, FileSpreadsheet, UserRound } from "lucide-react";
+import { Menu, X, BarChart2, Link, Settings, LogOut, FileText, Users, Gift, FileSpreadsheet, UserRound, MousePointer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,6 +114,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: Users, label: "Users", href: "/admin/users" },
     { icon: Gift, label: "Offers", href: "/admin/offers" },
     { icon: FileSpreadsheet, label: "Leads", href: "/admin/leads" },
+    { icon: MousePointer, label: "Clicks", href: "/admin/clicks" },
   ];
 
   const navItems = isAdmin ? adminNavItems : affiliateNavItems;
