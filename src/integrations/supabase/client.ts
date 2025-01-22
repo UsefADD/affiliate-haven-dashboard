@@ -19,14 +19,19 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 });
 
 // Test database access
-supabase.from('profiles').select('*').limit(1)
-  .then(response => {
-    if (response.error) {
-      console.error('Database access error:', response.error);
+(async () => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .limit(1);
+
+    if (error) {
+      console.error('Database access error:', error);
     } else {
-      console.log('Database connection successful');
+      console.log('Database connection successful', data);
     }
-  })
-  .catch(error => {
+  } catch (error) {
     console.error('Database connection error:', error);
-  });
+  }
+})();
