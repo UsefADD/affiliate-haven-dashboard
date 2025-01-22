@@ -206,6 +206,32 @@ export default function Leads() {
     setIsOpen(true);
   };
 
+  const handleDelete = async (lead: Lead) => {
+    try {
+      console.log("Deleting lead:", lead.id);
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', lead.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Lead deleted successfully",
+      });
+      
+      fetchLeads();
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete lead",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -238,6 +264,7 @@ export default function Leads() {
           leads={leads}
           onEdit={handleEdit}
           onToggleStatus={toggleLeadStatus}
+          onDelete={handleDelete}
         />
       </div>
     </DashboardLayout>
