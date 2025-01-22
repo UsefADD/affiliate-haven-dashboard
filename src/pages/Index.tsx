@@ -36,6 +36,7 @@ interface DashboardStats {
 }
 
 export default function Index() {
+  console.log("Index component mounted");
   const [offers, setOffers] = useState<Offer[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalLeads: 0,
@@ -43,10 +44,36 @@ export default function Index() {
     conversionRate: 0,
     recentLeads: []
   });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchOffers();
-    fetchDashboardStats();
+    const checkAuth = async () => {
+      try {
+        console.log("Checking authentication status...");
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          setError("Authentication error");
+          return;
+        }
+
+        if (!session) {
+          console.log("No active session found");
+          setError("No active session");
+          return;
+        }
+
+        console.log("Session found:", session.user.id);
+        fetchOffers();
+        fetchDashboardStats();
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setError("Authentication check failed");
+      }
+    };
+
+    checkAuth();
   }, []);
 
   const fetchOffers = async () => {
@@ -61,6 +88,7 @@ export default function Index() {
 
       if (error) {
         console.error("Error fetching offers:", error);
+        setError("Error fetching offers");
         throw error;
       }
 
@@ -75,6 +103,7 @@ export default function Index() {
       setOffers(typedOffers);
     } catch (error) {
       console.error('Error in fetchOffers:', error);
+      setError("Failed to fetch offers");
     }
   };
 
@@ -87,6 +116,7 @@ export default function Index() {
 
       if (leadsError) {
         console.error("Error fetching leads:", leadsError);
+        setError("Error fetching leads");
         throw leadsError;
       }
 
@@ -117,8 +147,22 @@ export default function Index() {
 
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      setError("Failed to fetch dashboard stats");
     }
   };
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center space-y-4">
+            <p className="text-red-600">{error}</p>
+            <p className="text-sm text-gray-600">Please try refreshing the page or logging in again.</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
