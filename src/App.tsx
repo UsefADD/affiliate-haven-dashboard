@@ -34,21 +34,32 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         
         if (error) {
           console.error("Session error:", error);
-          throw error;
-        }
-
-        if (!session) {
-          console.log("No active session found");
-          localStorage.removeItem("isLoggedIn");
+          await supabase.auth.signOut();
           setIsAuthenticated(false);
           return;
         }
 
-        console.log("Active session found:", session.user.id);
+        if (!session) {
+          console.log("No active session found");
+          setIsAuthenticated(false);
+          return;
+        }
+
+        // Verify the session is still valid
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          console.error("User verification failed:", userError);
+          await supabase.auth.signOut();
+          setIsAuthenticated(false);
+          return;
+        }
+
+        console.log("Active session verified for user:", user.id);
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Auth check error:', error);
-        localStorage.removeItem("isLoggedIn");
+        await supabase.auth.signOut();
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -61,12 +72,26 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
       if (event === 'SIGNED_OUT' || !session) {
-        localStorage.removeItem("isLoggedIn");
         setIsAuthenticated(false);
         return;
       }
 
-      setIsAuthenticated(true);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        try {
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          if (userError || !user) {
+            console.error("User verification failed after state change:", userError);
+            await supabase.auth.signOut();
+            setIsAuthenticated(false);
+            return;
+          }
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error('Auth verification error:', error);
+          await supabase.auth.signOut();
+          setIsAuthenticated(false);
+        }
+      }
     });
 
     return () => {
