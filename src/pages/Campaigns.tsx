@@ -20,7 +20,7 @@ export default function Campaigns() {
 
   useEffect(() => {
     if (selectedCampaign) {
-      fetchTrackingUrl(selectedCampaign.id.toString());
+      fetchTrackingUrl(selectedCampaign.id);
     }
   }, [selectedCampaign]);
 
@@ -71,12 +71,21 @@ export default function Campaigns() {
       console.log("Fetched offers for campaigns:", data);
       
       const typedOffers: Offer[] = data.map(offer => ({
-        ...offer,
-        creatives: offer.creatives || [],
-        links: offer.links || [],
-        created_by: offer.created_by || '',
+        id: offer.id,
+        name: offer.name,
+        description: offer.description,
+        payout: offer.payout,
         status: offer.status ?? true,
-        created_at: offer.created_at || new Date().toISOString(),
+        created_at: offer.created_at,
+        created_by: offer.created_by,
+        creatives: Array.isArray(offer.creatives) ? offer.creatives.map(creative => ({
+          type: creative.type as "image" | "email",
+          content: creative.content,
+          details: creative.details,
+          images: creative.images
+        })) : [],
+        links: offer.links || [],
+        is_top_offer: offer.is_top_offer ?? false
       }));
       
       setOffers(typedOffers);
