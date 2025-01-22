@@ -16,6 +16,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
+            <TableHead className="font-semibold">ID</TableHead>
             <TableHead className="font-semibold">Campaign Name</TableHead>
             <TableHead className="font-semibold">Payout</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
@@ -28,6 +29,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
               key={campaign.id}
               className="hover:bg-muted/30 transition-colors"
             >
+              <TableCell className="font-mono text-sm">{campaign.id.split('-')[0]}</TableCell>
               <TableCell className="font-medium">{campaign.name}</TableCell>
               <TableCell className="text-green-600 font-semibold">
                 ${campaign.payout}

@@ -102,6 +102,7 @@ export default function Campaigns() {
 
   const filteredOffers = offers.filter(offer =>
     offer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    offer.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (offer.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
@@ -125,7 +126,7 @@ export default function Campaigns() {
         </div>
         
         <div className="mb-6 bg-white/50 backdrop-blur-sm rounded-lg p-4 border shadow-sm">
-          <SearchBar value={searchQuery} onChange={handleSearch} />
+          <SearchBar value={searchQuery} onSearch={handleSearch} />
         </div>
 
         <CampaignList
