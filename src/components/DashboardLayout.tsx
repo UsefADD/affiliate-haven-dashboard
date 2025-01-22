@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -22,12 +23,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
     checkUserRole();
     
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
       if (event === 'SIGNED_OUT' || !session) {
         navigate('/login');
       }
@@ -70,11 +73,33 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log("Attempting to sign out...");
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Error during sign out:', error);
+        // If we get a session_not_found error, we can still proceed with local cleanup
+        if (error.message.includes('session_not_found')) {
+          localStorage.removeItem("isLoggedIn");
+          navigate("/login");
+          return;
+        }
+        throw error;
+      }
+
+      console.log("Sign out successful");
       localStorage.removeItem("isLoggedIn");
       navigate("/login");
-    } catch (error) {
+      
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+    } catch (error: any) {
       console.error('Error signing out:', error);
+      // Even if there's an error, we should clean up local state and redirect
+      localStorage.removeItem("isLoggedIn");
+      navigate("/login");
     }
   };
 
