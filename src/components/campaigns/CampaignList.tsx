@@ -62,27 +62,15 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       return affiliateLink;
     }
     
-    // If user has subdomain and offer has links, generate subdomain URL
-    if (userProfile?.subdomain && offer.links && offer.links.length > 0) {
+    // If user has subdomain, generate subdomain URL
+    if (userProfile?.subdomain) {
       try {
-        const defaultLink = offer.links[0];
-        // Extract just the path and query parameters if they exist
-        let pathAndQuery = '';
-        try {
-          const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
-          pathAndQuery = url.pathname + url.search;
-        } catch (e) {
-          // If URL parsing fails, use the link as is
-          pathAndQuery = defaultLink;
-        }
-        
-        // Construct new URL with subdomain first, then domain
-        const newUrl = `https://${userProfile.subdomain}.trackoffers.net${pathAndQuery}`;
-        console.log("Generated subdomain URL for offer", offer.id, ":", newUrl);
-        return newUrl;
+        // Generate tracking URL with subdomain first
+        const trackingUrl = `https://${userProfile.subdomain}.trackoffers.net/track/${offer.id}`;
+        console.log("Generated subdomain URL for offer", offer.id, ":", trackingUrl);
+        return trackingUrl;
       } catch (error) {
         console.error('Error generating tracking URL:', error);
-        return offer.links[0];
       }
     }
 
