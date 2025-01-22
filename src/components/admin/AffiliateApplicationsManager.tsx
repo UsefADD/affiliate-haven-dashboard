@@ -71,28 +71,94 @@ export function AffiliateApplicationsManager() {
     }
   };
 
-  const updateApplicationStatus = async (id: string, newStatus: string) => {
+  const handleApproveApplication = async (application: AffiliateApplication) => {
     try {
-      console.log(`Updating application ${id} status to ${newStatus}`);
+      console.log("Creating new user for application:", application);
+      
+      // Create new user with temporary password
+      const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
+        email: application.email,
+        password: 'SoftDigi',
+        email_confirm: true,
+        user_metadata: {
+          first_name: application.first_name,
+          last_name: application.last_name,
+        },
+      });
+
+      if (signUpError) throw signUpError;
+
+      if (authData.user) {
+        console.log("User created successfully:", authData.user);
+
+        // Update the user's profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            first_name: application.first_name,
+            last_name: application.last_name,
+            company: application.company,
+            role: 'affiliate',
+            email: application.email,
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) throw profileError;
+
+        // Force password change on next login
+        const { error: updateUserError } = await supabase.auth.admin.updateUserById(
+          authData.user.id,
+          { user_metadata: { force_password_change: true } }
+        );
+
+        if (updateUserError) throw updateUserError;
+
+        // Update application status
+        const { error: statusError } = await supabase
+          .from('affiliate_applications')
+          .update({ status: 'approved' })
+          .eq('id', application.id);
+
+        if (statusError) throw statusError;
+
+        toast({
+          title: "Application Approved",
+          description: "User account created successfully",
+        });
+
+        fetchApplications();
+      }
+    } catch (error: any) {
+      console.error('Error approving application:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve application",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectApplication = async (id: string) => {
+    try {
+      console.log("Deleting application:", id);
       const { error } = await supabase
         .from('affiliate_applications')
-        .update({ status: newStatus })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Application status updated successfully",
+        description: "Application rejected and deleted",
       });
 
-      // Refresh the applications list
       fetchApplications();
-    } catch (error) {
-      console.error('Error updating application status:', error);
+    } catch (error: any) {
+      console.error('Error rejecting application:', error);
       toast({
         title: "Error",
-        description: "Failed to update application status",
+        description: error.message || "Failed to reject application",
         variant: "destructive",
       });
     }
@@ -221,14 +287,14 @@ export function AffiliateApplicationsManager() {
                                 <Button
                                   size="sm"
                                   className="bg-green-600 hover:bg-green-700"
-                                  onClick={() => updateApplicationStatus(app.id, 'approved')}
+                                  onClick={() => handleApproveApplication(app)}
                                 >
                                   Approve
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => updateApplicationStatus(app.id, 'rejected')}
+                                  onClick={() => handleRejectApplication(app.id)}
                                 >
                                   Reject
                                 </Button>
