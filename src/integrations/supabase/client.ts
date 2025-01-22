@@ -8,6 +8,7 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 console.log('Initializing Supabase client with:', {
   url: supabaseUrl,
   anonKeyLength: supabaseAnonKey.length,
+  redirectTo: 'https://550c67ab-625a-46e1-8c95-7b0b7b734801.lovableproject.com'
 });
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
@@ -15,7 +16,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    redirectTo: 'https://550c67ab-625a-46e1-8c95-7b0b7b734801.lovableproject.com'
   }
 });
 
