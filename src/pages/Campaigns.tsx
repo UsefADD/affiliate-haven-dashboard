@@ -64,8 +64,15 @@ export default function Campaigns() {
       if (profile?.subdomain && offer?.links?.[0]) {
         try {
           const defaultLink = offer.links[0];
+          // Parse the URL, handling cases with or without protocol
           const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
-          const newUrl = `https://${profile.subdomain}.${url.hostname}${url.pathname}${url.search}`;
+          
+          // Extract the base domain (remove any existing subdomains)
+          const domainParts = url.hostname.split('.');
+          const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
+          
+          // Construct new URL with single subdomain
+          const newUrl = `https://${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
           console.log("Generated subdomain URL:", newUrl);
           setTrackingUrl(newUrl);
           return;
