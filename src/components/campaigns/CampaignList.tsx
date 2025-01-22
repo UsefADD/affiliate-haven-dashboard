@@ -62,19 +62,22 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       return affiliateLink;
     }
     
-    // If no specific affiliate link and user has subdomain, generate one from offer links
+    // If user has subdomain and offer has links, generate subdomain URL
     if (userProfile?.subdomain && offer.links && offer.links.length > 0) {
       try {
         const defaultLink = offer.links[0];
-        // Check if the link already starts with http/https, if not add https://
-        const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
+        // Extract just the path and query parameters if they exist
+        let pathAndQuery = '';
+        try {
+          const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
+          pathAndQuery = url.pathname + url.search;
+        } catch (e) {
+          // If URL parsing fails, use the link as is
+          pathAndQuery = defaultLink;
+        }
         
-        // Extract the base domain (remove any existing subdomains)
-        const domainParts = url.hostname.split('.');
-        const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
-        
-        // Construct new URL with user's subdomain
-        const newUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+        // Construct new URL with subdomain first, then domain
+        const newUrl = `https://${userProfile.subdomain}.trackoffers.net${pathAndQuery}`;
         console.log("Generated subdomain URL for offer", offer.id, ":", newUrl);
         return newUrl;
       } catch (error) {
