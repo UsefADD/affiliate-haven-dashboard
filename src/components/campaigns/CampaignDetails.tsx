@@ -15,6 +15,7 @@ interface CampaignDetailsProps {
 
 export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDetailsProps) {
   const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
+  const [formattedTrackingUrl, setFormattedTrackingUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,21 +33,24 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
     fetchUserProfile();
   }, []);
 
-  const getFormattedTrackingUrl = async () => {
-    if (!campaign) return null;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+  useEffect(() => {
+    const getFormattedTrackingUrl = async () => {
+      if (!campaign) return null;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
 
-    // Generate tracking URL in the format /track/{offerId}/{affiliateId}
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/track/${campaign.id}/${user.id}`;
-  };
+      // Generate tracking URL in the format /track/{offerId}/{affiliateId}
+      const baseUrl = window.location.origin;
+      return `${baseUrl}/track/${campaign.id}/${user.id}`;
+    };
+
+    getFormattedTrackingUrl().then(url => setFormattedTrackingUrl(url));
+  }, [campaign]);
 
   const handleCopyToClipboard = async () => {
-    const formattedUrl = await getFormattedTrackingUrl();
-    if (formattedUrl) {
+    if (formattedTrackingUrl) {
       try {
-        await navigator.clipboard.writeText(formattedUrl);
+        await navigator.clipboard.writeText(formattedTrackingUrl);
         toast({
           title: "Success",
           description: "Tracking link copied to clipboard",
@@ -122,7 +126,7 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
               <div className="space-y-2">
                 <div className="flex items-center justify-between p-2 bg-muted rounded-md">
                   <span className="text-sm truncate mr-2">
-                    {getFormattedTrackingUrl() || 'No tracking link assigned'}
+                    {formattedTrackingUrl || 'No tracking link assigned'}
                   </span>
                   <Button 
                     variant="ghost" 
