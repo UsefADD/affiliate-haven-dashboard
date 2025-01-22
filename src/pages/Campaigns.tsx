@@ -5,25 +5,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { CampaignList } from "@/components/campaigns/CampaignList";
 import { CampaignDetails } from "@/components/campaigns/CampaignDetails";
 import { SearchBar } from "@/components/campaigns/SearchBar";
-
-interface Offer {
-  id: string;
-  name: string;
-  description: string | null;
-  payout: number;
-  status: boolean;
-  created_at: string;
-  links?: string[];
-  creatives?: {
-    type: "image" | "email";
-    content: string;
-    details?: {
-      fromNames?: string[];
-      subjects?: string[];
-    };
-    images?: string[];
-  }[];
-}
+import { Offer } from "@/types/offer";
 
 export default function Campaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -38,11 +20,11 @@ export default function Campaigns() {
 
   useEffect(() => {
     if (selectedCampaign) {
-      fetchTrackingUrl(selectedCampaign.id);
+      fetchTrackingUrl(selectedCampaign.id.toString());
     }
   }, [selectedCampaign]);
 
-  const fetchTrackingUrl = async (campaignId: number) => {
+  const fetchTrackingUrl = async (campaignId: string) => {
     try {
       console.log("Fetching tracking URL for campaign:", campaignId);
       const { data: { user } } = await supabase.auth.getUser();
@@ -91,7 +73,10 @@ export default function Campaigns() {
       const typedOffers: Offer[] = data.map(offer => ({
         ...offer,
         creatives: offer.creatives as Offer['creatives'] || [],
-        links: offer.links || []
+        links: offer.links || [],
+        created_by: offer.created_by || '',
+        status: offer.status ?? true,
+        created_at: offer.created_at || new Date().toISOString(),
       }));
       
       setOffers(typedOffers);
@@ -124,7 +109,7 @@ export default function Campaigns() {
     <DashboardLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar value={searchQuery} onSearch={handleSearch} />
         </div>
         <CampaignList
           campaigns={filteredOffers.map(offer => ({
