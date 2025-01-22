@@ -9,14 +9,6 @@ console.log('Initializing Supabase client with:', {
   key: supabaseAnonKey ? 'Key exists' : 'Key missing'
 });
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:', {
-    url: !!supabaseUrl,
-    key: !!supabaseAnonKey
-  });
-  throw new Error('Missing Supabase environment variables');
-}
-
 export const supabase = createClient<Database>(
   supabaseUrl,
   supabaseAnonKey,
