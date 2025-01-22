@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = 'https://ibjnokzepukzuzveseik.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imliam5va3plcHVrenV6dmVzZWlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDU4OTU1NzcsImV4cCI6MjAyMTQ3MTU3N30.RkKDwS-5q2egF_vHEwr4HSEYh_Qe_lRmKi_tFI-IyPE';
 
 console.log('Initializing Supabase client with:', {
   url: supabaseUrl ? 'URL exists' : 'URL missing',
