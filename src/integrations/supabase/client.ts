@@ -10,13 +10,7 @@ console.log('Initializing Supabase client with:', {
   anonKeyLength: supabaseAnonKey.length
 });
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // Test database access
 (async () => {
