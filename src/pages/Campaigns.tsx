@@ -78,11 +78,11 @@ export default function Campaigns() {
         status: offer.status ?? true,
         created_at: offer.created_at,
         created_by: offer.created_by,
-        creatives: Array.isArray(offer.creatives) ? offer.creatives.map(creative => ({
-          type: creative.type as "image" | "email",
-          content: creative.content,
-          details: creative.details,
-          images: creative.images
+        creatives: Array.isArray(offer.creatives) ? offer.creatives.map((creative: any) => ({
+          type: creative.type || "image",
+          content: creative.content || "",
+          details: creative.details || {},
+          images: creative.images || []
         })) : [],
         links: offer.links || [],
         is_top_offer: offer.is_top_offer ?? false
