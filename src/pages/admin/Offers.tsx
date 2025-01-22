@@ -8,26 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { OfferForm, OfferFormData } from "@/components/offers/OfferForm";
 import OfferList from "@/components/offers/OfferList";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-
-interface Offer {
-  id: string;
-  name: string;
-  description: string | null;
-  payout: number;
-  status: boolean;
-  created_at: string;
-  links?: string[];
-  is_top_offer?: boolean;
-  creatives?: {
-    type: "image" | "email";
-    content: string;
-    details?: {
-      fromNames?: string[];
-      subjects?: string[];
-    };
-    images?: string[];
-  }[];
-}
+import { Offer } from "@/types/offer";
 
 export default function Offers() {
   const [offers, setOffers] = useState<Offer[]>([]);
