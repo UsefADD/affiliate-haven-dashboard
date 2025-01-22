@@ -13,7 +13,7 @@ interface CampaignListProps {
   onViewDetails: (campaign: Campaign) => void;
 }
 
-export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
+export default function OfferList({ campaigns, onViewDetails }: CampaignListProps) {
   const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
   const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
   const { toast } = useToast();
@@ -61,7 +61,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
     fetchAffiliateLinks();
   }, [toast]);
 
-  const getTrackingUrl = (offer: Offer) => {
+  const getTrackingUrl = async (offer: Offer) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 

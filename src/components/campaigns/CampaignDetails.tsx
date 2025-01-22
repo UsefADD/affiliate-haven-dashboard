@@ -32,7 +32,7 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
     fetchUserProfile();
   }, []);
 
-  const getFormattedTrackingUrl = () => {
+  const getFormattedTrackingUrl = async () => {
     if (!campaign) return null;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
@@ -43,7 +43,7 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
   };
 
   const handleCopyToClipboard = async () => {
-    const formattedUrl = getFormattedTrackingUrl();
+    const formattedUrl = await getFormattedTrackingUrl();
     if (formattedUrl) {
       try {
         await navigator.clipboard.writeText(formattedUrl);
