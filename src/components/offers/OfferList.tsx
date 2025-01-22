@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Check, X, Pencil, Star } from "lucide-react";
+import { Check, X, Pencil, Star, Trash2 } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -35,12 +35,13 @@ interface Offer {
 interface OfferListProps {
   offers: Offer[];
   onEdit: (offer: Offer) => void;
+  onDelete: (offer: Offer) => void;
   onToggleStatus: (offerId: string, currentStatus: boolean) => void;
   onToggleTopOffer?: (offerId: string, currentTopStatus: boolean) => void;
   isAdmin?: boolean;
 }
 
-export function OfferList({ offers, onEdit, onToggleStatus, onToggleTopOffer, isAdmin = false }: OfferListProps) {
+export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTopOffer, isAdmin = false }: OfferListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
   const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
@@ -203,13 +204,21 @@ export function OfferList({ offers, onEdit, onToggleStatus, onToggleTopOffer, is
                   {new Date(offer.created_at).toLocaleDateString()}
                 </TableCell>
                 {isAdmin && (
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2">
                     <Button 
                       variant="ghost" 
                       size="icon"
                       onClick={() => onEdit(offer)}
                     >
                       <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => onDelete(offer)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 )}

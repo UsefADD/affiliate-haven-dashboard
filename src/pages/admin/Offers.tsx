@@ -7,6 +7,7 @@ import { Plus, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { OfferForm, OfferFormData } from "@/components/offers/OfferForm";
 import { OfferList } from "@/components/offers/OfferList";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Offer {
   id: string;
@@ -33,6 +34,8 @@ export default function Offers() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [offerToDelete, setOfferToDelete] = useState<Offer | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -140,6 +143,41 @@ export default function Offers() {
     setIsOpen(true);
   };
 
+  const handleDelete = async (offer: Offer) => {
+    setOfferToDelete(offer);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!offerToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('offers')
+        .delete()
+        .eq('id', offerToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Offer deleted successfully",
+      });
+
+      fetchOffers();
+    } catch (error) {
+      console.error('Error deleting offer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete offer",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setOfferToDelete(null);
+    }
+  };
+
   const handleToggleStatus = async (offerId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
@@ -230,10 +268,29 @@ export default function Offers() {
         <OfferList
           offers={offers}
           onEdit={handleEdit}
+          onDelete={handleDelete}
           onToggleStatus={handleToggleStatus}
           onToggleTopOffer={handleToggleTopOffer}
           isAdmin={true}
         />
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the offer
+                "{offerToDelete?.name}" and remove all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
