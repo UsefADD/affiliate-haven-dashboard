@@ -5,9 +5,9 @@ const supabaseUrl = 'https://ibjnokzepukzuzveseik.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imliam5va3plcHVrenV6dmVzZWlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDU4OTU1NzcsImV4cCI6MjAyMTQ3MTU3N30.RkKDwS-5q2egF_vHEwr4HSEYh_Qe_lRmKi_tFI-IyPE';
 
 console.log('Initializing Supabase client with:', {
-  url: supabaseUrl ? 'URL exists' : 'URL missing',
-  key: supabaseAnonKey ? 'Key exists' : 'Key missing',
-  keyLength: supabaseAnonKey?.length
+  url: supabaseUrl,
+  keyLength: supabaseAnonKey?.length,
+  keyPreview: supabaseAnonKey?.substring(0, 10) + '...'
 });
 
 export const supabase = createClient<Database>(
@@ -26,23 +26,27 @@ export const supabase = createClient<Database>(
 // Test the connection and auth configuration
 supabase.auth.getSession().then(({ data, error }) => {
   if (error) {
-    console.error('Supabase connection error:', error);
+    console.error('Supabase auth error:', error);
   } else {
-    console.log('Supabase connection successful, session:', data.session ? 'exists' : 'none');
+    console.log('Supabase auth successful:', {
+      hasSession: !!data.session,
+      user: data.session?.user?.email
+    });
   }
 });
 
-// Test a simple query to verify database access
+// Test database access with a simple query
 supabase
   .from('profiles')
-  .select('count')
+  .select('*')
   .limit(1)
-  .then(({ error }) => {
+  .single()
+  .then(({ data, error }) => {
     if (error) {
       console.error('Database access error:', error);
     } else {
-      console.log('Database access successful');
+      console.log('Database access successful, retrieved profile:', data);
     }
   });
 
-console.log('Supabase client initialized successfully');
+console.log('Supabase client configuration complete');
