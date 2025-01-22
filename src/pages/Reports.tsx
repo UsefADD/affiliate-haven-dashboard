@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,6 +29,7 @@ export default function Reports() {
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState("");
   const [reportData, setReportData] = useState<Lead[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function Reports() {
       
       if (!user) {
         console.error("No user found");
+        setIsLoading(false);
         return;
       }
 
@@ -73,6 +75,8 @@ export default function Reports() {
         description: "Failed to fetch leads data",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -108,6 +112,19 @@ export default function Reports() {
     .filter(lead => lead.status === 'converted')
     .reduce((sum, lead) => sum + (lead.offers?.payout || 0), 0);
   const averageEPC = totalLeads ? (totalEarnings / totalLeads).toFixed(2) : "0.00";
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+            <p className="text-muted-foreground">Loading reports...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
