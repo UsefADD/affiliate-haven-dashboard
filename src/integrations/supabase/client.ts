@@ -7,7 +7,7 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 // Add debug logging
 console.log('Initializing Supabase client with:', {
   url: supabaseUrl,
-  anonKeyLength: supabaseAnonKey.length
+  anonKeyLength: supabaseAnonKey.length,
 });
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
