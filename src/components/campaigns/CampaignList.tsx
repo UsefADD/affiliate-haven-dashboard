@@ -1,134 +1,97 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Campaign } from "@/types/campaign";
-import { Offer } from "@/types/offer";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Copy, ExternalLink } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-interface CampaignListProps {
-  campaigns: Offer[];
-  onViewDetails: (campaign: Campaign) => void;
-}
+export function CampaignList({ campaigns, profile }: { campaigns: any[]; profile: any }) {
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
-  const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
-  const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
-
-  useEffect(() => {
-    const fetchAffiliateLinks = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        console.log("Fetching affiliate links for user:", user.id);
-        const { data: links, error } = await supabase
-          .from('affiliate_links')
-          .select('offer_id, tracking_url')
-          .eq('affiliate_id', user.id);
-
-        if (error) throw error;
-
-        console.log("Fetched affiliate links:", links);
-        const linksMap = links?.reduce((acc, link) => ({
-          ...acc,
-          [link.offer_id]: link.tracking_url
-        }), {});
-
-        setAffiliateLinks(linksMap);
-
-        // Fetch user profile for subdomain
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('subdomain')
-          .eq('id', user.id)
-          .single();
-
-        setUserProfile(profile);
-      } catch (error) {
-        console.error('Error fetching affiliate links:', error);
-      }
-    };
-
-    fetchAffiliateLinks();
-  }, []);
-
-  const getTrackingUrl = (offer: Offer) => {
-    // First check if there's a specific affiliate link
-    const affiliateLink = affiliateLinks[offer.id];
-    if (affiliateLink) {
-      console.log("Using affiliate-specific link for offer", offer.id, ":", affiliateLink);
-      return affiliateLink;
+  const handleCopyToClipboard = async (trackingUrl: string) => {
+    try {
+      await navigator.clipboard.writeText(trackingUrl);
+      toast({
+        title: "Success",
+        description: "Tracking URL copied to clipboard",
+      });
+    } catch (error) {
+      console.error("Failed to copy:", error);
+      toast({
+        title: "Error",
+        description: "Failed to copy URL",
+        variant: "destructive",
+      });
     }
-    
-    // If user has subdomain, generate subdomain URL
-    if (userProfile?.subdomain) {
-      try {
-        // Generate tracking URL with subdomain first
-        const trackingUrl = `https://${userProfile.subdomain}.trackoffers.net/track/${offer.id}`;
-        console.log("Generated subdomain URL for offer", offer.id, ":", trackingUrl);
-        return trackingUrl;
-      } catch (error) {
-        console.error('Error generating tracking URL:', error);
-      }
+  };
+
+  const getTrackingUrl = (campaign: any) => {
+    if (!profile?.subdomain) {
+      console.log("No subdomain found for affiliate");
+      return '';
     }
 
-    // If no specific link and no subdomain, use the first offer link directly
-    if (offer.links && offer.links.length > 0) {
-      const link = offer.links[0];
-      // Ensure the link starts with http/https
-      return link.startsWith('http') ? link : `https://${link}`;
-    }
-
-    return null;
+    const baseUrl = `https://${profile.subdomain}.trackoffers.net`;
+    const trackingPath = `/track/${campaign.id}/${profile.id}`;
+    return `${baseUrl}${trackingPath}`;
   };
 
   return (
-    <div className="rounded-lg border bg-white/50 backdrop-blur-sm shadow-sm">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="font-semibold">ID</TableHead>
-            <TableHead className="font-semibold">Campaign Name</TableHead>
-            <TableHead className="font-semibold">Payout</TableHead>
-            <TableHead className="font-semibold">Status</TableHead>
-            <TableHead className="text-right font-semibold">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {campaigns.map((campaign) => (
-            <TableRow 
-              key={campaign.id}
-              className="hover:bg-muted/30 transition-colors"
-            >
-              <TableCell className="font-mono text-sm">{campaign.id.split('-')[0]}</TableCell>
-              <TableCell className="font-medium">{campaign.name}</TableCell>
-              <TableCell className="text-green-600 font-semibold">
-                ${campaign.payout}
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  variant={campaign.status ? "success" : "secondary"}
-                >
-                  {campaign.status ? "Approved" : "Pending"}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onViewDetails(campaign as Campaign)}
-                  className="hover:bg-primary/10 text-primary"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {campaigns.map((campaign) => {
+        const trackingUrl = getTrackingUrl(campaign);
+        
+        return (
+          <Card key={campaign.id} className="relative overflow-hidden">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="line-clamp-1">{campaign.name}</CardTitle>
+                {campaign.is_top_offer && (
+                  <Badge variant="secondary">Top Offer</Badge>
+                )}
+              </div>
+              <CardDescription className="line-clamp-2">
+                {campaign.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Payout</span>
+                  <span className="font-semibold">${campaign.payout}</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1"
+                    onClick={() => navigate(`/campaigns/${campaign.id}`)}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleCopyToClipboard(trackingUrl)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button asChild variant="outline">
+                    <a 
+                      href={trackingUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
