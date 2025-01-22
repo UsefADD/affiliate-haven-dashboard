@@ -30,18 +30,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     const checkAuth = async () => {
       try {
         console.log("Checking authentication status...");
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error("Session error:", error);
-          await supabase.auth.signOut();
-          setIsAuthenticated(false);
-          return;
-        }
-
         if (!session) {
           console.log("No active session found");
           setIsAuthenticated(false);
+          setIsLoading(false);
           return;
         }
 
@@ -52,16 +46,16 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           console.error("User verification failed:", userError);
           await supabase.auth.signOut();
           setIsAuthenticated(false);
+          setIsLoading(false);
           return;
         }
 
         console.log("Active session verified for user:", user.id);
         setIsAuthenticated(true);
+        setIsLoading(false);
       } catch (error) {
         console.error('Auth check error:', error);
-        await supabase.auth.signOut();
         setIsAuthenticated(false);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -73,35 +67,30 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       
       if (event === 'SIGNED_OUT' || !session) {
         setIsAuthenticated(false);
+        setIsLoading(false);
         return;
       }
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        try {
-          const { data: { user }, error: userError } = await supabase.auth.getUser();
-          if (userError || !user) {
-            console.error("User verification failed after state change:", userError);
-            await supabase.auth.signOut();
-            setIsAuthenticated(false);
-            return;
-          }
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.error('Auth verification error:', error);
-          await supabase.auth.signOut();
-          setIsAuthenticated(false);
-        }
+        setIsAuthenticated(true);
+        setIsLoading(false);
       }
     });
 
     return () => {
-      console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
   }, []);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return isAuthenticated ? children : <Navigate to="/login" />;
