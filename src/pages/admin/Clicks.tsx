@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,11 +26,60 @@ interface ClickData {
 export default function Clicks() {
   const [clicks, setClicks] = useState<ClickData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchClicks();
+    checkAdminAndFetchClicks();
   }, []);
+
+  const checkAdminAndFetchClicks = async () => {
+    try {
+      console.log("Checking admin status and fetching clicks...");
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log("No session found, redirecting to login");
+        navigate('/login');
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        throw profileError;
+      }
+
+      if (profile?.role !== 'admin') {
+        console.log("User is not admin, redirecting to home");
+        navigate('/');
+        toast({
+          title: "Access Denied",
+          description: "You need admin privileges to view this page",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsAdmin(true);
+      await fetchClicks();
+      
+    } catch (error) {
+      console.error('Error in admin check:', error);
+      toast({
+        title: "Error",
+        description: "Failed to verify admin access",
+        variant: "destructive",
+      });
+      navigate('/login');
+    }
+  };
 
   const fetchClicks = async () => {
     try {
@@ -65,6 +115,10 @@ export default function Clicks() {
     }
   };
 
+  if (!isAdmin) {
+    return null;
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -73,49 +127,53 @@ export default function Clicks() {
             <CardTitle>Affiliate Clicks</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Affiliate</TableHead>
-                    <TableHead>Offer</TableHead>
-                    <TableHead>IP Address</TableHead>
-                    <TableHead>Referrer</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {clicks.map((click) => (
-                    <TableRow key={click.id}>
-                      <TableCell>
-                        {format(new Date(click.clicked_at), 'MMM d, yyyy HH:mm:ss')}
-                      </TableCell>
-                      <TableCell>
-                        {click.affiliate?.first_name} {click.affiliate?.last_name}
-                        <br />
-                        <span className="text-sm text-muted-foreground">
-                          {click.affiliate?.email}
-                        </span>
-                      </TableCell>
-                      <TableCell>{click.offer?.name}</TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {click.ip_address}
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {click.referrer || 'Direct'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {clicks.length === 0 && (
+            {isLoading ? (
+              <div className="text-center py-4">Loading clicks data...</div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4">
-                        No clicks recorded yet
-                      </TableCell>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Affiliate</TableHead>
+                      <TableHead>Offer</TableHead>
+                      <TableHead>IP Address</TableHead>
+                      <TableHead>Referrer</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {clicks.map((click) => (
+                      <TableRow key={click.id}>
+                        <TableCell>
+                          {format(new Date(click.clicked_at), 'MMM d, yyyy HH:mm:ss')}
+                        </TableCell>
+                        <TableCell>
+                          {click.affiliate?.first_name} {click.affiliate?.last_name}
+                          <br />
+                          <span className="text-sm text-muted-foreground">
+                            {click.affiliate?.email}
+                          </span>
+                        </TableCell>
+                        <TableCell>{click.offer?.name}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {click.ip_address}
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {click.referrer || 'Direct'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {clicks.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4">
+                          No clicks recorded yet
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
