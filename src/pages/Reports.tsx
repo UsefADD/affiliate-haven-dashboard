@@ -3,10 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, isEqual } from "date-fns";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -16,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface Lead {
   id: string;
   offers: {
+    id: string;
     name: string;
     payout: number;
   };
@@ -55,6 +55,7 @@ export default function Reports() {
           created_at,
           conversion_date,
           offers:offer_id (
+            id,
             name,
             payout
           )
@@ -91,10 +92,12 @@ export default function Reports() {
       return;
     }
 
-    const selectedDate = format(date, 'yyyy-MM-dd');
+    const selectedStartDate = startOfDay(date);
+    const selectedEndDate = endOfDay(date);
+
     const filteredData = reportData.filter(lead => {
-      const leadDate = lead.created_at.split('T')[0];
-      return leadDate === selectedDate;
+      const leadDate = new Date(lead.created_at);
+      return leadDate >= selectedStartDate && leadDate <= selectedEndDate;
     });
 
     setReportData(filteredData);
@@ -106,9 +109,14 @@ export default function Reports() {
 
   // Calculate totals
   const campaignStats = reportData.reduce((acc, lead) => {
+    const campaignId = lead.offers.id;
     const campaignName = lead.offers.name;
-    if (!acc[campaignName]) {
-      acc[campaignName] = {
+    const key = `${campaignId} - ${campaignName}`;
+    
+    if (!acc[key]) {
+      acc[key] = {
+        id: campaignId,
+        name: campaignName,
         totalLeads: 0,
         conversions: 0,
         lastConversion: null,
@@ -116,17 +124,17 @@ export default function Reports() {
       };
     }
     
-    acc[campaignName].totalLeads++;
+    acc[key].totalLeads++;
     if (lead.status === 'converted') {
-      acc[campaignName].conversions++;
-      acc[campaignName].earnings += lead.offers.payout;
-      if (!acc[campaignName].lastConversion || new Date(lead.conversion_date!) > new Date(acc[campaignName].lastConversion!)) {
-        acc[campaignName].lastConversion = lead.conversion_date;
+      acc[key].conversions++;
+      acc[key].earnings += lead.offers.payout;
+      if (!acc[key].lastConversion || new Date(lead.conversion_date!) > new Date(acc[key].lastConversion!)) {
+        acc[key].lastConversion = lead.conversion_date;
       }
     }
     
     return acc;
-  }, {} as Record<string, { totalLeads: number; conversions: number; lastConversion: string | null; earnings: number }>);
+  }, {} as Record<string, { id: string; name: string; totalLeads: number; conversions: number; lastConversion: string | null; earnings: number }>);
 
   if (isLoading) {
     return (
@@ -190,7 +198,8 @@ export default function Reports() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Campaign</TableHead>
+                  <TableHead>Campaign ID</TableHead>
+                  <TableHead>Campaign Name</TableHead>
                   <TableHead>Total Leads</TableHead>
                   <TableHead>Conversions</TableHead>
                   <TableHead>Last Conversion</TableHead>
@@ -199,9 +208,10 @@ export default function Reports() {
               </TableHeader>
               <TableBody>
                 {Object.entries(campaignStats).length > 0 ? (
-                  Object.entries(campaignStats).map(([campaign, stats]) => (
-                    <TableRow key={campaign}>
-                      <TableCell>{campaign}</TableCell>
+                  Object.entries(campaignStats).map(([key, stats]) => (
+                    <TableRow key={key}>
+                      <TableCell>{stats.id}</TableCell>
+                      <TableCell>{stats.name}</TableCell>
                       <TableCell>{stats.totalLeads}</TableCell>
                       <TableCell>{stats.conversions}</TableCell>
                       <TableCell>
@@ -214,7 +224,7 @@ export default function Reports() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4">
+                    <TableCell colSpan={6} className="text-center py-4">
                       No matching records found
                     </TableCell>
                   </TableRow>
