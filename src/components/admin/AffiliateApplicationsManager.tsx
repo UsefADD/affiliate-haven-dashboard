@@ -71,88 +71,28 @@ export function AffiliateApplicationsManager() {
     }
   };
 
-  const handleApproveApplication = async (application: AffiliateApplication) => {
+  const updateApplicationStatus = async (id: string, newStatus: string) => {
     try {
-      console.log("Creating new user for application:", application);
-      
-      // First, sign up the new user
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: application.email,
-        password: 'SoftDigi',
-        options: {
-          data: {
-            first_name: application.first_name,
-            last_name: application.last_name,
-            force_password_change: true
-          }
-        }
-      });
-
-      if (signUpError) throw signUpError;
-
-      if (signUpData.user) {
-        console.log("User created successfully:", signUpData.user);
-
-        // Update the user's profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            first_name: application.first_name,
-            last_name: application.last_name,
-            company: application.company,
-            role: 'affiliate',
-            email: application.email,
-          })
-          .eq('id', signUpData.user.id);
-
-        if (profileError) throw profileError;
-
-        // Update application status
-        const { error: statusError } = await supabase
-          .from('affiliate_applications')
-          .update({ status: 'approved' })
-          .eq('id', application.id);
-
-        if (statusError) throw statusError;
-
-        toast({
-          title: "Application Approved",
-          description: "User account created successfully. They will need to verify their email and change their password on first login.",
-        });
-
-        fetchApplications();
-      }
-    } catch (error: any) {
-      console.error('Error approving application:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to approve application",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleRejectApplication = async (id: string) => {
-    try {
-      console.log("Deleting application:", id);
+      console.log(`Updating application ${id} status to ${newStatus}`);
       const { error } = await supabase
         .from('affiliate_applications')
-        .delete()
+        .update({ status: newStatus })
         .eq('id', id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Application rejected and deleted",
+        description: "Application status updated successfully",
       });
 
+      // Refresh the applications list
       fetchApplications();
-    } catch (error: any) {
-      console.error('Error rejecting application:', error);
+    } catch (error) {
+      console.error('Error updating application status:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to reject application",
+        description: "Failed to update application status",
         variant: "destructive",
       });
     }
@@ -281,14 +221,14 @@ export function AffiliateApplicationsManager() {
                                 <Button
                                   size="sm"
                                   className="bg-green-600 hover:bg-green-700"
-                                  onClick={() => handleApproveApplication(app)}
+                                  onClick={() => updateApplicationStatus(app.id, 'approved')}
                                 >
                                   Approve
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => handleRejectApplication(app.id)}
+                                  onClick={() => updateApplicationStatus(app.id, 'rejected')}
                                 >
                                   Reject
                                 </Button>

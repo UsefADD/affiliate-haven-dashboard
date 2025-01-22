@@ -3,7 +3,6 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Pencil, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -32,43 +31,6 @@ export default function Users() {
   useEffect(() => {
     fetchUsers();
   }, []);
-
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      console.log("Deleting user profile:", userId);
-      
-      // First delete the profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      if (profileError) throw profileError;
-
-      // Then delete the auth user
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) {
-        // If we get a session_not_found error, the user might already be deleted
-        if (!authError.message.includes('session_not_found')) {
-          throw authError;
-        }
-      }
-
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-      });
-
-      fetchUsers();
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete user",
-        variant: "destructive",
-      });
-    }
-  };
 
   const fetchUsers = async () => {
     try {
@@ -121,15 +83,15 @@ export default function Users() {
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .upsert({
-            id: authData.user.id,
+          .update({
             first_name: data.first_name,
             last_name: data.last_name,
             company: data.company,
             role: data.role,
             email: data.email,
             subdomain: data.subdomain,
-          });
+          })
+          .eq('id', authData.user.id);
 
         if (profileError) throw profileError;
 
@@ -198,6 +160,27 @@ export default function Users() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase.auth.admin.deleteUser(userId);
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user",
+        variant: "destructive",
+      });
     }
   };
 

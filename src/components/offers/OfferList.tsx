@@ -1,148 +1,232 @@
-import { Button } from "@/components/ui/button";
-import { Offer } from "@/types/offer";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Eye } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Check, X, Pencil, Star, Trash2 } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+
+interface AffiliateLink {
+  id: string;
+  tracking_url: string;
+  affiliate_id: string;
+}
+
+interface Offer {
+  id: string;
+  name: string;
+  description: string | null;
+  payout: number;
+  status: boolean;
+  created_at: string;
+  is_top_offer?: boolean;
+  links?: string[];
+  creatives?: {
+    type: "image" | "email";
+    content: string;
+    details?: {
+      fromNames?: string[];
+      subjects?: string[];
+    };
+    images?: string[];
+  }[];
+  affiliate_links?: AffiliateLink[];
+}
 
 interface OfferListProps {
   offers: Offer[];
-  onEdit?: (offer: Offer) => void;
-  onDelete?: (offer: Offer) => void;
-  onToggleStatus?: (offerId: string, currentStatus: boolean) => Promise<void>;
-  onToggleTopOffer?: (offerId: string, currentTopStatus: boolean) => Promise<void>;
+  onEdit: (offer: Offer) => void;
+  onDelete: (offer: Offer) => void;
+  onToggleStatus: (offerId: string, currentStatus: boolean) => void;
+  onToggleTopOffer?: (offerId: string, currentTopStatus: boolean) => void;
   isAdmin?: boolean;
-  onViewDetails?: (offer: Offer) => void;
 }
 
-export default function OfferList({ 
-  offers, 
-  onEdit, 
-  onDelete, 
-  onToggleStatus, 
-  onToggleTopOffer,
-  isAdmin = false,
-  onViewDetails 
-}: OfferListProps) {
+export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTopOffer, isAdmin = false }: OfferListProps) {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
   const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchAffiliateLinks = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        console.log("Fetching affiliate links for user:", user.id);
-        const { data: links, error } = await supabase
-          .from('affiliate_links')
-          .select('offer_id, tracking_url')
-          .eq('affiliate_id', user.id);
-
-        if (error) throw error;
-
-        console.log("Fetched affiliate links:", links);
-        const linksMap = links?.reduce((acc, link) => ({
-          ...acc,
-          [link.offer_id]: link.tracking_url
-        }), {});
-
-        setAffiliateLinks(linksMap);
-
-        // Fetch user profile for subdomain
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('subdomain')
-          .eq('id', user.id)
-          .single();
-
-        setUserProfile(profile);
-      } catch (error) {
-        console.error('Error fetching affiliate links:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch affiliate links",
-          variant: "destructive",
-        });
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+      if (user?.id) {
+        fetchAffiliateLinks(user.id);
+        fetchUserProfile(user.id);
       }
     };
+    getCurrentUser();
+  }, []);
 
-    fetchAffiliateLinks();
-  }, [toast]);
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('subdomain')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const fetchAffiliateLinks = async (userId: string) => {
+    try {
+      console.log("Fetching affiliate links for user:", userId);
+      const { data, error } = await supabase
+        .from('affiliate_links')
+        .select('offer_id, tracking_url')
+        .eq('affiliate_id', userId);
+
+      if (error) throw error;
+
+      console.log("Fetched affiliate links:", data);
+      
+      const linksMap = data?.reduce((acc, link) => ({
+        ...acc,
+        [link.offer_id]: link.tracking_url
+      }), {}) || {};
+
+      console.log("Processed affiliate links map:", linksMap);
+      setAffiliateLinks(linksMap);
+    } catch (error) {
+      console.error('Error fetching affiliate links:', error);
+    }
+  };
+
+  const getTrackingUrl = (offer: Offer) => {
+    if (!currentUserId || !userProfile?.subdomain) return null;
+    console.log("Getting tracking URL for offer:", offer.id);
+    console.log("Current affiliate links:", affiliateLinks);
+    console.log("Specific affiliate link:", affiliateLinks[offer.id]);
+    
+    // First check if there's a specific affiliate link for this offer
+    const affiliateLink = affiliateLinks[offer.id];
+    if (affiliateLink) {
+      console.log("Using affiliate-specific link:", affiliateLink);
+      return affiliateLink;
+    }
+    
+    // If no specific affiliate link is found, generate one using the subdomain
+    const defaultLink = offer.links && offer.links.length > 0 ? offer.links[0] : null;
+    if (defaultLink) {
+      // Parse the URL and add subdomain
+      try {
+        const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
+        const newUrl = `https://${userProfile.subdomain}.${url.hostname}${url.pathname}${url.search}`;
+        console.log("Generated subdomain URL:", newUrl);
+        return newUrl;
+      } catch (error) {
+        console.error('Error parsing URL:', error);
+        return defaultLink;
+      }
+    }
+    console.log("Using default link:", defaultLink);
+    return defaultLink;
+  };
 
   return (
-    <div className="rounded-lg border bg-white/50 backdrop-blur-sm shadow-sm">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="font-semibold">ID</TableHead>
-            <TableHead className="font-semibold">Campaign Name</TableHead>
-            <TableHead className="font-semibold">Payout</TableHead>
-            <TableHead className="font-semibold">Status</TableHead>
-            <TableHead className="text-right font-semibold">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {offers.map((offer) => (
-            <TableRow 
-              key={offer.id}
-              className="hover:bg-muted/30 transition-colors"
-            >
-              <TableCell className="font-mono text-sm">{offer.id.split('-')[0]}</TableCell>
-              <TableCell className="font-medium">{offer.name}</TableCell>
-              <TableCell className="text-green-600 font-semibold">
-                ${offer.payout}
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  variant={offer.status ? "success" : "secondary"}
-                >
-                  {offer.status ? "Approved" : "Pending"}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                {isAdmin ? (
-                  <div className="flex justify-end gap-2">
-                    {onEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(offer)}
-                        className="hover:bg-primary/10 text-primary"
-                      >
-                        Edit
-                      </Button>
-                    )}
-                    {onDelete && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDelete(offer)}
-                        className="hover:bg-destructive/10 text-destructive"
-                      >
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onViewDetails?.(offer)}
-                    className="hover:bg-primary/10 text-primary"
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </Button>
-                )}
-              </TableCell>
+    <div className="space-y-6">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Payout</TableHead>
+              {!isAdmin && <TableHead>Your Tracking Link</TableHead>}
+              <TableHead>Creatives</TableHead>
+              {isAdmin && (
+                <>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Top Offer</TableHead>
+                </>
+              )}
+              <TableHead>Created At</TableHead>
+              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {offers.map((offer) => (
+              <TableRow key={offer.id}>
+                <TableCell className="font-medium">
+                  {offer.creatives?.some(c => c.type === "image") && (
+                    <div className="w-20 mb-2">
+                      <AspectRatio ratio={16/9}>
+                        <img
+                          src={offer.creatives.find(c => c.type === "image")?.content}
+                          alt={offer.name}
+                          className="rounded-md object-cover"
+                        />
+                      </AspectRatio>
+                    </div>
+                  )}
+                  {offer.name}
+                </TableCell>
+                <TableCell>{offer.description || 'N/A'}</TableCell>
+                <TableCell>${offer.payout}</TableCell>
+                {!isAdmin && (
+                  <TableCell>
+                    {getTrackingUrl(offer) || 'No tracking link assigned'}
+                  </TableCell>
+                )}
+                <TableCell>{offer.creatives?.length || 0} creatives</TableCell>
+                {isAdmin && (
+                  <>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onToggleStatus(offer.id, offer.status)}
+                      >
+                        {offer.status ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <X className="h-4 w-4 text-red-500" />
+                        )}
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onToggleTopOffer?.(offer.id, offer.is_top_offer || false)}
+                      >
+                        <Star className={`h-4 w-4 ${offer.is_top_offer ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
+                      </Button>
+                    </TableCell>
+                  </>
+                )}
+                <TableCell>
+                  {new Date(offer.created_at).toLocaleDateString()}
+                </TableCell>
+                {isAdmin && (
+                  <TableCell className="text-right space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => onEdit(offer)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => onDelete(offer)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

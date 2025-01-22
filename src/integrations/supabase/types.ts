@@ -93,51 +93,6 @@ export type Database = {
         }
         Relationships: []
       }
-      affiliate_clicks: {
-        Row: {
-          affiliate_id: string | null
-          clicked_at: string | null
-          id: string
-          ip_address: string | null
-          offer_id: string | null
-          referrer: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          affiliate_id?: string | null
-          clicked_at?: string | null
-          id?: string
-          ip_address?: string | null
-          offer_id?: string | null
-          referrer?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          affiliate_id?: string | null
-          clicked_at?: string | null
-          id?: string
-          ip_address?: string | null
-          offer_id?: string | null
-          referrer?: string | null
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "affiliate_clicks_affiliate_id_fkey"
-            columns: ["affiliate_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "affiliate_clicks_offer_id_fkey"
-            columns: ["offer_id"]
-            isOneToOne: false
-            referencedRelation: "offers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       affiliate_links: {
         Row: {
           affiliate_id: string | null

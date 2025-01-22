@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { AffiliateApplicationForm } from "@/components/affiliate/AffiliateApplicationForm";
@@ -39,7 +39,7 @@ export default function Login() {
       if (authData.user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('role')
           .eq('id', authData.user.id)
           .maybeSingle();
 
@@ -49,35 +49,13 @@ export default function Login() {
           console.error("Profile fetch error:", profileError);
           throw profileError;
         }
-
-        // If no profile exists, create one with default role 'affiliate'
-        if (!profile) {
-          console.log("No profile found, creating new profile");
-          const { error: createProfileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              email: authData.user.email,
-              role: 'affiliate'
-            });
-
-          if (createProfileError) {
-            console.error("Profile creation error:", createProfileError);
-            throw createProfileError;
-          }
-
-          console.log("New affiliate profile created, redirecting to home");
-          navigate("/");
+        
+        if (profile?.role === 'admin') {
+          console.log("Admin user detected, redirecting to admin dashboard");
+          navigate("/admin");
         } else {
-          console.log("Profile found with role:", profile.role);
-          // Check the role and redirect accordingly
-          if (profile.role === 'admin') {
-            console.log("Admin user detected, redirecting to admin dashboard");
-            navigate("/admin");
-          } else {
-            console.log("Regular user detected, redirecting to home");
-            navigate("/");
-          }
+          console.log("Regular user detected, redirecting to home");
+          navigate("/");
         }
 
         toast({
@@ -106,7 +84,7 @@ export default function Login() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/30">
         <Card className="w-full max-w-md p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-green-600">Walid</h1>
+            <h1 className="text-3xl font-bold text-green-600">SoftDigi</h1>
             <p className="text-muted-foreground mt-2">Sign in to your account</p>
           </div>
           
