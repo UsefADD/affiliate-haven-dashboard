@@ -8,12 +8,25 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface CampaignListProps {
-  campaigns: Offer[];
-  onViewDetails: (campaign: Campaign) => void;
+interface OfferListProps {
+  offers: Offer[];
+  onEdit?: (offer: Offer) => void;
+  onDelete?: (offer: Offer) => void;
+  onToggleStatus?: (offerId: string, currentStatus: boolean) => Promise<void>;
+  onToggleTopOffer?: (offerId: string, currentTopStatus: boolean) => Promise<void>;
+  isAdmin?: boolean;
+  onViewDetails?: (campaign: Campaign) => void;
 }
 
-export default function OfferList({ campaigns, onViewDetails }: CampaignListProps) {
+export default function OfferList({ 
+  offers, 
+  onEdit, 
+  onDelete, 
+  onToggleStatus, 
+  onToggleTopOffer,
+  isAdmin = false,
+  onViewDetails 
+}: OfferListProps) {
   const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
   const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
   const { toast } = useToast();
@@ -83,7 +96,7 @@ export default function OfferList({ campaigns, onViewDetails }: CampaignListProp
           </TableRow>
         </TableHeader>
         <TableBody>
-          {campaigns.map((campaign) => (
+          {offers.map((campaign) => (
             <TableRow 
               key={campaign.id}
               className="hover:bg-muted/30 transition-colors"
@@ -101,15 +114,40 @@ export default function OfferList({ campaigns, onViewDetails }: CampaignListProp
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onViewDetails(campaign as Campaign)}
-                  className="hover:bg-primary/10 text-primary"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
+                {isAdmin ? (
+                  <div className="flex justify-end gap-2">
+                    {onEdit && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(campaign)}
+                        className="hover:bg-primary/10 text-primary"
+                      >
+                        Edit
+                      </Button>
+                    )}
+                    {onDelete && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDelete(campaign)}
+                        className="hover:bg-destructive/10 text-destructive"
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onViewDetails?.(campaign as Campaign)}
+                    className="hover:bg-primary/10 text-primary"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Details
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}
