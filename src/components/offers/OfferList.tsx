@@ -64,7 +64,7 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
         .from('profiles')
         .select('subdomain')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setUserProfile(profile);
