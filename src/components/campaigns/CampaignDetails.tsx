@@ -47,12 +47,12 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
   }, []);
 
   const getFormattedTrackingUrl = () => {
-    if (!campaign?.id || !userProfile?.subdomain) {
-      console.log("No campaign ID or subdomain available");
+    if (!campaign?.id) {
+      console.log("No campaign ID available");
       return null;
     }
 
-    // Return a simplified tracking URL that includes just the essential parameters
+    // Return a simplified tracking URL
     return `/api/track-click/${campaign.id}`;
   };
 
