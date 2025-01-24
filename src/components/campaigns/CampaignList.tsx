@@ -47,7 +47,6 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
 
       setAffiliateLinks(linksMap);
 
-      // Fetch user profile for subdomain
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('subdomain, id')
@@ -77,9 +76,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       const affiliateLink = affiliateLinks[offer.id];
       if (affiliateLink) {
         console.log("Using affiliate-specific link for offer", offer.id, ":", affiliateLink);
-        // Wrap the affiliate link with our click tracking
-        const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(affiliateLink)}`;
-        return trackingEndpoint;
+        return `/api/track-click/${userProfile.id}/${offer.id}`;
       }
       
       // If no specific link and user has subdomain, generate one from offer links
@@ -95,9 +92,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
           // Construct new URL with single subdomain
           const destinationUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
           console.log("Generated subdomain URL:", destinationUrl);
-          // Wrap with click tracking
-          const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
-          return trackingEndpoint;
+          return `/api/track-click/${userProfile.id}/${offer.id}`;
         } catch (error) {
           console.error('Error generating tracking URL:', error);
           return null;
@@ -106,9 +101,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
 
       // If no specific link and no subdomain, use the first offer link
       if (offer.links && offer.links.length > 0) {
-        const destinationUrl = offer.links[0];
-        const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
-        return trackingEndpoint;
+        return `/api/track-click/${userProfile.id}/${offer.id}`;
       }
 
       console.log("No tracking URL could be generated for offer:", offer.id);
