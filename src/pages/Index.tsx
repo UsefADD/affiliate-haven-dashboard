@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { OfferList } from "@/components/offers/OfferList";
+import { ClickStats } from "@/components/analytics/ClickStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, Users, Star } from "lucide-react";
@@ -43,8 +44,14 @@ export default function Index() {
     conversionRate: 0,
     recentLeads: []
   });
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
     fetchOffers();
     fetchDashboardStats();
   }, []);
@@ -163,6 +170,12 @@ export default function Index() {
               <p className="text-xs text-muted-foreground mt-1">Average conversion rate</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Click Statistics */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-green-600">Click Statistics</h2>
+          <ClickStats affiliateId={currentUserId} />
         </div>
 
         {/* Leads Chart */}
