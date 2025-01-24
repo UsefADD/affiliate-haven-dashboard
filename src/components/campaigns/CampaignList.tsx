@@ -28,26 +28,35 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
           .select('offer_id, tracking_url')
           .eq('affiliate_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching affiliate links:', error);
+          return;
+        }
 
         console.log("Fetched affiliate links:", links);
         const linksMap = links?.reduce((acc, link) => ({
           ...acc,
           [link.offer_id]: link.tracking_url
-        }), {});
+        }), {}) || {};
 
         setAffiliateLinks(linksMap);
 
         // Fetch user profile for subdomain
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('subdomain, id')
           .eq('id', user.id)
           .maybeSingle();
 
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+          return;
+        }
+
+        console.log("Fetched user profile:", profile);
         setUserProfile(profile);
       } catch (error) {
-        console.error('Error fetching affiliate links:', error);
+        console.error('Error in fetchAffiliateLinks:', error);
       }
     };
 
