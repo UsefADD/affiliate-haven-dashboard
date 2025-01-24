@@ -54,7 +54,7 @@ serve(async (req) => {
       .select('tracking_url')
       .eq('affiliate_id', affiliateId)
       .eq('offer_id', offerId)
-      .maybeSingle();
+      .maybeSingle();  // Changed from .single() to .maybeSingle()
 
     if (linkError) {
       console.error('Error fetching affiliate link:', linkError);
@@ -77,7 +77,7 @@ serve(async (req) => {
       .from('offers')
       .select('links')
       .eq('id', offerId)
-      .single();
+      .maybeSingle();  // Changed from .single() to .maybeSingle()
 
     if (offerError) {
       console.error('Error fetching offer:', offerError);
@@ -93,7 +93,7 @@ serve(async (req) => {
       .from('profiles')
       .select('subdomain')
       .eq('id', affiliateId)
-      .single();
+      .maybeSingle();  // Changed from .single() to .maybeSingle()
 
     if (profileError) {
       console.error('Error fetching profile:', profileError);
