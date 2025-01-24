@@ -47,33 +47,21 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
   }, []);
 
   const getFormattedTrackingUrl = () => {
-    if (!trackingUrl || !userProfile?.subdomain) {
-      console.log("No tracking URL or subdomain available");
-      return trackingUrl;
+    if (!campaign?.id || !userProfile?.subdomain) {
+      console.log("No campaign ID or subdomain available");
+      return null;
     }
 
-    try {
-      const url = new URL(trackingUrl.startsWith('http') ? trackingUrl : `https://${trackingUrl}`);
-      
-      // Extract the base domain (remove any existing subdomains)
-      const domainParts = url.hostname.split('.');
-      const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
-      
-      // Construct new URL with single subdomain
-      const formattedUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-      console.log("Generated formatted tracking URL:", formattedUrl);
-      return formattedUrl;
-    } catch (error) {
-      console.error('Error parsing URL:', error);
-      return trackingUrl;
-    }
+    // Return a simplified tracking URL that includes just the essential parameters
+    return `/api/track-click/${campaign.id}`;
   };
 
   const handleCopyToClipboard = async () => {
     const formattedUrl = getFormattedTrackingUrl();
     if (formattedUrl) {
       try {
-        await navigator.clipboard.writeText(formattedUrl);
+        const fullUrl = `${window.location.origin}${formattedUrl}`;
+        await navigator.clipboard.writeText(fullUrl);
         toast({
           title: "Success",
           description: "Tracking link copied to clipboard",
@@ -149,12 +137,13 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
               <div className="space-y-2">
                 <div className="flex items-center justify-between p-2 bg-muted rounded-md">
                   <span className="text-sm truncate mr-2">
-                    {getFormattedTrackingUrl() || 'No tracking link assigned'}
+                    {getFormattedTrackingUrl() ? `${window.location.origin}${getFormattedTrackingUrl()}` : 'No tracking link available'}
                   </span>
                   <Button 
                     variant="ghost" 
                     size="sm"
                     onClick={handleCopyToClipboard}
+                    disabled={!getFormattedTrackingUrl()}
                   >
                     <Copy className="h-4 w-4 mr-1" />
                     Copy
