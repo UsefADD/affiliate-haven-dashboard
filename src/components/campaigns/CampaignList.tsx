@@ -17,94 +17,106 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
   const [userProfile, setUserProfile] = useState<{ subdomain?: string, id?: string } | null>(null);
 
   useEffect(() => {
-    const fetchAffiliateLinks = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        console.log("Fetching affiliate links for user:", user.id);
-        const { data: links, error } = await supabase
-          .from('affiliate_links')
-          .select('offer_id, tracking_url')
-          .eq('affiliate_id', user.id);
-
-        if (error) {
-          console.error('Error fetching affiliate links:', error);
-          return;
-        }
-
-        console.log("Fetched affiliate links:", links);
-        const linksMap = links?.reduce((acc, link) => ({
-          ...acc,
-          [link.offer_id]: link.tracking_url
-        }), {}) || {};
-
-        setAffiliateLinks(linksMap);
-
-        // Fetch user profile for subdomain
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('subdomain, id')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (profileError) {
-          console.error('Error fetching user profile:', profileError);
-          return;
-        }
-
-        console.log("Fetched user profile:", profile);
-        setUserProfile(profile);
-      } catch (error) {
-        console.error('Error in fetchAffiliateLinks:', error);
-      }
-    };
-
     fetchAffiliateLinks();
   }, []);
 
-  const getTrackingUrl = (offer: Offer) => {
-    if (!userProfile?.id) return null;
-
-    // First check if there's a specific affiliate link
-    const affiliateLink = affiliateLinks[offer.id];
-    if (affiliateLink) {
-      console.log("Using affiliate-specific link for offer", offer.id, ":", affiliateLink);
-      // Wrap the affiliate link with our click tracking
-      const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(affiliateLink)}`;
-      return trackingEndpoint;
-    }
-    
-    // If no specific affiliate link and user has subdomain, generate one from offer links
-    if (userProfile?.subdomain && offer.links && offer.links.length > 0) {
-      try {
-        const defaultLink = offer.links[0];
-        const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
-        
-        // Extract the base domain (remove any existing subdomains)
-        const domainParts = url.hostname.split('.');
-        const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
-        
-        // Construct new URL with single subdomain
-        const destinationUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-        // Wrap with click tracking
-        const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
-        console.log("Generated tracking URL for offer", offer.id, ":", trackingEndpoint);
-        return trackingEndpoint;
-      } catch (error) {
-        console.error('Error generating tracking URL:', error);
-        return null;
+  const fetchAffiliateLinks = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log("No user found");
+        return;
       }
+
+      console.log("Fetching affiliate links for user:", user.id);
+      const { data: links, error } = await supabase
+        .from('affiliate_links')
+        .select('offer_id, tracking_url')
+        .eq('affiliate_id', user.id);
+
+      if (error) {
+        console.error('Error fetching affiliate links:', error);
+        return;
+      }
+
+      console.log("Fetched affiliate links:", links);
+      const linksMap = links?.reduce((acc, link) => ({
+        ...acc,
+        [link.offer_id]: link.tracking_url
+      }), {}) || {};
+
+      setAffiliateLinks(linksMap);
+
+      // Fetch user profile for subdomain
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('subdomain, id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        return;
+      }
+
+      console.log("Fetched user profile:", profile);
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Error in fetchAffiliateLinks:', error);
+    }
+  };
+
+  const getTrackingUrl = (offer: Offer) => {
+    if (!userProfile?.id) {
+      console.log("No user profile found");
+      return null;
     }
 
-    // If no specific link and no subdomain, use the first offer link
-    if (offer.links && offer.links.length > 0) {
-      const destinationUrl = offer.links[0];
-      const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
-      return trackingEndpoint;
-    }
+    try {
+      // First check if there's a specific affiliate link
+      const affiliateLink = affiliateLinks[offer.id];
+      if (affiliateLink) {
+        console.log("Using affiliate-specific link for offer", offer.id, ":", affiliateLink);
+        // Wrap the affiliate link with our click tracking
+        const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(affiliateLink)}`;
+        return trackingEndpoint;
+      }
+      
+      // If no specific link and user has subdomain, generate one from offer links
+      if (userProfile?.subdomain && offer.links && offer.links.length > 0) {
+        try {
+          const defaultLink = offer.links[0];
+          const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
+          
+          // Extract the base domain (remove any existing subdomains)
+          const domainParts = url.hostname.split('.');
+          const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
+          
+          // Construct new URL with single subdomain
+          const destinationUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+          console.log("Generated subdomain URL:", destinationUrl);
+          // Wrap with click tracking
+          const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
+          return trackingEndpoint;
+        } catch (error) {
+          console.error('Error generating tracking URL:', error);
+          return null;
+        }
+      }
 
-    return null;
+      // If no specific link and no subdomain, use the first offer link
+      if (offer.links && offer.links.length > 0) {
+        const destinationUrl = offer.links[0];
+        const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
+        return trackingEndpoint;
+      }
+
+      console.log("No tracking URL could be generated for offer:", offer.id);
+      return null;
+    } catch (error) {
+      console.error('Error in getTrackingUrl:', error);
+      return null;
+    }
   };
 
   return (

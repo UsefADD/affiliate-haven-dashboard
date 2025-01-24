@@ -19,21 +19,39 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log("No user found");
+          return;
+        }
+
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('subdomain')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          return;
+        }
+
+        console.log("Fetched user profile:", profile);
         setUserProfile(profile);
+      } catch (error) {
+        console.error('Error in fetchUserProfile:', error);
       }
     };
     fetchUserProfile();
   }, []);
 
   const getFormattedTrackingUrl = () => {
-    if (!trackingUrl || !userProfile?.subdomain) return trackingUrl;
+    if (!trackingUrl || !userProfile?.subdomain) {
+      console.log("No tracking URL or subdomain available");
+      return trackingUrl;
+    }
+
     try {
       const url = new URL(trackingUrl.startsWith('http') ? trackingUrl : `https://${trackingUrl}`);
       
@@ -42,7 +60,9 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
       const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
       
       // Construct new URL with single subdomain
-      return `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+      const formattedUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+      console.log("Generated formatted tracking URL:", formattedUrl);
+      return formattedUrl;
     } catch (error) {
       console.error('Error parsing URL:', error);
       return trackingUrl;
