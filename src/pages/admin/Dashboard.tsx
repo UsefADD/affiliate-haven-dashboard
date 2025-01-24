@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Users, Gift, FileSpreadsheet, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AffiliateApplicationsManager } from "@/components/admin/AffiliateApplicationsManager";
+import { ClicksOverview } from "@/components/admin/ClicksOverview";
 
 interface DashboardStats {
   totalOffers: number;
@@ -127,6 +128,15 @@ export default function AdminDashboard() {
               </Card>
             </Link>
           ))}
+        </div>
+
+        {/* Click Statistics Section */}
+        <div className="mt-8 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-lg p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <BarChart className="h-5 w-5 text-purple-500" />
+            <h2 className="text-xl font-semibold">Click Statistics</h2>
+          </div>
+          <ClicksOverview />
         </div>
 
         {/* Applications Section */}

@@ -14,7 +14,7 @@ interface CampaignListProps {
 
 export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
   const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
-  const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ subdomain?: string, id?: string } | null>(null);
 
   useEffect(() => {
     const fetchAffiliateLinks = async () => {
@@ -41,9 +41,9 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
         // Fetch user profile for subdomain
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subdomain')
+          .select('subdomain, id')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         setUserProfile(profile);
       } catch (error) {
@@ -55,11 +55,15 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
   }, []);
 
   const getTrackingUrl = (offer: Offer) => {
+    if (!userProfile?.id) return null;
+
     // First check if there's a specific affiliate link
     const affiliateLink = affiliateLinks[offer.id];
     if (affiliateLink) {
       console.log("Using affiliate-specific link for offer", offer.id, ":", affiliateLink);
-      return affiliateLink;
+      // Wrap the affiliate link with our click tracking
+      const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(affiliateLink)}`;
+      return trackingEndpoint;
     }
     
     // If no specific affiliate link and user has subdomain, generate one from offer links
@@ -73,18 +77,22 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
         const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
         
         // Construct new URL with single subdomain
-        const newUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-        console.log("Generated subdomain URL for offer", offer.id, ":", newUrl);
-        return newUrl;
+        const destinationUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+        // Wrap with click tracking
+        const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
+        console.log("Generated tracking URL for offer", offer.id, ":", trackingEndpoint);
+        return trackingEndpoint;
       } catch (error) {
         console.error('Error generating tracking URL:', error);
-        return offer.links[0];
+        return null;
       }
     }
 
     // If no specific link and no subdomain, use the first offer link
     if (offer.links && offer.links.length > 0) {
-      return offer.links[0];
+      const destinationUrl = offer.links[0];
+      const trackingEndpoint = `${window.location.origin}/api/track-click?affiliateId=${userProfile.id}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
+      return trackingEndpoint;
     }
 
     return null;
