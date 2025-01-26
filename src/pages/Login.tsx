@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,53 @@ export default function Login() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Check for existing session on component mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("Current session:", session);
+      
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (profile?.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
+      }
+    };
+
+    checkSession();
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
+      
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (profile?.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,18 +97,12 @@ export default function Login() {
           throw profileError;
         }
         
-        if (profile?.role === 'admin') {
-          console.log("Admin user detected, redirecting to admin dashboard");
-          navigate("/admin");
-        } else {
-          console.log("Regular user detected, redirecting to home");
-          navigate("/");
-        }
-
         toast({
           title: "Login successful",
           description: "Welcome back!",
         });
+
+        // Navigation will be handled by the auth state change listener
       }
     } catch (error: any) {
       console.error("Login error:", error);
