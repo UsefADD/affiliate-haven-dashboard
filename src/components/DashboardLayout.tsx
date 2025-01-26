@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,16 +21,26 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
-    checkUserRole();
+    checkSession();
     
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
+      
       if (event === 'SIGNED_OUT' || !session) {
+        console.log("No session found, redirecting to login");
+        setProfile(null);
+        setIsAdmin(false);
         navigate('/login');
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        console.log("Session found, fetching profile");
+        await checkUserRole();
       }
     });
 
@@ -37,6 +48,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
+  const checkSession = async () => {
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!session) {
+        console.log("No active session found");
+        navigate('/login');
+        return;
+      }
+
+      await checkUserRole();
+    } catch (error) {
+      console.error("Session check error:", error);
+      navigate('/login');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const checkUserRole = async () => {
     try {
@@ -48,35 +82,68 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         return;
       }
 
+      console.log("Fetching profile for user:", session.user.id);
+      
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching profile:', error);
         throw error;
       }
       
+      console.log("Fetched profile:", profile);
+      
+      if (!profile) {
+        console.log("No profile found for user");
+        toast({
+          title: "Profile Error",
+          description: "Unable to load user profile. Please try logging in again.",
+          variant: "destructive",
+        });
+        await handleLogout();
+        return;
+      }
+
       setIsAdmin(profile?.role === 'admin');
       setProfile(profile);
     } catch (error) {
-      console.error('Session error:', error);
-      localStorage.removeItem("isLoggedIn");
-      navigate('/login');
+      console.error('Profile fetch error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load user profile. Please try logging in again.",
+        variant: "destructive",
+      });
+      await handleLogout();
     }
   };
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      localStorage.removeItem("isLoggedIn");
+      setProfile(null);
+      setIsAdmin(false);
       navigate("/login");
     } catch (error) {
       console.error('Error signing out:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
 
   const affiliateNavItems = [
     { icon: BarChart2, label: "Dashboard", href: "/" },
