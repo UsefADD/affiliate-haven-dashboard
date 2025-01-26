@@ -13,59 +13,43 @@ interface CampaignListProps {
 }
 
 export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
-  const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
   const [userProfile, setUserProfile] = useState<{ subdomain?: string, id?: string } | null>(null);
 
   useEffect(() => {
-    fetchAffiliateLinks();
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        fetchUserProfile(user.id);
+      }
+    };
+    getCurrentUser();
   }, []);
 
-  const fetchAffiliateLinks = async () => {
+  const fetchUserProfile = async (userId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log("No user found");
-        return;
-      }
-
-      console.log("Fetching affiliate links for user:", user.id);
-      const { data: links, error } = await supabase
-        .from('affiliate_links')
-        .select('offer_id, tracking_url')
-        .eq('affiliate_id', user.id)
+      console.log("Fetching user profile for:", userId);
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('subdomain, id')
+        .eq('id', userId)
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching affiliate links:', error);
-        return;
-      }
-
-      console.log("Fetched affiliate links:", links);
-      const linksMap = links ? { [links.offer_id]: links.tracking_url } : {};
-      setAffiliateLinks(linksMap);
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('subdomain, id')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
+        console.error('Error fetching user profile:', error);
         return;
       }
 
       console.log("Fetched user profile:", profile);
       setUserProfile(profile);
     } catch (error) {
-      console.error('Error in fetchAffiliateLinks:', error);
+      console.error('Error in fetchUserProfile:', error);
     }
   };
 
   const getTrackingUrl = (offer: Offer) => {
     if (!userProfile?.id) {
       console.log("No user profile found");
-      return `/api/track-click/${offer.id}`;
+      return null;
     }
 
     try {

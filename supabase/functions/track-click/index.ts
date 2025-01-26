@@ -10,7 +10,7 @@ const redirectPage = (destinationUrl: string) => `
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Redirecting...</title>
+  <title>Redirecting to Offer...</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>
@@ -26,24 +26,34 @@ const redirectPage = (destinationUrl: string) => `
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      background-color: #f9fafb;
+      background: linear-gradient(to right, #22c55e, #16a34a);
+      color: white;
     }
     .container {
       text-align: center;
       padding: 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     .spinner {
       width: 40px;
       height: 40px;
       margin: 20px auto;
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #3498db;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    .message {
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      opacity: 0.9;
     }
   </style>
 </head>
@@ -52,6 +62,7 @@ const redirectPage = (destinationUrl: string) => `
     <h2>Please wait...</h2>
     <div class="spinner"></div>
     <p>You are being redirected to the offer.</p>
+    <p class="message">This will only take a few seconds.</p>
   </div>
 </body>
 </html>
@@ -99,27 +110,7 @@ serve(async (req) => {
 
     console.log('Click recorded successfully');
 
-    // First check for specific affiliate link
-    const { data: affiliateLink, error: linkError } = await supabaseClient
-      .from('affiliate_links')
-      .select('tracking_url')
-      .eq('affiliate_id', affiliateId)
-      .eq('offer_id', offerId)
-      .maybeSingle();
-
-    if (linkError) {
-      console.error('Error fetching affiliate link:', linkError);
-      throw linkError;
-    }
-
-    if (affiliateLink?.tracking_url) {
-      console.log('Using affiliate-specific tracking URL:', affiliateLink.tracking_url);
-      return new Response(redirectPage(affiliateLink.tracking_url), {
-        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
-      });
-    }
-
-    // If no specific link, get the offer's default link
+    // Get the offer's destination URL
     const { data: offer, error: offerError } = await supabaseClient
       .from('offers')
       .select('links')
