@@ -6,17 +6,68 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+const redirectPage = (destinationUrl: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Redirecting...</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    setTimeout(function() {
+      window.location.href = "${destinationUrl}";
+    }, 3000);
+  </script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f9fafb;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      margin: 20px auto;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Please wait...</h2>
+    <div class="spinner"></div>
+    <p>You are being redirected to the offer.</p>
+  </div>
+</body>
+</html>
+`;
 
+serve(async (req) => {
   try {
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
     // Extract affiliate ID and offer ID from URL path
     const url = new URL(req.url);
@@ -54,7 +105,7 @@ serve(async (req) => {
       .select('tracking_url')
       .eq('affiliate_id', affiliateId)
       .eq('offer_id', offerId)
-      .maybeSingle();  // Changed from .single() to .maybeSingle()
+      .maybeSingle();
 
     if (linkError) {
       console.error('Error fetching affiliate link:', linkError);
@@ -63,12 +114,8 @@ serve(async (req) => {
 
     if (affiliateLink?.tracking_url) {
       console.log('Using affiliate-specific tracking URL:', affiliateLink.tracking_url);
-      return new Response(null, {
-        status: 302,
-        headers: {
-          ...corsHeaders,
-          'Location': affiliateLink.tracking_url
-        }
+      return new Response(redirectPage(affiliateLink.tracking_url), {
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
       });
     }
 
@@ -77,7 +124,7 @@ serve(async (req) => {
       .from('offers')
       .select('links')
       .eq('id', offerId)
-      .maybeSingle();  // Changed from .single() to .maybeSingle()
+      .maybeSingle();
 
     if (offerError) {
       console.error('Error fetching offer:', offerError);
@@ -93,7 +140,7 @@ serve(async (req) => {
       .from('profiles')
       .select('subdomain')
       .eq('id', affiliateId)
-      .maybeSingle();  // Changed from .single() to .maybeSingle()
+      .maybeSingle();
 
     if (profileError) {
       console.error('Error fetching profile:', profileError);
@@ -124,13 +171,9 @@ serve(async (req) => {
 
     console.log('Redirecting to:', destinationUrl);
 
-    // Return redirect response
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        'Location': destinationUrl
-      }
+    // Return HTML page with redirect
+    return new Response(redirectPage(destinationUrl), {
+      headers: { ...corsHeaders, 'Content-Type': 'text/html' },
     });
   } catch (error) {
     console.error('Error processing click:', error);
@@ -141,6 +184,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
       }
-    )
+    );
   }
-})
+});
