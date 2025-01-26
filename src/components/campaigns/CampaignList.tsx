@@ -14,8 +14,7 @@ interface CampaignListProps {
 }
 
 export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
-  const [userProfile, setUserProfile] = useState<{ subdomain?: string, id?: string } | null>(null);
-  const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
+  const [userProfile, setUserProfile] = useState<{ id?: string } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -23,7 +22,6 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.id) {
         fetchUserProfile(user.id);
-        fetchAffiliateLinks(user.id);
       }
     };
     getCurrentUser();
@@ -34,7 +32,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       console.log("Fetching user profile for:", userId);
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('subdomain, id')
+        .select('id')
         .eq('id', userId)
         .maybeSingle();
 
@@ -50,38 +48,13 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
     }
   };
 
-  const fetchAffiliateLinks = async (userId: string) => {
-    try {
-      console.log("Fetching affiliate links for user:", userId);
-      const { data, error } = await supabase
-        .from('affiliate_links')
-        .select('offer_id, tracking_url')
-        .eq('affiliate_id', userId);
-
-      if (error) {
-        console.error('Error fetching affiliate links:', error);
-        return;
-      }
-
-      const linksMap = data?.reduce((acc, link) => ({
-        ...acc,
-        [link.offer_id]: link.tracking_url
-      }), {});
-
-      console.log("Processed affiliate links map:", linksMap);
-      setAffiliateLinks(linksMap || {});
-    } catch (error) {
-      console.error('Error in fetchAffiliateLinks:', error);
-    }
-  };
-
   const getTrackingUrl = (offer: Offer) => {
     if (!userProfile?.id) {
       console.log("No user profile found");
       return null;
     }
 
-    return `/api/track-click/${userProfile.id}/${offer.id}`;
+    return `/redirect/${userProfile.id}/${offer.id}`;
   };
 
   const handleCopyLink = async (offer: Offer) => {
@@ -121,6 +94,8 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
         <TableBody>
           {campaigns.map((campaign) => {
             const trackingUrl = getTrackingUrl(campaign);
+            const fullTrackingUrl = trackingUrl ? `${window.location.origin}${trackingUrl}` : null;
+            
             return (
               <TableRow 
                 key={campaign.id}
@@ -139,10 +114,10 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {trackingUrl ? (
+                  {fullTrackingUrl ? (
                     <div className="flex items-center space-x-2">
                       <span className="text-sm truncate max-w-[200px]">
-                        {`${window.location.origin}${trackingUrl}`}
+                        {fullTrackingUrl}
                       </span>
                       <Button
                         variant="ghost"
