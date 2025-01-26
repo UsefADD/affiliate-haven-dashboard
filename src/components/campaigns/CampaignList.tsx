@@ -3,9 +3,10 @@ import { Campaign } from "@/types/campaign";
 import { Offer } from "@/types/offer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye } from "lucide-react";
+import { Eye, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface CampaignListProps {
   campaigns: Offer[];
@@ -15,6 +16,7 @@ interface CampaignListProps {
 export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
   const [userProfile, setUserProfile] = useState<{ subdomain?: string, id?: string } | null>(null);
   const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
+  const { toast } = useToast();
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -79,44 +81,27 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       return null;
     }
 
-    try {
-      // First check if there's a specific affiliate link for this offer
-      if (affiliateLinks[offer.id]) {
-        console.log("Using affiliate-specific link:", affiliateLinks[offer.id]);
-        return `/api/track-click/${userProfile.id}/${offer.id}`;
-      }
+    return `/api/track-click/${userProfile.id}/${offer.id}`;
+  };
 
-      // If no specific link and user has subdomain, generate one from offer links
-      if (userProfile?.subdomain && offer.links && offer.links.length > 0) {
-        try {
-          const defaultLink = offer.links[0];
-          // Handle links with or without protocol
-          const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
-          
-          // Extract the base domain (remove any existing subdomains)
-          const domainParts = url.hostname.split('.');
-          const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
-          
-          // Construct new URL with subdomain
-          const destinationUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-          console.log("Generated subdomain URL:", destinationUrl);
-          
-          return `/api/track-click/${userProfile.id}/${offer.id}`;
-        } catch (error) {
-          console.error('Error generating tracking URL:', error);
-          return null;
-        }
+  const handleCopyLink = async (offer: Offer) => {
+    const trackingUrl = getTrackingUrl(offer);
+    if (trackingUrl) {
+      try {
+        const fullUrl = `${window.location.origin}${trackingUrl}`;
+        await navigator.clipboard.writeText(fullUrl);
+        toast({
+          title: "Success",
+          description: "Tracking link copied to clipboard",
+        });
+      } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        toast({
+          title: "Error",
+          description: "Failed to copy tracking link",
+          variant: "destructive",
+        });
       }
-
-      // If no specific link and no subdomain, use the first offer link
-      if (offer.links && offer.links.length > 0) {
-        return `/api/track-click/${userProfile.id}/${offer.id}`;
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Error in getTrackingUrl:', error);
-      return null;
     }
   };
 
@@ -129,40 +114,63 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
             <TableHead className="font-semibold">Campaign Name</TableHead>
             <TableHead className="font-semibold">Payout</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="font-semibold">Your Tracking Link</TableHead>
             <TableHead className="text-right font-semibold">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {campaigns.map((campaign) => (
-            <TableRow 
-              key={campaign.id}
-              className="hover:bg-muted/30 transition-colors"
-            >
-              <TableCell className="font-mono text-sm">{campaign.id.split('-')[0]}</TableCell>
-              <TableCell className="font-medium">{campaign.name}</TableCell>
-              <TableCell className="text-green-600 font-semibold">
-                ${campaign.payout}
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  variant={campaign.status ? "success" : "secondary"}
-                >
-                  {campaign.status ? "Approved" : "Pending"}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onViewDetails(campaign as Campaign)}
-                  className="hover:bg-primary/10 text-primary"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {campaigns.map((campaign) => {
+            const trackingUrl = getTrackingUrl(campaign);
+            return (
+              <TableRow 
+                key={campaign.id}
+                className="hover:bg-muted/30 transition-colors"
+              >
+                <TableCell className="font-mono text-sm">{campaign.id.split('-')[0]}</TableCell>
+                <TableCell className="font-medium">{campaign.name}</TableCell>
+                <TableCell className="text-green-600 font-semibold">
+                  ${campaign.payout}
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={campaign.status ? "success" : "secondary"}
+                  >
+                    {campaign.status ? "Approved" : "Pending"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {trackingUrl ? (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm truncate max-w-[200px]">
+                        {`${window.location.origin}${trackingUrl}`}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopyLink(campaign)}
+                        className="hover:bg-primary/10 text-primary"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">No tracking link available</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onViewDetails(campaign as Campaign)}
+                    className="hover:bg-primary/10 text-primary"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Details
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
