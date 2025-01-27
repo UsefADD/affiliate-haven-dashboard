@@ -17,8 +17,8 @@ export function AuthStateHandler({ onAuthStateChange }: AuthStateHandlerProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session);
       
-      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESH_FAILED') {
-        console.log("Session invalid or expired, redirecting to login");
+      if (event === 'SIGNED_OUT' || !session) {
+        console.log("No session found, redirecting to login");
         onAuthStateChange(null);
         navigate('/login');
         return;
@@ -26,9 +26,7 @@ export function AuthStateHandler({ onAuthStateChange }: AuthStateHandlerProps) {
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         console.log("Valid session found, fetching profile");
-        if (session) {
-          await checkUserProfile(session);
-        }
+        await checkUserProfile(session);
       }
     });
 
