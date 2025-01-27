@@ -20,7 +20,7 @@ export function AuthStateHandler({ onAuthStateChange }: AuthStateHandlerProps) {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          console.log("No active session found, redirecting to login");
+          console.log("No active session found");
           if (mounted) {
             onAuthStateChange(null);
             navigate('/login');
@@ -29,13 +29,47 @@ export function AuthStateHandler({ onAuthStateChange }: AuthStateHandlerProps) {
         }
 
         console.log("Active session found, fetching profile...");
-        await checkUserProfile(session);
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          throw profileError;
+        }
+
+        if (!profile) {
+          console.log("No profile found, creating new profile");
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([{ 
+              id: session.user.id,
+              email: session.user.email,
+              role: 'affiliate'
+            }])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("Profile creation error:", createError);
+            throw createError;
+          }
+          
+          console.log("Created new profile:", newProfile);
+          if (mounted) onAuthStateChange(newProfile);
+        } else {
+          console.log("Existing profile found:", profile);
+          if (mounted) onAuthStateChange(profile);
+        }
       } catch (error) {
-        console.error("Session check error:", error);
+        console.error('Session/Profile error:', error);
         if (mounted) {
+          onAuthStateChange(null);
           toast({
             title: "Error",
-            description: "Failed to check session. Please try logging in again.",
+            description: "Failed to load your profile. Please try logging in again.",
             variant: "destructive",
           });
           navigate('/login');
@@ -47,7 +81,6 @@ export function AuthStateHandler({ onAuthStateChange }: AuthStateHandlerProps) {
       console.log("Auth state changed:", event, session);
       
       if (event === 'SIGNED_OUT' || !session) {
-        console.log("No session found or signed out, redirecting to login");
         if (mounted) {
           onAuthStateChange(null);
           navigate('/login');
@@ -56,75 +89,17 @@ export function AuthStateHandler({ onAuthStateChange }: AuthStateHandlerProps) {
       }
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        console.log("Valid session event received, checking profile");
-        await checkUserProfile(session);
+        await checkSession();
       }
     });
 
-    // Initial session check
     checkSession();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, onAuthStateChange]);
-
-  const checkUserProfile = async (session: any) => {
-    if (!session?.user?.id) {
-      console.log("No user ID in session, redirecting to login");
-      onAuthStateChange(null);
-      navigate('/login');
-      return;
-    }
-
-    try {
-      console.log("Fetching profile for user:", session.user.id);
-      
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-      
-      if (profileError) {
-        console.error("Profile fetch error:", profileError);
-        throw profileError;
-      }
-      
-      if (!profile) {
-        console.log("No profile found, creating new profile");
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert([{ 
-            id: session.user.id,
-            email: session.user.email,
-            role: 'affiliate'
-          }])
-          .select()
-          .single();
-
-        if (createError) {
-          console.error("Profile creation error:", createError);
-          throw createError;
-        }
-        
-        console.log("Created new profile:", newProfile);
-        onAuthStateChange(newProfile);
-      } else {
-        console.log("Existing profile found:", profile);
-        onAuthStateChange(profile);
-      }
-    } catch (error) {
-      console.error('Profile check/create error:', error);
-      toast({
-        title: "Profile Error",
-        description: "Unable to load your profile. Please try logging in again.",
-        variant: "destructive",
-      });
-      navigate('/login');
-    }
-  };
+  }, [navigate, onAuthStateChange, toast]);
 
   return null;
 }

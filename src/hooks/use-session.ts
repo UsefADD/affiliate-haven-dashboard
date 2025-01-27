@@ -39,7 +39,7 @@ export function useSession() {
           .from('profiles')
           .select('role')
           .eq('id', session.user.id)
-          .maybeSingle();
+          .single();
 
         if (profileError) {
           console.error("Profile fetch error:", profileError);

@@ -35,7 +35,7 @@ export function LoginForm() {
           .from('profiles')
           .select('role')
           .eq('id', authData.user.id)
-          .maybeSingle();
+          .single();
 
         if (profileError) {
           console.error("Profile fetch error:", profileError);
