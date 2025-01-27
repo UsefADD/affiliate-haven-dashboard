@@ -17,13 +17,18 @@ export function AuthStateHandler({ onAuthStateChange }: AuthStateHandlerProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session);
       
-      if (event === 'SIGNED_OUT' || !session) {
-        console.log("No session found, redirecting to login");
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESH_FAILED') {
+        console.log("Session invalid or expired, redirecting to login");
         onAuthStateChange(null);
         navigate('/login');
-      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        console.log("Session found, fetching profile");
-        await checkUserProfile(session);
+        return;
+      }
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        console.log("Valid session found, fetching profile");
+        if (session) {
+          await checkUserProfile(session);
+        }
       }
     });
 
@@ -49,8 +54,24 @@ export function AuthStateHandler({ onAuthStateChange }: AuthStateHandlerProps) {
         return;
       }
 
-      console.log("Active session found:", session);
-      await checkUserProfile(session);
+      // Try to refresh the session
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError) {
+        console.error("Session refresh error:", refreshError);
+        onAuthStateChange(null);
+        navigate('/login');
+        return;
+      }
+
+      if (refreshData.session) {
+        console.log("Session refreshed successfully");
+        await checkUserProfile(refreshData.session);
+      } else {
+        console.log("No session after refresh, redirecting to login");
+        onAuthStateChange(null);
+        navigate('/login');
+      }
     } catch (error) {
       console.error("Session check error:", error);
       toast({
