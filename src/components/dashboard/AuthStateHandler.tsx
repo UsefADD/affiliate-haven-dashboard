@@ -12,113 +12,111 @@ export function AuthStateHandler({ onAuthStateChange }: AuthStateHandlerProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    checkSession();
-    
+    let mounted = true;
+
+    const checkSession = async () => {
+      try {
+        console.log("Checking initial session...");
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.log("No active session found, redirecting to login");
+          if (mounted) {
+            onAuthStateChange(null);
+            navigate('/login');
+          }
+          return;
+        }
+
+        console.log("Active session found, fetching profile...");
+        await checkUserProfile(session);
+      } catch (error) {
+        console.error("Session check error:", error);
+        if (mounted) {
+          toast({
+            title: "Error",
+            description: "Failed to check session. Please try logging in again.",
+            variant: "destructive",
+          });
+          navigate('/login');
+        }
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session);
       
       if (event === 'SIGNED_OUT' || !session) {
-        console.log("No session found, redirecting to login");
-        onAuthStateChange(null);
-        navigate('/login');
+        console.log("No session found or signed out, redirecting to login");
+        if (mounted) {
+          onAuthStateChange(null);
+          navigate('/login');
+        }
         return;
       }
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        console.log("Valid session found, fetching profile");
+        console.log("Valid session event received, checking profile");
         await checkUserProfile(session);
       }
     });
 
+    // Initial session check
+    checkSession();
+
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate, onAuthStateChange]);
 
-  const checkSession = async () => {
-    try {
-      console.log("Checking session...");
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        throw sessionError;
-      }
-
-      if (!session) {
-        console.log("No active session found");
-        onAuthStateChange(null);
-        navigate('/login');
-        return;
-      }
-
-      // Try to refresh the session
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshError) {
-        console.error("Session refresh error:", refreshError);
-        onAuthStateChange(null);
-        navigate('/login');
-        return;
-      }
-
-      if (refreshData.session) {
-        console.log("Session refreshed successfully");
-        await checkUserProfile(refreshData.session);
-      } else {
-        console.log("No session after refresh, redirecting to login");
-        onAuthStateChange(null);
-        navigate('/login');
-      }
-    } catch (error) {
-      console.error("Session check error:", error);
-      toast({
-        title: "Session Error",
-        description: "Please try logging in again",
-        variant: "destructive",
-      });
-      navigate('/login');
-    }
-  };
-
   const checkUserProfile = async (session: any) => {
-    try {
-      if (!session?.user?.id) {
-        throw new Error('No user ID in session');
-      }
+    if (!session?.user?.id) {
+      console.log("No user ID in session, redirecting to login");
+      onAuthStateChange(null);
+      navigate('/login');
+      return;
+    }
 
+    try {
       console.log("Fetching profile for user:", session.user.id);
       
-      const { data: profile, error } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
       
-      if (error) {
-        console.error("Profile fetch error:", error);
-        throw error;
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        throw profileError;
       }
-      
-      console.log("Fetched profile:", profile);
       
       if (!profile) {
         console.log("No profile found, creating new profile");
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .insert([{ id: session.user.id }])
+          .insert([{ 
+            id: session.user.id,
+            email: session.user.email,
+            role: 'affiliate'
+          }])
           .select()
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error("Profile creation error:", createError);
+          throw createError;
+        }
         
         console.log("Created new profile:", newProfile);
         onAuthStateChange(newProfile);
       } else {
+        console.log("Existing profile found:", profile);
         onAuthStateChange(profile);
       }
     } catch (error) {
-      console.error('Profile fetch/create error:', error);
+      console.error('Profile check/create error:', error);
       toast({
         title: "Profile Error",
         description: "Unable to load your profile. Please try logging in again.",
