@@ -21,48 +21,41 @@ export default function Login() {
   // Check for existing session on component mount
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Current session:", session);
-      
-      if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (profile?.role === 'admin') {
-          navigate("/admin");
-        } else {
-          navigate("/");
+      try {
+        console.log("Checking initial session...");
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session check error:", sessionError);
+          return;
         }
+
+        if (session?.user) {
+          console.log("Active session found, fetching profile...");
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.error("Profile fetch error:", profileError);
+            return;
+          }
+
+          console.log("Profile found:", profile);
+          if (profile?.role === 'admin') {
+            navigate("/admin");
+          } else {
+            navigate("/");
+          }
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
       }
     };
 
     checkSession();
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session);
-      
-      if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (profile?.role === 'admin') {
-          navigate("/admin");
-        } else {
-          navigate("/");
-        }
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -90,19 +83,24 @@ export default function Login() {
           .eq('id', authData.user.id)
           .maybeSingle();
 
-        console.log("Profile data:", profile);
-        
         if (profileError) {
           console.error("Profile fetch error:", profileError);
           throw profileError;
         }
+
+        console.log("Profile data:", profile);
         
         toast({
           title: "Login successful",
           description: "Welcome back!",
         });
 
-        // Navigation will be handled by the auth state change listener
+        // Navigate based on user role
+        if (profile?.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
       }
     } catch (error: any) {
       console.error("Login error:", error);
