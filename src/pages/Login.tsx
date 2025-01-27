@@ -18,44 +18,72 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check for existing session on component mount
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Current session:", session);
-      
-      if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (profile?.role === 'admin') {
-          navigate("/admin");
-        } else {
-          navigate("/");
+      try {
+        // Clear any existing session data
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (signOutError) {
+          console.error("Error clearing session:", signOutError);
         }
+
+        // Check for existing session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log("Current session check:", session);
+        
+        if (sessionError) {
+          console.error("Session check error:", sessionError);
+          return;
+        }
+
+        if (session) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.error("Profile fetch error:", profileError);
+            return;
+          }
+
+          if (profile?.role === 'admin') {
+            navigate("/admin");
+          } else {
+            navigate("/");
+          }
+        }
+      } catch (error) {
+        console.error("Session check failed:", error);
       }
     };
 
     checkSession();
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session);
       
       if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .maybeSingle();
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-        if (profile?.role === 'admin') {
-          navigate("/admin");
-        } else {
-          navigate("/");
+          if (profileError) {
+            console.error("Profile fetch error:", profileError);
+            return;
+          }
+
+          if (profile?.role === 'admin') {
+            navigate("/admin");
+          } else {
+            navigate("/");
+          }
+        } catch (error) {
+          console.error("Profile check failed:", error);
         }
       }
     });
