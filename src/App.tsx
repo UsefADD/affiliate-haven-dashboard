@@ -11,12 +11,12 @@ import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminUsers from "@/pages/admin/Users";
 import AdminOffers from "@/pages/admin/Offers";
 import AdminLeads from "@/pages/admin/Leads";
-import Redirect from "@/pages/Redirect";
 
+// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000, // 5 minutes
       retry: 1,
     },
   },
@@ -36,7 +36,6 @@ function App() {
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/offers" element={<AdminOffers />} />
           <Route path="/admin/leads" element={<AdminLeads />} />
-          <Route path="/redirect/:affiliateId/:offerId" element={<Redirect />} />
         </Routes>
         <Toaster />
       </BrowserRouter>
