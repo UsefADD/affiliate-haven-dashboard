@@ -11,12 +11,13 @@ import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminUsers from "@/pages/admin/Users";
 import AdminOffers from "@/pages/admin/Offers";
 import AdminLeads from "@/pages/admin/Leads";
+import { AdminRoute } from "@/components/auth/AdminRoute";
+import { RedirectPage } from "@/components/tracking/RedirectPage";
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
       retry: 1,
     },
   },
@@ -32,10 +33,39 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/campaigns" element={<Campaigns />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/offers" element={<AdminOffers />} />
-          <Route path="/admin/leads" element={<AdminLeads />} />
+          <Route path="/track/:affiliateId/:offerId" element={<RedirectPage />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <AdminUsers />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/offers"
+            element={
+              <AdminRoute>
+                <AdminOffers />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/leads"
+            element={
+              <AdminRoute>
+                <AdminLeads />
+              </AdminRoute>
+            }
+          />
         </Routes>
         <Toaster />
       </BrowserRouter>
