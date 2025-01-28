@@ -5,7 +5,7 @@ import { OfferList } from "@/components/offers/OfferList";
 import { ClickStats } from "@/components/analytics/ClickStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, TrendingUp, Users, Star } from "lucide-react";
+import { DollarSign, TrendingUp, Users, Star, MousePointer } from "lucide-react";
 
 interface Offer {
   id: string;
@@ -30,6 +30,7 @@ interface DashboardStats {
   totalLeads: number;
   totalEarnings: number;
   conversionRate: number;
+  totalClicks: number;
   recentLeads: Array<{
     date: string;
     count: number;
@@ -42,6 +43,7 @@ export default function Index() {
     totalLeads: 0,
     totalEarnings: 0,
     conversionRate: 0,
+    totalClicks: 0,
     recentLeads: []
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -88,21 +90,43 @@ export default function Index() {
   const fetchDashboardStats = async () => {
     try {
       console.log("Fetching dashboard stats...");
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
+
+      // Fetch leads
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
-        .select('*');
+        .select('*, offers(payout)')
+        .eq('affiliate_id', user.id);
 
       if (leadsError) {
         console.error("Error fetching leads:", leadsError);
         throw leadsError;
       }
 
+      // Fetch clicks
+      const { data: clicksData, error: clicksError } = await supabase
+        .from('affiliate_clicks')
+        .select('*')
+        .eq('affiliate_id', user.id);
+
+      if (clicksError) {
+        console.error("Error fetching clicks:", clicksError);
+        throw clicksError;
+      }
+
       console.log("Fetched leads:", leadsData);
+      console.log("Fetched clicks:", clicksData);
 
       const totalLeads = leadsData?.length || 0;
-      const totalEarnings = leadsData?.reduce((sum, lead) => sum + (lead.payout || 0), 0) || 0;
+      const totalClicks = clicksData?.length || 0;
+      const totalEarnings = leadsData?.reduce((sum, lead) => sum + (lead.offers?.payout || 0), 0) || 0;
       const convertedLeads = leadsData?.filter(lead => lead.status === 'converted').length || 0;
-      const conversionRate = totalLeads ? (convertedLeads / totalLeads) * 100 : 0;
+      const conversionRate = totalClicks > 0 ? (convertedLeads / totalClicks) * 100 : 0;
 
       const recentLeads = leadsData?.reduce((acc: any[], lead) => {
         const date = new Date(lead.created_at).toLocaleDateString();
@@ -119,6 +143,7 @@ export default function Index() {
         totalLeads,
         totalEarnings,
         conversionRate,
+        totalClicks,
         recentLeads
       });
 
@@ -137,7 +162,7 @@ export default function Index() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-4">
           <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Leads</CardTitle>
@@ -151,12 +176,12 @@ export default function Index() {
 
           <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Clicks</CardTitle>
+              <MousePointer className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">${stats.totalEarnings.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground mt-1">Total revenue earned</p>
+              <div className="text-2xl font-bold text-green-600">{stats.totalClicks}</div>
+              <p className="text-xs text-muted-foreground mt-1">Total clicks tracked</p>
             </CardContent>
           </Card>
 
@@ -166,8 +191,19 @@ export default function Index() {
               <TrendingUp className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.conversionRate.toFixed(1)}%</div>
-              <p className="text-xs text-muted-foreground mt-1">Average conversion rate</p>
+              <div className="text-2xl font-bold text-green-600">{stats.conversionRate.toFixed(2)}%</div>
+              <p className="text-xs text-muted-foreground mt-1">Clicks to conversions</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">${stats.totalEarnings.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">Total revenue earned</p>
             </CardContent>
           </Card>
         </div>

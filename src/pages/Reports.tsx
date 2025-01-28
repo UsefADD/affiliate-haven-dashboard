@@ -12,6 +12,18 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+interface CampaignStats {
+  id: string;
+  name: string;
+  totalLeads: number;
+  conversions: number;
+  lastConversion: string | null;
+  earnings: number;
+  clicks: number;
+  conversionRate: number;
+  epc: number;
+}
+
 interface Lead {
   id: string;
   offers: {
@@ -27,14 +39,14 @@ interface Lead {
 export default function Reports() {
   const [date, setDate] = useState<Date>();
   const [searchQuery, setSearchQuery] = useState("");
-  const [category, setCategory] = useState("");
   const [reportData, setReportData] = useState<Lead[]>([]);
+  const [clickData, setClickData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchLeads();
+    Promise.all([fetchLeads(), fetchClicks()]);
   }, []);
 
   const fetchLeads = async () => {
@@ -84,6 +96,38 @@ export default function Reports() {
     }
   };
 
+  const fetchClicks = async () => {
+    try {
+      console.log("Fetching clicks for reports...");
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('affiliate_clicks')
+        .select('*')
+        .eq('affiliate_id', user.id);
+
+      if (error) {
+        console.error("Error fetching clicks:", error);
+        throw error;
+      }
+
+      console.log("Fetched clicks:", data);
+      setClickData(data || []);
+    } catch (error) {
+      console.error('Error in fetchClicks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch clicks data",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleRunReport = () => {
     if (!date) {
       toast({
@@ -115,20 +159,26 @@ export default function Reports() {
     });
   };
 
-  // Calculate totals
+  // Calculate campaign stats including clicks and EPC
   const campaignStats = filteredData.reduce((acc, lead) => {
     const campaignId = lead.offers.id;
     const campaignName = lead.offers.name;
     const key = `${campaignId} - ${campaignName}`;
     
     if (!acc[key]) {
+      // Get clicks for this campaign
+      const campaignClicks = clickData.filter(click => click.offer_id === campaignId).length;
+      
       acc[key] = {
         id: campaignId,
         name: campaignName,
         totalLeads: 0,
         conversions: 0,
         lastConversion: null,
-        earnings: 0
+        earnings: 0,
+        clicks: campaignClicks,
+        conversionRate: 0,
+        epc: 0
       };
     }
     
@@ -141,8 +191,17 @@ export default function Reports() {
       }
     }
     
+    // Calculate conversion rate and EPC
+    acc[key].conversionRate = acc[key].clicks > 0 
+      ? (acc[key].conversions / acc[key].clicks) * 100 
+      : 0;
+    
+    acc[key].epc = acc[key].clicks > 0 
+      ? acc[key].earnings / acc[key].clicks 
+      : 0;
+    
     return acc;
-  }, {} as Record<string, { id: string; name: string; totalLeads: number; conversions: number; lastConversion: string | null; earnings: number }>);
+  }, {} as Record<string, CampaignStats>);
 
   if (isLoading) {
     return (
@@ -209,9 +268,12 @@ export default function Reports() {
                   <TableHead>Campaign ID</TableHead>
                   <TableHead>Campaign Name</TableHead>
                   <TableHead>Total Leads</TableHead>
+                  <TableHead>Clicks</TableHead>
                   <TableHead>Conversions</TableHead>
-                  <TableHead>Last Conversion</TableHead>
+                  <TableHead>Conv. Rate</TableHead>
+                  <TableHead>EPC</TableHead>
                   <TableHead>Total Earnings</TableHead>
+                  <TableHead>Last Conversion</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -221,18 +283,21 @@ export default function Reports() {
                       <TableCell className="font-mono text-sm">{stats.id.split('-')[0]}</TableCell>
                       <TableCell>{stats.name}</TableCell>
                       <TableCell>{stats.totalLeads}</TableCell>
+                      <TableCell>{stats.clicks}</TableCell>
                       <TableCell>{stats.conversions}</TableCell>
+                      <TableCell>{stats.conversionRate.toFixed(2)}%</TableCell>
+                      <TableCell>${stats.epc.toFixed(2)}</TableCell>
+                      <TableCell>${stats.earnings.toFixed(2)}</TableCell>
                       <TableCell>
                         {stats.lastConversion 
                           ? format(new Date(stats.lastConversion), 'MMM d, yyyy HH:mm:ss')
                           : 'N/A'}
                       </TableCell>
-                      <TableCell>${stats.earnings.toFixed(2)}</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4">
+                    <TableCell colSpan={9} className="text-center py-4">
                       No matching records found
                     </TableCell>
                   </TableRow>
