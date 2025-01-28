@@ -81,7 +81,8 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       return null;
     }
 
-    return `/api/track-click/${userProfile.id}/${offer.id}`;
+    // Generate tracking URL with proper path parameters
+    return `/track/${userProfile.id}/${offer.id}`;
   };
 
   const handleCopyLink = async (offer: Offer) => {

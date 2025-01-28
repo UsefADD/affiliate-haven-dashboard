@@ -178,7 +178,6 @@ export default function Index() {
           <ClickStats affiliateId={currentUserId} />
         </div>
 
-        {/* Leads Chart */}
         <Card className="bg-white/80 backdrop-blur-sm border border-green-100">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-green-600">Recent Leads Performance</CardTitle>
