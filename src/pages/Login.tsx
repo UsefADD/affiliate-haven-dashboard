@@ -21,8 +21,12 @@ export default function Login() {
   useEffect(() => {
     const checkSession = async () => {
       try {
+        // First clear any existing session
+        await supabase.auth.signOut();
+        console.log("Cleared existing session");
+
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log("Current session:", session);
+        console.log("Current session check:", session);
         
         if (sessionError) {
           console.error("Session check error:", sessionError);
@@ -92,6 +96,9 @@ export default function Login() {
     console.log("Attempting login with email:", email);
 
     try {
+      // First sign out to clear any existing session
+      await supabase.auth.signOut();
+      
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
@@ -99,9 +106,13 @@ export default function Login() {
 
       if (authError) {
         console.error("Auth error:", authError);
+        let errorMessage = "Please check your email and password and try again.";
+        if (authError.message.includes("Email not confirmed")) {
+          errorMessage = "Please verify your email address before logging in.";
+        }
         toast({
           title: "Login Failed",
-          description: "Please check your email and password and try again.",
+          description: errorMessage,
           variant: "destructive",
         });
         return;
