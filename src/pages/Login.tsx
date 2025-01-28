@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { AffiliateApplicationForm } from "@/components/affiliate/AffiliateApplicationForm";
@@ -21,15 +21,8 @@ export default function Login() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // Clear any existing session data
-        const { error: signOutError } = await supabase.auth.signOut();
-        if (signOutError) {
-          console.error("Error clearing session:", signOutError);
-        }
-
-        // Check for existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log("Current session check:", session);
+        console.log("Current session:", session);
         
         if (sessionError) {
           console.error("Session check error:", sessionError);
@@ -100,13 +93,18 @@ export default function Login() {
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: email.trim(),
+        password: password.trim(),
       });
 
       if (authError) {
         console.error("Auth error:", authError);
-        throw authError;
+        toast({
+          title: "Login Failed",
+          description: "Please check your email and password and try again.",
+          variant: "destructive",
+        });
+        return;
       }
 
       console.log("Auth successful:", authData);
@@ -122,7 +120,12 @@ export default function Login() {
         
         if (profileError) {
           console.error("Profile fetch error:", profileError);
-          throw profileError;
+          toast({
+            title: "Error",
+            description: "Failed to fetch user profile. Please try again.",
+            variant: "destructive",
+          });
+          return;
         }
         
         toast({
