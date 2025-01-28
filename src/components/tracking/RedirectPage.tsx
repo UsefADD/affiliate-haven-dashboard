@@ -1,72 +1,71 @@
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export function RedirectPage() {
   const { affiliateId, offerId } = useParams();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const trackClickAndRedirect = async () => {
-      if (!affiliateId || !offerId) {
-        console.error("Missing required parameters");
-        navigate("/");
-        return;
-      }
-
+    const trackAndRedirect = async () => {
       try {
+        if (!affiliateId || !offerId) {
+          console.error("Missing parameters:", { affiliateId, offerId });
+          navigate("/");
+          return;
+        }
+
+        console.log("Recording click for:", { affiliateId, offerId });
+        
         // Record the click
         const { error: clickError } = await supabase.functions.invoke('track-click', {
-          body: { affiliateId, offerId }
+          body: { 
+            affiliateId, 
+            offerId,
+            referrer: document.referrer,
+            userAgent: navigator.userAgent
+          }
         });
 
         if (clickError) {
           console.error('Error recording click:', clickError);
         }
 
-        // Get the offer links and affiliate's subdomain
-        const [offerResponse, profileResponse] = await Promise.all([
-          supabase
-            .from('offers')
-            .select('links')
-            .eq('id', offerId)
-            .single(),
-          supabase
-            .from('profiles')
-            .select('subdomain')
-            .eq('id', affiliateId)
-            .single()
-        ]);
+        // Get the destination URL
+        const { data: offer, error: offerError } = await supabase
+          .from('offers')
+          .select('links')
+          .eq('id', offerId)
+          .maybeSingle();
 
-        if (offerResponse.error || !offerResponse.data?.links?.[0]) {
-          console.error('Error fetching offer:', offerResponse.error);
+        if (offerError) {
+          console.error('Error fetching offer:', offerError);
           navigate("/");
           return;
         }
 
-        let destinationUrl = offerResponse.data.links[0];
-
-        // Add subdomain if available
-        if (!profileResponse.error && profileResponse.data?.subdomain) {
-          try {
-            const url = new URL(destinationUrl);
-            url.hostname = `${profileResponse.data.subdomain}.${url.hostname}`;
-            destinationUrl = url.toString();
-          } catch (error) {
-            console.error('Error processing URL:', error);
-          }
+        if (!offer?.links?.[0]) {
+          console.error('No destination URL found for offer');
+          navigate("/");
+          return;
         }
 
-        // Redirect to the destination URL
+        // Immediately redirect to the destination URL
+        const url = offer.links[0];
+        const destinationUrl = url.startsWith('http') ? url : `https://${url}`;
         window.location.href = destinationUrl;
+
       } catch (error) {
-        console.error('Error in redirect process:', error);
+        console.error('Error in trackAndRedirect:', error);
         navigate("/");
       }
     };
 
-    trackClickAndRedirect();
-  }, [affiliateId, offerId, navigate]);
+    trackAndRedirect();
+  }, [affiliateId, offerId, navigate, toast]);
 
+  // Show nothing while processing
   return null;
 }
