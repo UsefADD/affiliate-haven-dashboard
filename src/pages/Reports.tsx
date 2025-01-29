@@ -1,6 +1,6 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -200,6 +200,31 @@ export default function Reports() {
     return acc;
   }, {});
 
+  // Calculate totals
+  const calculateTotals = () => {
+    const totals = Object.values(campaignStats).reduce((acc, stats) => {
+      return {
+        clicks: acc.clicks + stats.clicks,
+        conversions: acc.conversions + stats.conversions,
+        earnings: acc.earnings + stats.earnings,
+      };
+    }, { clicks: 0, conversions: 0, earnings: 0 });
+
+    // Calculate overall rates
+    const conversionRate = totals.clicks > 0 
+      ? (totals.conversions / totals.clicks) * 100 
+      : 0;
+    const epc = totals.clicks > 0 
+      ? totals.earnings / totals.clicks 
+      : 0;
+
+    return {
+      ...totals,
+      conversionRate,
+      epc,
+    };
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -212,6 +237,8 @@ export default function Reports() {
       </DashboardLayout>
     );
   }
+
+  const totals = calculateTotals();
 
   return (
     <DashboardLayout>
@@ -295,6 +322,18 @@ export default function Reports() {
                   </TableRow>
                 )}
               </TableBody>
+              {Object.entries(campaignStats).length > 0 && (
+                <TableFooter className="bg-muted/50 font-medium">
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-right">Totals:</TableCell>
+                    <TableCell>{totals.clicks}</TableCell>
+                    <TableCell>{totals.conversions}</TableCell>
+                    <TableCell>{totals.conversionRate.toFixed(2)}%</TableCell>
+                    <TableCell>${totals.epc.toFixed(2)}</TableCell>
+                    <TableCell>${totals.earnings.toFixed(2)}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              )}
             </Table>
           </div>
         </div>
