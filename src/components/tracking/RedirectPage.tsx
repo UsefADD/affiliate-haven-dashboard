@@ -90,12 +90,6 @@ export function RedirectPage() {
     trackAndRedirect();
   }, [affiliateId, offerId]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-xl font-semibold mb-2">Redirecting...</h2>
-        <p className="text-muted-foreground">Please wait while we process your request.</p>
-      </div>
-    </div>
-  );
+  // Return null instead of loading screen for instant redirect
+  return null;
 }
