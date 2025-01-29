@@ -1,89 +1,103 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
+import { createClient } from '@supabase/supabase-js';
+import { corsHeaders } from '../_shared/cors.ts';
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface CreateUserPayload {
   email: string;
-  password: string;
+  password?: string;
   first_name: string;
   last_name: string;
-  company: string;
-  role: string;
-  subdomain: string;
+  company?: string;
+  role: 'admin' | 'affiliate';
+  subdomain?: string;
+  mode: 'create' | 'edit';
+  userId?: string;
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    // Verify the request is from an admin
+    const authHeader = req.headers.get('Authorization')!;
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
 
-    // Check if the requesting user is an admin
-    const authHeader = req.headers.get('Authorization')?.split(' ')[1]
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    if (authError || !user) {
+      throw new Error('Unauthorized');
     }
 
-    const { data: { user: requestingUser } } = await supabase.auth.getUser(authHeader)
-    if (!requestingUser) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Check if requesting user is admin
-    const { data: profile } = await supabase
+    const { data: adminProfile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', requestingUser.id)
-      .single()
+      .eq('id', user.id)
+      .single();
 
-    if (profile?.role !== 'admin') {
-      return new Response(
-        JSON.stringify({ error: 'Not authorized' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    if (!adminProfile || adminProfile.role !== 'admin') {
+      throw new Error('Only admins can manage users');
     }
 
     // Get the user data from the request
-    const payload: CreateUserPayload = await req.json()
+    const payload: CreateUserPayload = await req.json();
     
-    // Check if user already exists
-    const { data: existingUser } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', payload.email)
-      .single()
+    if (payload.mode === 'create') {
+      // Check if user already exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', payload.email)
+        .single();
 
-    if (existingUser) {
+      if (existingUser) {
+        return new Response(
+          JSON.stringify({ error: 'A user with this email address has already been registered' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create the user
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email: payload.email,
+        password: payload.password,
+        email_confirm: true,
+      });
+
+      if (createError) {
+        console.error('Error creating user:', createError);
+        throw createError;
+      }
+
+      if (newUser?.user) {
+        // Update the user's profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            first_name: payload.first_name,
+            last_name: payload.last_name,
+            company: payload.company,
+            role: payload.role,
+            subdomain: payload.subdomain,
+            email: payload.email,
+          })
+          .eq('id', newUser.user.id);
+
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+          throw profileError;
+        }
+      }
+
       return new Response(
-        JSON.stringify({ error: 'A user with this email address has already been registered' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-    
-    // Create the user
-    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-      email: payload.email,
-      password: payload.password,
-      email_confirm: true,
-    })
-
-    if (createError) {
-      console.error('Error creating user:', createError)
-      throw createError
-    }
-
-    // Update the profile
-    if (newUser.user) {
+        JSON.stringify({ message: 'User created successfully' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else if (payload.mode === 'edit' && payload.userId) {
+      // Update user profile
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -91,27 +105,41 @@ Deno.serve(async (req) => {
           last_name: payload.last_name,
           company: payload.company,
           role: payload.role,
-          email: payload.email,
           subdomain: payload.subdomain,
         })
-        .eq('id', newUser.user.id)
+        .eq('id', payload.userId);
 
       if (profileError) {
-        console.error('Error updating profile:', profileError)
-        throw profileError
+        console.error('Error updating profile:', profileError);
+        throw profileError;
       }
+
+      // Only update password if one is provided
+      if (payload.password && payload.password.trim() !== '') {
+        const { error: passwordError } = await supabase.auth.admin.updateUserById(
+          payload.userId,
+          { password: payload.password }
+        );
+
+        if (passwordError) {
+          console.error('Error updating password:', passwordError);
+          throw passwordError;
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ message: 'User updated successfully' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    return new Response(
-      JSON.stringify({ user: newUser.user }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    throw new Error('Invalid mode specified');
 
   } catch (error) {
-    console.error('Error in create-user function:', error)
+    console.error('Error in create-user function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
-})
+});

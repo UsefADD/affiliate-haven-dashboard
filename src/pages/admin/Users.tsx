@@ -145,33 +145,43 @@ export default function Users() {
   };
 
   const handleEditUser = async (data: UserFormData) => {
-    if (!selectedUser) return;
+    if (currentUserRole !== 'admin') {
+      toast({
+        title: "Error",
+        description: "Only admins can edit users",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsSubmitting(true);
       console.log("Updating user:", data);
 
-      // Only update password if one was provided
-      if (data.password && data.password.trim() !== '') {
-        const { error: passwordError } = await supabase.auth.updateUser({
-          password: data.password
-        });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session found');
 
-        if (passwordError) throw passwordError;
+      const response = await fetch(
+        'https://ibjnokzepukzuzveseik.supabase.co/functions/v1/create-user',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            ...data,
+            mode: 'edit',
+            userId: selectedUser?.id,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update user");
       }
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          company: data.company,
-          role: data.role,
-          subdomain: data.subdomain,
-        })
-        .eq('id', selectedUser.id);
-
-      if (profileError) throw profileError;
 
       toast({
         title: "Success",
@@ -180,7 +190,7 @@ export default function Users() {
 
       setIsEditDialogOpen(false);
       fetchUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating user:', error);
       toast({
         title: "Error",
