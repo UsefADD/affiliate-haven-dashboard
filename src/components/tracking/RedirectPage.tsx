@@ -116,17 +116,17 @@ export function RedirectPage() {
         }
 
         console.log("Final redirect URL:", destinationUrl);
-        
-        // Force navigation to the destination URL using window.location.href
-        window.location.href = destinationUrl;
 
-        // Fallback: If window.location.href doesn't work, try window.location.replace after a short delay
+        // Force navigation to the destination URL
+        document.location.assign(destinationUrl);
+
+        // Fallback: If the first redirect doesn't work, try window.location after a short delay
         setTimeout(() => {
           if (window.location.pathname.includes('/track/')) {
-            console.log("Fallback: Using window.location.replace");
-            window.location.replace(destinationUrl);
+            console.log("Fallback: Using window.location");
+            window.location.href = destinationUrl;
           }
-        }, 100);
+        }, 200);
 
       } catch (error) {
         console.error('Error in trackAndRedirect:', error);
