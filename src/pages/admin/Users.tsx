@@ -65,7 +65,8 @@ export default function Users() {
         email_confirm: true,
         user_metadata: {
           first_name: data.first_name,
-          last_name: data.last_name
+          last_name: data.last_name,
+          role: data.role
         }
       });
 
@@ -97,6 +98,8 @@ export default function Users() {
 
         if (profileError) {
           console.error('Error updating profile:', profileError);
+          // If profile update fails, delete the auth user
+          await supabase.auth.admin.deleteUser(authData.user.id);
           toast({
             title: "Error",
             description: "Failed to update user profile",
@@ -117,7 +120,7 @@ export default function Users() {
       console.error('Error adding user:', error);
       toast({
         title: "Error",
-        description: "Failed to create user",
+        description: error.message || "Failed to create user",
         variant: "destructive",
       });
     } finally {

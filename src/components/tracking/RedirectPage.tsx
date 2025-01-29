@@ -52,21 +52,33 @@ export function RedirectPage() {
             console.error('Error recording click:', clickError);
           }
         } else {
-          console.log("Duplicate click detected, redirecting without counting");
+          console.log("Duplicate click detected");
         }
 
         // Get the destination URL and affiliate's subdomain
-        const { data: offer } = await supabase
+        const { data: offer, error: offerError } = await supabase
           .from('offers')
           .select('links')
           .eq('id', offerId)
           .single();
 
-        const { data: profile } = await supabase
+        if (offerError) {
+          console.error('Error fetching offer:', offerError);
+          navigate("/");
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('subdomain')
           .eq('id', affiliateId)
           .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          navigate("/");
+          return;
+        }
 
         console.log("Offer data:", offer);
         console.log("Profile data:", profile);
@@ -92,7 +104,7 @@ export function RedirectPage() {
             
             // Construct final URL with subdomain
             destinationUrl = `${url.protocol}//${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-            console.log("Redirecting to URL with subdomain:", destinationUrl);
+            console.log("Final destination URL:", destinationUrl);
           } catch (error) {
             console.error('Error constructing subdomain URL:', error);
             destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
@@ -101,8 +113,10 @@ export function RedirectPage() {
           destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
         }
 
-        // Perform the actual redirect
-        window.location.replace(destinationUrl);
+        console.log("Redirecting to:", destinationUrl);
+        
+        // Use window.location.href for the redirect
+        window.location.href = destinationUrl;
 
       } catch (error) {
         console.error('Error in trackAndRedirect:', error);
