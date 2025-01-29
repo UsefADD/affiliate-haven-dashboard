@@ -90,7 +90,12 @@ export function RedirectPage() {
             
             // Extract domain parts
             const domainParts = url.hostname.split('.');
-            const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
+            
+            // If domain has more than 2 parts (e.g. sub.example.com), take the last 2
+            // If domain has 2 or fewer parts (e.g. example.com), use the whole domain
+            const baseDomain = domainParts.length > 2 
+              ? domainParts.slice(-2).join('.') 
+              : url.hostname;
             
             // Construct final URL with subdomain
             destinationUrl = `${url.protocol}//${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
