@@ -22,6 +22,8 @@ export function RedirectPage() {
           .then(res => res.json())
           .then(data => data.ip);
 
+        console.log("IP Address:", ipAddress);
+
         const twentyFourHoursAgo = new Date();
         twentyFourHoursAgo.setHours(twentyFourHoursAgo.getTime() - 24);
 
@@ -51,8 +53,6 @@ export function RedirectPage() {
           if (clickError) {
             console.error('Error recording click:', clickError);
           }
-        } else {
-          console.log("Duplicate click detected");
         }
 
         // Get the destination URL and affiliate's subdomain
@@ -62,7 +62,7 @@ export function RedirectPage() {
           .eq('id', offerId)
           .single();
 
-        if (offerError) {
+        if (offerError || !offer) {
           console.error('Error fetching offer:', offerError);
           navigate("/");
           return;
@@ -74,7 +74,7 @@ export function RedirectPage() {
           .eq('id', affiliateId)
           .single();
 
-        if (profileError) {
+        if (profileError || !profile) {
           console.error('Error fetching profile:', profileError);
           navigate("/");
           return;
@@ -104,7 +104,7 @@ export function RedirectPage() {
             
             // Construct final URL with subdomain
             destinationUrl = `${url.protocol}//${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-            console.log("Final destination URL:", destinationUrl);
+            console.log("Final destination URL with subdomain:", destinationUrl);
           } catch (error) {
             console.error('Error constructing subdomain URL:', error);
             destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
@@ -113,10 +113,10 @@ export function RedirectPage() {
           destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
         }
 
-        console.log("Redirecting to:", destinationUrl);
+        console.log("Final redirect URL:", destinationUrl);
         
-        // Use window.location.href for the redirect
-        window.location.href = destinationUrl;
+        // Force navigation to the destination URL
+        window.location.assign(destinationUrl);
 
       } catch (error) {
         console.error('Error in trackAndRedirect:', error);
@@ -127,6 +127,13 @@ export function RedirectPage() {
     trackAndRedirect();
   }, [affiliateId, offerId, navigate, toast]);
 
-  // Show nothing while processing
-  return null;
+  // Show loading state while processing
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-xl font-semibold mb-2">Redirecting...</h2>
+        <p className="text-muted-foreground">Please wait while we process your request.</p>
+      </div>
+    </div>
+  );
 }

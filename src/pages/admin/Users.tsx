@@ -37,7 +37,8 @@ export default function Users() {
       console.log("Fetching users...");
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -56,18 +57,13 @@ export default function Users() {
   const handleAddUser = async (data: UserFormData) => {
     try {
       setIsSubmitting(true);
-      console.log("Creating new user:", data);
+      console.log("Creating new user with data:", data);
 
       // First create the auth user
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: data.email,
         password: data.password!,
         email_confirm: true,
-        user_metadata: {
-          first_name: data.first_name,
-          last_name: data.last_name,
-          role: data.role
-        }
       });
 
       if (authError) {
@@ -80,42 +76,44 @@ export default function Users() {
         return;
       }
 
-      if (authData.user) {
-        console.log("Auth user created:", authData.user);
-
-        // Then update the profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            first_name: data.first_name,
-            last_name: data.last_name,
-            company: data.company,
-            role: data.role,
-            email: data.email,
-            subdomain: data.subdomain,
-          })
-          .eq('id', authData.user.id);
-
-        if (profileError) {
-          console.error('Error updating profile:', profileError);
-          // If profile update fails, delete the auth user
-          await supabase.auth.admin.deleteUser(authData.user.id);
-          toast({
-            title: "Error",
-            description: "Failed to update user profile",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        toast({
-          title: "Success",
-          description: "User created successfully",
-        });
-
-        setIsAddDialogOpen(false);
-        fetchUsers();
+      if (!authData.user) {
+        throw new Error('No user data returned from auth creation');
       }
+
+      console.log("Auth user created:", authData.user);
+
+      // Then update the profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          company: data.company,
+          role: data.role,
+          email: data.email,
+          subdomain: data.subdomain,
+        })
+        .eq('id', authData.user.id);
+
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+        // If profile update fails, delete the auth user
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        toast({
+          title: "Error",
+          description: "Failed to update user profile",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
+
+      setIsAddDialogOpen(false);
+      await fetchUsers();
     } catch (error: any) {
       console.error('Error adding user:', error);
       toast({
