@@ -21,19 +21,10 @@ export default function Login() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // First clear any existing session
-        await supabase.auth.signOut();
-        console.log("Cleared existing session");
-
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         console.log("Current session check:", session);
         
-        if (sessionError) {
-          console.error("Session check error:", sessionError);
-          return;
-        }
-
-        if (session) {
+        if (session?.user) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role')
@@ -61,7 +52,7 @@ export default function Login() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session);
       
-      if (session) {
+      if (session?.user) {
         try {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
@@ -96,9 +87,6 @@ export default function Login() {
     console.log("Attempting login with email:", email);
 
     try {
-      // First sign out to clear any existing session
-      await supabase.auth.signOut();
-      
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
