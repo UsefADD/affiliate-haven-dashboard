@@ -43,7 +43,7 @@ interface LeadData {
 }
 
 export default function Reports() {
-  const [date, setDate] = useState<Date>();
+  const [date, setDate] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState("");
   const [clickData, setClickData] = useState<ClickData[]>([]);
   const [leadsData, setLeadsData] = useState<LeadData[]>([]);
@@ -51,12 +51,12 @@ export default function Reports() {
   const { toast } = useToast();
 
   useEffect(() => {
-    Promise.all([fetchClicks(), fetchLeads()]);
+    handleRunReport();
   }, []);
 
-  const fetchLeads = async () => {
+  const fetchLeads = async (selectedDate: Date) => {
     try {
-      console.log("Fetching leads for reports...");
+      console.log("Fetching leads for date:", format(selectedDate, "yyyy-MM-dd"));
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -64,25 +64,31 @@ export default function Reports() {
         return;
       }
 
+      const startDate = startOfDay(selectedDate);
+      const endDate = endOfDay(selectedDate);
+
       const { data, error } = await supabase
         .from('leads')
         .select(`
           id,
           status,
-          offers:offer_id (
+          created_at,
+          offers (
             id,
             name,
             payout
           )
         `)
-        .eq('affiliate_id', user.id);
+        .eq('affiliate_id', user.id)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
 
       if (error) {
         console.error("Error fetching leads:", error);
         throw error;
       }
 
-      console.log("Fetched leads:", data);
+      console.log("Fetched leads for date:", data);
       setLeadsData(data || []);
     } catch (error) {
       console.error('Error in fetchLeads:', error);
@@ -94,9 +100,9 @@ export default function Reports() {
     }
   };
 
-  const fetchClicks = async () => {
+  const fetchClicks = async (selectedDate: Date) => {
     try {
-      console.log("Fetching clicks for reports...");
+      console.log("Fetching clicks for date:", format(selectedDate, "yyyy-MM-dd"));
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -104,24 +110,29 @@ export default function Reports() {
         return;
       }
 
+      const startDate = startOfDay(selectedDate);
+      const endDate = endOfDay(selectedDate);
+
       const { data, error } = await supabase
         .from('affiliate_clicks')
         .select(`
           *,
-          offers:offer_id (
+          offers (
             id,
             name,
             payout
           )
         `)
-        .eq('affiliate_id', user.id);
+        .eq('affiliate_id', user.id)
+        .gte('clicked_at', startDate.toISOString())
+        .lte('clicked_at', endDate.toISOString());
 
       if (error) {
         console.error("Error fetching clicks:", error);
         throw error;
       }
 
-      console.log("Fetched clicks:", data);
+      console.log("Fetched clicks for date:", data);
       setClickData(data || []);
     } catch (error) {
       console.error('Error in fetchClicks:', error);
@@ -135,33 +146,20 @@ export default function Reports() {
     }
   };
 
-  const handleRunReport = () => {
-    if (!date) {
-      toast({
-        title: "Date Required",
-        description: "Please select a date to filter the report",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const selectedStartDate = startOfDay(date);
-    const selectedEndDate = endOfDay(date);
+  const handleRunReport = async () => {
+    setIsLoading(true);
+    const selectedDate = date || new Date();
     
-    console.log("Filtering between:", selectedStartDate, "and", selectedEndDate);
-
-    // Filter clicks based on date
-    const filteredClicks = clickData.filter(click => {
-      const clickDate = new Date(click.clicked_at);
-      return clickDate >= selectedStartDate && clickDate <= selectedEndDate;
-    });
-
-    console.log("Filtered clicks:", filteredClicks);
-    setClickData(filteredClicks);
+    console.log("Running report for date:", format(selectedDate, "yyyy-MM-dd"));
+    
+    await Promise.all([
+      fetchClicks(selectedDate),
+      fetchLeads(selectedDate)
+    ]);
     
     toast({
       title: "Report Generated",
-      description: `Showing results for ${format(date, "MMM d, yyyy")}`,
+      description: `Showing results for ${format(selectedDate, "MMM d, yyyy")}`,
     });
   };
 
@@ -227,19 +225,18 @@ export default function Reports() {
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-full md:w-[300px] justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
+                    "w-full md:w-[300px] justify-start text-left font-normal"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
+                  {format(date, "PPP")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={date}
-                  onSelect={setDate}
+                  onSelect={(newDate) => setDate(newDate || new Date())}
                   initialFocus
                 />
               </PopoverContent>
@@ -275,21 +272,25 @@ export default function Reports() {
               </TableHeader>
               <TableBody>
                 {Object.entries(campaignStats).length > 0 ? (
-                  Object.entries(campaignStats).map(([key, stats]) => (
-                    <TableRow key={key}>
-                      <TableCell className="font-mono text-sm">{stats.id.split('-')[0]}</TableCell>
-                      <TableCell>{stats.name}</TableCell>
-                      <TableCell>{stats.clicks}</TableCell>
-                      <TableCell>{stats.conversions}</TableCell>
-                      <TableCell>{stats.conversionRate.toFixed(2)}%</TableCell>
-                      <TableCell>${stats.epc.toFixed(2)}</TableCell>
-                      <TableCell>${stats.earnings.toFixed(2)}</TableCell>
-                    </TableRow>
-                  ))
+                  Object.entries(campaignStats)
+                    .filter(([_, stats]) => 
+                      stats.name.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map(([key, stats]) => (
+                      <TableRow key={key}>
+                        <TableCell className="font-mono text-sm">{stats.id.split('-')[0]}</TableCell>
+                        <TableCell>{stats.name}</TableCell>
+                        <TableCell>{stats.clicks}</TableCell>
+                        <TableCell>{stats.conversions}</TableCell>
+                        <TableCell>{stats.conversionRate.toFixed(2)}%</TableCell>
+                        <TableCell>${stats.epc.toFixed(2)}</TableCell>
+                        <TableCell>${stats.earnings.toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-4">
-                      No matching records found
+                      No data found for selected date
                     </TableCell>
                   </TableRow>
                 )}
