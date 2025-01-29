@@ -18,26 +18,35 @@ export function RedirectPage() {
           .then(res => res.json())
           .then(data => data.ip);
 
-        // Check for duplicate clicks
+        // Clean the IP address - take only the first IP if multiple are present
+        const cleanIpAddress = ipAddress.split(',')[0].trim();
+        console.log("Clean IP address for click:", cleanIpAddress);
+
+        // Check for duplicate clicks with exact match on IP and user agent
         const { data: existingClicks } = await supabase
           .from('affiliate_clicks')
           .select('*')
           .eq('affiliate_id', affiliateId)
           .eq('offer_id', offerId)
-          .eq('ip_address', ipAddress)
+          .eq('ip_address', cleanIpAddress)
+          .eq('user_agent', navigator.userAgent)
           .gte('clicked_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
+        // Only consider it a duplicate if exact IP AND user agent match
         if (!existingClicks || existingClicks.length === 0) {
+          console.log("Recording new click...");
           // Record the click
           await supabase
             .from('affiliate_clicks')
             .insert({
               affiliate_id: affiliateId,
               offer_id: offerId,
-              ip_address: ipAddress,
+              ip_address: cleanIpAddress,
               referrer: document.referrer,
               user_agent: navigator.userAgent
             });
+        } else {
+          console.log("Duplicate click detected with same IP and user agent");
         }
 
         // Get the destination URL and affiliate's subdomain
