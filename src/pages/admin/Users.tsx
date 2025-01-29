@@ -59,11 +59,15 @@ export default function Users() {
       setIsSubmitting(true);
       console.log("Creating new user with data:", data);
 
-      // First create the auth user
+      // First create the auth user using admin API
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: data.email,
         password: data.password!,
         email_confirm: true,
+        user_metadata: {
+          first_name: data.first_name,
+          last_name: data.last_name,
+        }
       });
 
       if (authError) {
