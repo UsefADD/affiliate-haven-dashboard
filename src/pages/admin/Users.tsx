@@ -58,29 +58,27 @@ export default function Users() {
       setIsSubmitting(true);
       console.log("Creating new user:", data);
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // First create the auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: data.email,
         password: data.password!,
+        email_confirm: true
       });
 
       if (authError) {
-        if (authError.message.includes("rate_limit")) {
-          toast({
-            title: "Error",
-            description: "Please wait a moment before trying again",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: authError.message,
-            variant: "destructive",
-          });
-        }
+        console.error('Error creating auth user:', authError);
+        toast({
+          title: "Error",
+          description: authError.message,
+          variant: "destructive",
+        });
         return;
       }
 
       if (authData.user) {
+        console.log("Auth user created:", authData.user);
+
+        // Then update the profile
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
@@ -93,7 +91,15 @@ export default function Users() {
           })
           .eq('id', authData.user.id);
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+          toast({
+            title: "Error",
+            description: "Failed to update user profile",
+            variant: "destructive",
+          });
+          return;
+        }
 
         toast({
           title: "Success",
@@ -107,7 +113,7 @@ export default function Users() {
       console.error('Error adding user:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create user",
+        description: "Failed to create user",
         variant: "destructive",
       });
     } finally {

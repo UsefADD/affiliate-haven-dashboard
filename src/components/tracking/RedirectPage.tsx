@@ -17,7 +17,7 @@ export function RedirectPage() {
           return;
         }
 
-        // Check for existing click from this IP/device in the last 24 hours
+        // Get IP address for duplicate click checking
         const ipAddress = await fetch('https://api.ipify.org?format=json')
           .then(res => res.json())
           .then(data => data.ip);
@@ -25,6 +25,7 @@ export function RedirectPage() {
         const twentyFourHoursAgo = new Date();
         twentyFourHoursAgo.setHours(twentyFourHoursAgo.getTime() - 24);
 
+        // Check for duplicate clicks
         const { data: existingClicks } = await supabase
           .from('affiliate_clicks')
           .select('*')
@@ -33,9 +34,7 @@ export function RedirectPage() {
           .eq('ip_address', ipAddress)
           .gte('clicked_at', twentyFourHoursAgo.toISOString());
 
-        if (existingClicks && existingClicks.length > 0) {
-          console.log("Duplicate click detected, redirecting without counting");
-        } else {
+        if (!existingClicks || existingClicks.length === 0) {
           console.log("Recording new click for:", { affiliateId, offerId });
           
           // Record the click
@@ -52,6 +51,8 @@ export function RedirectPage() {
           if (clickError) {
             console.error('Error recording click:', clickError);
           }
+        } else {
+          console.log("Duplicate click detected, redirecting without counting");
         }
 
         // Get the destination URL and affiliate's subdomain
@@ -80,10 +81,16 @@ export function RedirectPage() {
 
         if (profile?.subdomain) {
           try {
+            // Handle URLs with or without protocol
             const url = new URL(baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`);
+            
+            // Extract domain parts
             const domainParts = url.hostname.split('.');
             const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
-            destinationUrl = `https://${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+            
+            // Construct final URL with subdomain
+            destinationUrl = `${url.protocol}//${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+            console.log("Redirecting to URL with subdomain:", destinationUrl);
           } catch (error) {
             console.error('Error constructing subdomain URL:', error);
             destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
@@ -92,6 +99,7 @@ export function RedirectPage() {
           destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
         }
 
+        // Perform the actual redirect
         window.location.href = destinationUrl;
 
       } catch (error) {
