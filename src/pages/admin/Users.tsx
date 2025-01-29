@@ -59,15 +59,11 @@ export default function Users() {
       setIsSubmitting(true);
       console.log("Creating new user with data:", data);
 
-      // First create the auth user using admin API
+      // First create the auth user
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: data.email,
         password: data.password!,
         email_confirm: true,
-        user_metadata: {
-          first_name: data.first_name,
-          last_name: data.last_name,
-        }
       });
 
       if (authError) {
@@ -101,7 +97,7 @@ export default function Users() {
 
       if (profileError) {
         console.error('Error updating profile:', profileError);
-        // If profile update fails, delete the auth user
+        // If profile update fails, attempt to delete the auth user
         await supabase.auth.admin.deleteUser(authData.user.id);
         toast({
           title: "Error",
