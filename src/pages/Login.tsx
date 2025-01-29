@@ -22,7 +22,7 @@ export default function Login() {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log("Current session check:", session);
+        console.log("Current session:", session);
         
         if (session?.user) {
           const { data: profile, error: profileError } = await supabase
@@ -36,6 +36,7 @@ export default function Login() {
             return;
           }
 
+          console.log("User profile:", profile);
           if (profile?.role === 'admin') {
             navigate("/admin");
           } else {
@@ -65,6 +66,7 @@ export default function Login() {
             return;
           }
 
+          console.log("User profile after auth change:", profile);
           if (profile?.role === 'admin') {
             navigate("/admin");
           } else {
@@ -87,17 +89,26 @@ export default function Login() {
     console.log("Attempting login with email:", email);
 
     try {
+      // Trim whitespace from email and password
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+
+      console.log("Making auth request to Supabase...");
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password.trim(),
+        email: trimmedEmail,
+        password: trimmedPassword,
       });
 
       if (authError) {
-        console.error("Auth error:", authError);
-        let errorMessage = "Please check your email and password and try again.";
+        console.error("Auth error details:", authError);
+        let errorMessage = "Invalid email or password.";
+        
         if (authError.message.includes("Email not confirmed")) {
           errorMessage = "Please verify your email address before logging in.";
+        } else if (authError.message.includes("Invalid login credentials")) {
+          errorMessage = "The email or password you entered is incorrect.";
         }
+        
         toast({
           title: "Login Failed",
           description: errorMessage,
@@ -138,7 +149,7 @@ export default function Login() {
       console.error("Login error:", error);
       toast({
         title: "Login Failed",
-        description: error.message,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
