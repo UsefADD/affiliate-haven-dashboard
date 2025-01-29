@@ -62,7 +62,11 @@ export default function Users() {
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: data.email,
         password: data.password!,
-        email_confirm: true
+        email_confirm: true,
+        user_metadata: {
+          first_name: data.first_name,
+          last_name: data.last_name
+        }
       });
 
       if (authError) {
@@ -109,7 +113,7 @@ export default function Users() {
         setIsAddDialogOpen(false);
         fetchUsers();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding user:', error);
       toast({
         title: "Error",

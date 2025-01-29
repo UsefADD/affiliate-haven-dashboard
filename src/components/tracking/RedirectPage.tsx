@@ -56,18 +56,20 @@ export function RedirectPage() {
         }
 
         // Get the destination URL and affiliate's subdomain
-        const [{ data: offer }, { data: profile }] = await Promise.all([
-          supabase
-            .from('offers')
-            .select('links')
-            .eq('id', offerId)
-            .maybeSingle(),
-          supabase
-            .from('profiles')
-            .select('subdomain')
-            .eq('id', affiliateId)
-            .maybeSingle()
-        ]);
+        const { data: offer } = await supabase
+          .from('offers')
+          .select('links')
+          .eq('id', offerId)
+          .single();
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subdomain')
+          .eq('id', affiliateId)
+          .single();
+
+        console.log("Offer data:", offer);
+        console.log("Profile data:", profile);
 
         if (!offer?.links?.[0]) {
           console.error('No destination URL found for offer');
@@ -100,7 +102,7 @@ export function RedirectPage() {
         }
 
         // Perform the actual redirect
-        window.location.href = destinationUrl;
+        window.location.replace(destinationUrl);
 
       } catch (error) {
         console.error('Error in trackAndRedirect:', error);
