@@ -30,7 +30,33 @@ export default function Users() {
 
   useEffect(() => {
     fetchUsers();
+    checkCurrentUserRole();
   }, []);
+
+  const checkCurrentUserRole = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error("No session found");
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking user role:', error);
+        return;
+      }
+
+      console.log('Current user role:', profile?.role);
+    } catch (error) {
+      console.error('Error in checkCurrentUserRole:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -68,19 +94,25 @@ export default function Users() {
 
       if (authError) {
         console.error('Error creating auth user:', authError);
+        console.log('Auth error details:', {
+          message: authError.message,
+          status: authError.status,
+          name: authError.name
+        });
         toast({
           title: "Error",
-          description: authError.message,
+          description: `Failed to create user: ${authError.message}`,
           variant: "destructive",
         });
         return;
       }
 
       if (!authData.user) {
+        console.error('No user data returned from auth creation');
         throw new Error('No user data returned from auth creation');
       }
 
-      console.log("Auth user created:", authData.user);
+      console.log("Auth user created successfully:", authData.user);
 
       // Then update the profile
       const { error: profileError } = await supabase
@@ -97,8 +129,18 @@ export default function Users() {
 
       if (profileError) {
         console.error('Error updating profile:', profileError);
+        console.log('Profile error details:', {
+          message: profileError.message,
+          code: profileError.code,
+          details: profileError.details
+        });
+        
         // If profile update fails, attempt to delete the auth user
-        await supabase.auth.admin.deleteUser(authData.user.id);
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(authData.user.id);
+        if (deleteError) {
+          console.error('Error cleaning up auth user after profile update failure:', deleteError);
+        }
+        
         toast({
           title: "Error",
           description: "Failed to update user profile",
@@ -107,6 +149,7 @@ export default function Users() {
         return;
       }
 
+      console.log("User profile updated successfully");
       toast({
         title: "Success",
         description: "User created successfully",
