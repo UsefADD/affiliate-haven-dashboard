@@ -26,6 +26,7 @@ export default function Users() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,6 +54,15 @@ export default function Users() {
       }
 
       console.log('Current user role:', profile?.role);
+      setCurrentUserRole(profile?.role);
+
+      if (profile?.role !== 'admin') {
+        toast({
+          title: "Access Denied",
+          description: "You must be an admin to manage users",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error in checkCurrentUserRole:', error);
     }
@@ -81,6 +91,15 @@ export default function Users() {
   };
 
   const handleAddUser = async (data: UserFormData) => {
+    if (currentUserRole !== 'admin') {
+      toast({
+        title: "Error",
+        description: "Only admins can create users",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       console.log("Creating new user with data:", data);
@@ -243,24 +262,26 @@ export default function Users() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Users Management</h1>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-              </DialogHeader>
-              <UserForm
-                mode="create"
-                onSubmit={handleAddUser}
-                isSubmitting={isSubmitting}
-              />
-            </DialogContent>
-          </Dialog>
+          {currentUserRole === 'admin' && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New User</DialogTitle>
+                </DialogHeader>
+                <UserForm
+                  mode="create"
+                  onSubmit={handleAddUser}
+                  isSubmitting={isSubmitting}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -302,24 +323,28 @@ export default function Users() {
                   <TableCell className="capitalize">{user.role || 'N/A'}</TableCell>
                   <TableCell>{user.subdomain || 'N/A'}</TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setIsEditDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-destructive"
-                      onClick={() => handleDeleteUser(user.id)}
-                    >
-                      <UserX className="h-4 w-4" />
-                    </Button>
+                    {currentUserRole === 'admin' && (
+                      <>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsEditDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-destructive"
+                          onClick={() => handleDeleteUser(user.id)}
+                        >
+                          <UserX className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
