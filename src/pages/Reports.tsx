@@ -32,16 +32,67 @@ interface ClickData {
   } | null;
 }
 
+interface LeadData {
+  id: string;
+  status: string;
+  offers: {
+    id: string;
+    name: string;
+    payout: number;
+  } | null;
+}
+
 export default function Reports() {
   const [date, setDate] = useState<Date>();
   const [searchQuery, setSearchQuery] = useState("");
   const [clickData, setClickData] = useState<ClickData[]>([]);
+  const [leadsData, setLeadsData] = useState<LeadData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchClicks();
+    Promise.all([fetchClicks(), fetchLeads()]);
   }, []);
+
+  const fetchLeads = async () => {
+    try {
+      console.log("Fetching leads for reports...");
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          id,
+          status,
+          offers:offer_id (
+            id,
+            name,
+            payout
+          )
+        `)
+        .eq('affiliate_id', user.id);
+
+      if (error) {
+        console.error("Error fetching leads:", error);
+        throw error;
+      }
+
+      console.log("Fetched leads:", data);
+      setLeadsData(data || []);
+    } catch (error) {
+      console.error('Error in fetchLeads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch leads data",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchClicks = async () => {
     try {
@@ -94,7 +145,6 @@ export default function Reports() {
       return;
     }
 
-    console.log("Selected date:", date);
     const selectedStartDate = startOfDay(date);
     const selectedEndDate = endOfDay(date);
     
@@ -115,7 +165,7 @@ export default function Reports() {
     });
   };
 
-  // Calculate campaign stats from clicks
+  // Calculate campaign stats from clicks and leads
   const campaignStats = clickData.reduce((acc: Record<string, CampaignStats>, click) => {
     if (!click.offers) return acc;
     
@@ -124,7 +174,6 @@ export default function Reports() {
     const key = `${campaignId}`;
     
     if (!acc[key]) {
-      // Initialize stats for new campaign
       acc[key] = {
         id: campaignId,
         name: campaignName,
@@ -138,6 +187,13 @@ export default function Reports() {
     
     // Increment clicks
     acc[key].clicks++;
+    
+    // Calculate conversions from leads
+    const campaignLeads = leadsData.filter(lead => lead.offers?.id === campaignId);
+    acc[key].conversions = campaignLeads.filter(lead => lead.status === 'converted').length;
+    acc[key].earnings = campaignLeads
+      .filter(lead => lead.status === 'converted')
+      .reduce((sum, lead) => sum + (lead.offers?.payout || 0), 0);
     
     // Calculate rates
     acc[key].conversionRate = (acc[key].conversions / acc[key].clicks) * 100;
@@ -211,6 +267,7 @@ export default function Reports() {
                   <TableHead>Campaign ID</TableHead>
                   <TableHead>Campaign Name</TableHead>
                   <TableHead>Clicks</TableHead>
+                  <TableHead>Conversions</TableHead>
                   <TableHead>Conv. Rate</TableHead>
                   <TableHead>EPC</TableHead>
                   <TableHead>Total Earnings</TableHead>
@@ -223,6 +280,7 @@ export default function Reports() {
                       <TableCell className="font-mono text-sm">{stats.id.split('-')[0]}</TableCell>
                       <TableCell>{stats.name}</TableCell>
                       <TableCell>{stats.clicks}</TableCell>
+                      <TableCell>{stats.conversions}</TableCell>
                       <TableCell>{stats.conversionRate.toFixed(2)}%</TableCell>
                       <TableCell>${stats.epc.toFixed(2)}</TableCell>
                       <TableCell>${stats.earnings.toFixed(2)}</TableCell>
@@ -230,7 +288,7 @@ export default function Reports() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4">
+                    <TableCell colSpan={7} className="text-center py-4">
                       No matching records found
                     </TableCell>
                   </TableRow>
