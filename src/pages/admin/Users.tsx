@@ -119,9 +119,10 @@ export default function Users() {
         }
       );
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create user');
+        throw new Error(result.error || 'Failed to create user');
       }
 
       toast({

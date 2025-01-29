@@ -56,6 +56,20 @@ Deno.serve(async (req) => {
     // Get the user data from the request
     const payload: CreateUserPayload = await req.json()
     
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', payload.email)
+      .single()
+
+    if (existingUser) {
+      return new Response(
+        JSON.stringify({ error: 'A user with this email address has already been registered' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
     // Create the user
     const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
       email: payload.email,
@@ -64,6 +78,7 @@ Deno.serve(async (req) => {
     })
 
     if (createError) {
+      console.error('Error creating user:', createError)
       throw createError
     }
 
@@ -82,6 +97,7 @@ Deno.serve(async (req) => {
         .eq('id', newUser.user.id)
 
       if (profileError) {
+        console.error('Error updating profile:', profileError)
         throw profileError
       }
     }
@@ -92,6 +108,7 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('Error in create-user function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
