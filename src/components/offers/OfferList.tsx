@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Check, X, Pencil, Star, Trash2 } from "lucide-react";
+import { Check, X, Pencil, Star, Trash2, Copy } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AffiliateLink {
   id: string;
@@ -43,15 +44,14 @@ interface OfferListProps {
 
 export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTopOffer, isAdmin = false }: OfferListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({});
   const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
       if (user?.id) {
-        fetchAffiliateLinks(user.id);
         fetchUserProfile(user.id);
       }
     };
@@ -79,75 +79,34 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
     }
   };
 
-  const fetchAffiliateLinks = async (userId: string) => {
-    try {
-      console.log("Fetching affiliate links for user:", userId);
-      const { data, error } = await supabase
-        .from('affiliate_links')
-        .select('offer_id, tracking_url')
-        .eq('affiliate_id', userId);
-
-      if (error) {
-        console.error('Error fetching affiliate links:', error);
-        return;
-      }
-
-      console.log("Fetched affiliate links:", data);
-      
-      const linksMap = data?.reduce((acc, link) => ({
-        ...acc,
-        [link.offer_id]: link.tracking_url
-      }), {}) || {};
-
-      console.log("Processed affiliate links map:", linksMap);
-      setAffiliateLinks(linksMap);
-    } catch (error) {
-      console.error('Error in fetchAffiliateLinks:', error);
+  const getTrackingUrl = (offer: Offer) => {
+    if (!currentUserId) {
+      console.log("No user profile found");
+      return null;
     }
+
+    return `/track/${currentUserId}/${offer.id}`;
   };
 
-  const getTrackingUrl = (offer: Offer) => {
-    if (!currentUserId) return null;
-    console.log("Getting tracking URL for offer:", offer.id);
-    
-    // First check if there's a specific affiliate link for this offer
-    const affiliateLink = affiliateLinks[offer.id];
-    if (affiliateLink) {
-      console.log("Using affiliate-specific link:", affiliateLink);
-      // Wrap with click tracking
-      return `${window.location.origin}/api/track-click?affiliateId=${currentUserId}&offerId=${offer.id}&redirect=${encodeURIComponent(affiliateLink)}`;
-    }
-    
-    // If no specific affiliate link and user has subdomain, generate one from offer links
-    if (userProfile?.subdomain && offer.links && offer.links.length > 0) {
+  const handleCopyLink = async (offer: Offer) => {
+    const trackingUrl = getTrackingUrl(offer);
+    if (trackingUrl) {
       try {
-        const defaultLink = offer.links[0];
-        // Handle links with or without protocol
-        const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
-        
-        // Extract the base domain (remove any existing subdomains)
-        const domainParts = url.hostname.split('.');
-        const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
-        
-        // Construct new URL with subdomain
-        const destinationUrl = `https://${userProfile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-        console.log("Generated subdomain URL:", destinationUrl);
-        
-        // Wrap with click tracking
-        return `${window.location.origin}/api/track-click?affiliateId=${currentUserId}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
+        const fullUrl = `${window.location.origin}${trackingUrl}`;
+        await navigator.clipboard.writeText(fullUrl);
+        toast({
+          title: "Success",
+          description: "Tracking link copied to clipboard",
+        });
       } catch (error) {
-        console.error('Error generating tracking URL:', error);
-        return null;
+        console.error('Error copying to clipboard:', error);
+        toast({
+          title: "Error",
+          description: "Failed to copy tracking link",
+          variant: "destructive",
+        });
       }
     }
-
-    // If no specific link and no subdomain, use the first offer link
-    if (offer.links && offer.links.length > 0) {
-      const destinationUrl = offer.links[0];
-      return `${window.location.origin}/api/track-click?affiliateId=${currentUserId}&offerId=${offer.id}&redirect=${encodeURIComponent(destinationUrl)}`;
-    }
-
-    return null;
   };
 
   return (
@@ -192,7 +151,19 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
                 <TableCell>${offer.payout}</TableCell>
                 {!isAdmin && (
                   <TableCell>
-                    {getTrackingUrl(offer) || 'No tracking link assigned'}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm truncate max-w-[200px]">
+                        {getTrackingUrl(offer) ? `${window.location.origin}${getTrackingUrl(offer)}` : 'No tracking link available'}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopyLink(offer)}
+                        className="hover:bg-primary/10 text-primary"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 )}
                 <TableCell>{offer.creatives?.length || 0} creatives</TableCell>

@@ -17,34 +17,56 @@ export function RedirectPage() {
           return;
         }
 
-        console.log("Recording click for:", { affiliateId, offerId });
-        
-        // Record the click
-        const { error: clickError } = await supabase.functions.invoke('track-click', {
-          body: { 
-            affiliateId, 
-            offerId,
-            referrer: document.referrer,
-            userAgent: navigator.userAgent
+        // Check for existing click from this IP/device in the last 24 hours
+        const ipAddress = await fetch('https://api.ipify.org?format=json')
+          .then(res => res.json())
+          .then(data => data.ip);
+
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getTime() - 24);
+
+        const { data: existingClicks } = await supabase
+          .from('affiliate_clicks')
+          .select('*')
+          .eq('affiliate_id', affiliateId)
+          .eq('offer_id', offerId)
+          .eq('ip_address', ipAddress)
+          .gte('clicked_at', twentyFourHoursAgo.toISOString());
+
+        if (existingClicks && existingClicks.length > 0) {
+          console.log("Duplicate click detected, redirecting without counting");
+        } else {
+          console.log("Recording new click for:", { affiliateId, offerId });
+          
+          // Record the click
+          const { error: clickError } = await supabase
+            .from('affiliate_clicks')
+            .insert({
+              affiliate_id: affiliateId,
+              offer_id: offerId,
+              ip_address: ipAddress,
+              referrer: document.referrer,
+              user_agent: navigator.userAgent
+            });
+
+          if (clickError) {
+            console.error('Error recording click:', clickError);
           }
-        });
-
-        if (clickError) {
-          console.error('Error recording click:', clickError);
         }
 
-        // Get the destination URL
-        const { data: offer, error: offerError } = await supabase
-          .from('offers')
-          .select('links')
-          .eq('id', offerId)
-          .maybeSingle();
-
-        if (offerError) {
-          console.error('Error fetching offer:', offerError);
-          navigate("/");
-          return;
-        }
+        // Get the destination URL and affiliate's subdomain
+        const [{ data: offer }, { data: profile }] = await Promise.all([
+          supabase
+            .from('offers')
+            .select('links')
+            .eq('id', offerId)
+            .maybeSingle(),
+          supabase
+            .from('profiles')
+            .select('subdomain')
+            .eq('id', affiliateId)
+            .maybeSingle()
+        ]);
 
         if (!offer?.links?.[0]) {
           console.error('No destination URL found for offer');
@@ -52,9 +74,24 @@ export function RedirectPage() {
           return;
         }
 
-        // Immediately redirect to the destination URL
-        const url = offer.links[0];
-        const destinationUrl = url.startsWith('http') ? url : `https://${url}`;
+        // Construct URL with subdomain if available
+        const baseUrl = offer.links[0];
+        let destinationUrl = baseUrl;
+
+        if (profile?.subdomain) {
+          try {
+            const url = new URL(baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`);
+            const domainParts = url.hostname.split('.');
+            const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
+            destinationUrl = `https://${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+          } catch (error) {
+            console.error('Error constructing subdomain URL:', error);
+            destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
+          }
+        } else {
+          destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
+        }
+
         window.location.href = destinationUrl;
 
       } catch (error) {
