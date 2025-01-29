@@ -58,36 +58,24 @@ export function RedirectPage() {
         }
 
         // Get the destination URL and affiliate's subdomain
-        const { data: offer, error: offerError } = await supabase
+        const { data: offer } = await supabase
           .from('offers')
           .select('links')
           .eq('id', offerId)
           .single();
 
-        if (offerError || !offer) {
-          console.error('Error fetching offer:', offerError);
-          navigate("/");
-          return;
-        }
-
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('subdomain')
           .eq('id', affiliateId)
           .single();
-
-        if (profileError || !profile) {
-          console.error('Error fetching profile:', profileError);
-          navigate("/");
-          return;
-        }
 
         console.log("Offer data:", offer);
         console.log("Profile data:", profile);
 
         if (!offer?.links?.[0]) {
           console.error('No destination URL found for offer');
-          navigate("/");
+          window.location.href = '/';
           return;
         }
 
@@ -116,21 +104,11 @@ export function RedirectPage() {
         }
 
         console.log("Final redirect URL:", destinationUrl);
-
-        // Force navigation to the destination URL
-        document.location.assign(destinationUrl);
-
-        // Fallback: If the first redirect doesn't work, try window.location after a short delay
-        setTimeout(() => {
-          if (window.location.pathname.includes('/track/')) {
-            console.log("Fallback: Using window.location");
-            window.location.href = destinationUrl;
-          }
-        }, 200);
+        window.location.href = destinationUrl;
 
       } catch (error) {
         console.error('Error in trackAndRedirect:', error);
-        navigate("/");
+        window.location.href = '/';
       }
     };
 
