@@ -15,70 +15,33 @@ import { supabase } from "@/integrations/supabase/client";
 interface CampaignStats {
   id: string;
   name: string;
-  conversions: number;
-  earnings: number;
   clicks: number;
+  conversions: number;
   conversionRate: number;
   epc: number;
+  earnings: number;
+}
+
+interface ClickData {
+  id: string;
+  clicked_at: string;
+  offers: {
+    id: string;
+    name: string;
+    payout: number;
+  } | null;
 }
 
 export default function Reports() {
   const [date, setDate] = useState<Date>();
   const [searchQuery, setSearchQuery] = useState("");
-  const [clickData, setClickData] = useState<any[]>([]);
-  const [leadsData, setLeadsData] = useState<any[]>([]);
+  const [clickData, setClickData] = useState<ClickData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    Promise.all([fetchLeads(), fetchClicks()]);
+    fetchClicks();
   }, []);
-
-  const fetchLeads = async () => {
-    try {
-      console.log("Fetching leads for reports...");
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.error("No user found");
-        setIsLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('leads')
-        .select(`
-          id,
-          status,
-          created_at,
-          conversion_date,
-          offers:offer_id (
-            id,
-            name,
-            payout
-          )
-        `)
-        .eq('affiliate_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error("Error fetching leads:", error);
-        throw error;
-      }
-
-      console.log("Fetched leads:", data);
-      setLeadsData(data || []);
-    } catch (error) {
-      console.error('Error in fetchLeads:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch leads data",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const fetchClicks = async () => {
     try {
@@ -116,6 +79,8 @@ export default function Reports() {
         description: "Failed to fetch clicks data",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -150,7 +115,7 @@ export default function Reports() {
     });
   };
 
-  // Calculate campaign stats from clicks and conversions
+  // Calculate campaign stats from clicks
   const campaignStats = clickData.reduce((acc: Record<string, CampaignStats>, click) => {
     if (!click.offers) return acc;
     
@@ -163,9 +128,9 @@ export default function Reports() {
       acc[key] = {
         id: campaignId,
         name: campaignName,
+        clicks: 0,
         conversions: 0,
         earnings: 0,
-        clicks: 0,
         conversionRate: 0,
         epc: 0
       };
@@ -173,13 +138,6 @@ export default function Reports() {
     
     // Increment clicks
     acc[key].clicks++;
-    
-    // Calculate conversions and earnings from leads data
-    const campaignLeads = leadsData.filter(lead => lead.offers.id === campaignId);
-    acc[key].conversions = campaignLeads.filter(lead => lead.status === 'converted').length;
-    acc[key].earnings = campaignLeads.reduce((sum, lead) => 
-      lead.status === 'converted' ? sum + lead.offers.payout : sum, 0
-    );
     
     // Calculate rates
     acc[key].conversionRate = (acc[key].conversions / acc[key].clicks) * 100;
@@ -253,7 +211,6 @@ export default function Reports() {
                   <TableHead>Campaign ID</TableHead>
                   <TableHead>Campaign Name</TableHead>
                   <TableHead>Clicks</TableHead>
-                  <TableHead>Conversions</TableHead>
                   <TableHead>Conv. Rate</TableHead>
                   <TableHead>EPC</TableHead>
                   <TableHead>Total Earnings</TableHead>
@@ -266,7 +223,6 @@ export default function Reports() {
                       <TableCell className="font-mono text-sm">{stats.id.split('-')[0]}</TableCell>
                       <TableCell>{stats.name}</TableCell>
                       <TableCell>{stats.clicks}</TableCell>
-                      <TableCell>{stats.conversions}</TableCell>
                       <TableCell>{stats.conversionRate.toFixed(2)}%</TableCell>
                       <TableCell>${stats.epc.toFixed(2)}</TableCell>
                       <TableCell>${stats.earnings.toFixed(2)}</TableCell>
@@ -274,7 +230,7 @@ export default function Reports() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4">
+                    <TableCell colSpan={6} className="text-center py-4">
                       No matching records found
                     </TableCell>
                   </TableRow>
