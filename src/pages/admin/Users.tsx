@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,8 +16,8 @@ interface Profile {
   last_name: string | null;
   company: string | null;
   email: string | null;
-  created_at: string;
   subdomain: string | null;
+  created_at: string;
 }
 
 export default function Users() {
@@ -104,78 +104,33 @@ export default function Users() {
       setIsSubmitting(true);
       console.log("Creating new user with data:", data);
 
-      // First create the auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: data.email,
-        password: data.password!,
-        email_confirm: true,
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session found');
 
-      if (authError) {
-        console.error('Error creating auth user:', authError);
-        console.log('Auth error details:', {
-          message: authError.message,
-          status: authError.status,
-          name: authError.name
-        });
-        toast({
-          title: "Error",
-          description: `Failed to create user: ${authError.message}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!authData.user) {
-        console.error('No user data returned from auth creation');
-        throw new Error('No user data returned from auth creation');
-      }
-
-      console.log("Auth user created successfully:", authData.user);
-
-      // Then update the profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          company: data.company,
-          role: data.role,
-          email: data.email,
-          subdomain: data.subdomain,
-        })
-        .eq('id', authData.user.id);
-
-      if (profileError) {
-        console.error('Error updating profile:', profileError);
-        console.log('Profile error details:', {
-          message: profileError.message,
-          code: profileError.code,
-          details: profileError.details
-        });
-        
-        // If profile update fails, attempt to delete the auth user
-        const { error: deleteError } = await supabase.auth.admin.deleteUser(authData.user.id);
-        if (deleteError) {
-          console.error('Error cleaning up auth user after profile update failure:', deleteError);
+      const response = await fetch(
+        'https://ibjnokzepukzuzveseik.supabase.co/functions/v1/create-user',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(data),
         }
-        
-        toast({
-          title: "Error",
-          description: "Failed to update user profile",
-          variant: "destructive",
-        });
-        return;
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create user');
       }
 
-      console.log("User profile updated successfully");
       toast({
         title: "Success",
         description: "User created successfully",
       });
 
       setIsAddDialogOpen(false);
-      await fetchUsers();
+      fetchUsers();
     } catch (error: any) {
       console.error('Error adding user:', error);
       toast({
