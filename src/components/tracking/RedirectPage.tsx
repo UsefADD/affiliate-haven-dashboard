@@ -17,6 +17,8 @@ export function RedirectPage() {
           return;
         }
 
+        console.log("Starting redirect process for:", { affiliateId, offerId });
+
         // Get IP address for duplicate click checking
         const ipAddress = await fetch('https://api.ipify.org?format=json')
           .then(res => res.json())
@@ -56,29 +58,17 @@ export function RedirectPage() {
         }
 
         // Get the destination URL and affiliate's subdomain
-        const { data: offer, error: offerError } = await supabase
+        const { data: offer } = await supabase
           .from('offers')
           .select('links')
           .eq('id', offerId)
           .single();
 
-        if (offerError || !offer) {
-          console.error('Error fetching offer:', offerError);
-          navigate("/");
-          return;
-        }
-
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('subdomain')
           .eq('id', affiliateId)
           .single();
-
-        if (profileError || !profile) {
-          console.error('Error fetching profile:', profileError);
-          navigate("/");
-          return;
-        }
 
         console.log("Offer data:", offer);
         console.log("Profile data:", profile);
@@ -115,8 +105,8 @@ export function RedirectPage() {
 
         console.log("Final redirect URL:", destinationUrl);
         
-        // Force navigation to the destination URL
-        window.location.assign(destinationUrl);
+        // Force navigation to the destination URL using window.location.replace
+        window.location.replace(destinationUrl);
 
       } catch (error) {
         console.error('Error in trackAndRedirect:', error);
