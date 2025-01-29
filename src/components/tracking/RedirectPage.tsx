@@ -13,39 +13,25 @@ export function RedirectPage() {
           return;
         }
 
-        // Get IP address for duplicate click checking
+        // Get IP address for tracking purposes only
         const ipAddress = await fetch('https://api.ipify.org?format=json')
           .then(res => res.json())
           .then(data => data.ip);
 
         // Clean the IP address - take only the first IP if multiple are present
         const cleanIpAddress = ipAddress.split(',')[0].trim();
-        console.log("Clean IP address for click:", cleanIpAddress);
+        console.log("Recording click from IP:", cleanIpAddress);
 
-        // Check for duplicate clicks from same IP within 24 hours
-        const { data: existingClicks } = await supabase
+        // Record every click without duplicate checking
+        await supabase
           .from('affiliate_clicks')
-          .select('*')
-          .eq('affiliate_id', affiliateId)
-          .eq('offer_id', offerId)
-          .eq('ip_address', cleanIpAddress)
-          .gte('clicked_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-        // Record click if no duplicate from same IP in last 24 hours
-        if (!existingClicks || existingClicks.length === 0) {
-          console.log("Recording new click...");
-          await supabase
-            .from('affiliate_clicks')
-            .insert({
-              affiliate_id: affiliateId,
-              offer_id: offerId,
-              ip_address: cleanIpAddress,
-              referrer: document.referrer,
-              user_agent: navigator.userAgent
-            });
-        } else {
-          console.log("Duplicate click detected from IP:", cleanIpAddress);
-        }
+          .insert({
+            affiliate_id: affiliateId,
+            offer_id: offerId,
+            ip_address: cleanIpAddress,
+            referrer: document.referrer,
+            user_agent: navigator.userAgent
+          });
 
         // Get the destination URL and affiliate's subdomain
         const { data: offer } = await supabase
