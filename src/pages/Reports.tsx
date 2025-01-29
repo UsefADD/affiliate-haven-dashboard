@@ -15,33 +15,18 @@ import { supabase } from "@/integrations/supabase/client";
 interface CampaignStats {
   id: string;
   name: string;
-  totalLeads: number;
   conversions: number;
-  lastConversion: string | null;
   earnings: number;
   clicks: number;
   conversionRate: number;
   epc: number;
 }
 
-interface Lead {
-  id: string;
-  offers: {
-    id: string;
-    name: string;
-    payout: number;
-  };
-  status: string;
-  created_at: string;
-  conversion_date: string | null;
-}
-
 export default function Reports() {
   const [date, setDate] = useState<Date>();
   const [searchQuery, setSearchQuery] = useState("");
-  const [reportData, setReportData] = useState<Lead[]>([]);
   const [clickData, setClickData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<Lead[]>([]);
+  const [leadsData, setLeadsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -82,8 +67,7 @@ export default function Reports() {
       }
 
       console.log("Fetched leads:", data);
-      setReportData(data || []);
-      setFilteredData(data || []);
+      setLeadsData(data || []);
     } catch (error) {
       console.error('Error in fetchLeads:', error);
       toast({
@@ -108,7 +92,14 @@ export default function Reports() {
 
       const { data, error } = await supabase
         .from('affiliate_clicks')
-        .select('*')
+        .select(`
+          *,
+          offers:offer_id (
+            id,
+            name,
+            payout
+          )
+        `)
         .eq('affiliate_id', user.id);
 
       if (error) {
@@ -144,14 +135,14 @@ export default function Reports() {
     
     console.log("Filtering between:", selectedStartDate, "and", selectedEndDate);
 
-    const filtered = reportData.filter(lead => {
-      const leadDate = new Date(lead.created_at);
-      console.log("Lead date:", leadDate);
-      return leadDate >= selectedStartDate && leadDate <= selectedEndDate;
+    // Filter clicks based on date
+    const filteredClicks = clickData.filter(click => {
+      const clickDate = new Date(click.clicked_at);
+      return clickDate >= selectedStartDate && clickDate <= selectedEndDate;
     });
 
-    console.log("Filtered data:", filtered);
-    setFilteredData(filtered);
+    console.log("Filtered clicks:", filteredClicks);
+    setClickData(filteredClicks);
     
     toast({
       title: "Report Generated",
@@ -159,49 +150,43 @@ export default function Reports() {
     });
   };
 
-  // Calculate campaign stats including clicks and EPC
-  const campaignStats = filteredData.reduce((acc, lead) => {
-    const campaignId = lead.offers.id;
-    const campaignName = lead.offers.name;
-    const key = `${campaignId} - ${campaignName}`;
+  // Calculate campaign stats from clicks and conversions
+  const campaignStats = clickData.reduce((acc: Record<string, CampaignStats>, click) => {
+    if (!click.offers) return acc;
+    
+    const campaignId = click.offers.id;
+    const campaignName = click.offers.name;
+    const key = `${campaignId}`;
     
     if (!acc[key]) {
-      // Get clicks for this campaign
-      const campaignClicks = clickData.filter(click => click.offer_id === campaignId).length;
-      
+      // Initialize stats for new campaign
       acc[key] = {
         id: campaignId,
         name: campaignName,
-        totalLeads: 0,
         conversions: 0,
-        lastConversion: null,
         earnings: 0,
-        clicks: campaignClicks,
+        clicks: 0,
         conversionRate: 0,
         epc: 0
       };
     }
     
-    acc[key].totalLeads++;
-    if (lead.status === 'converted') {
-      acc[key].conversions++;
-      acc[key].earnings += lead.offers.payout;
-      if (!acc[key].lastConversion || new Date(lead.conversion_date!) > new Date(acc[key].lastConversion!)) {
-        acc[key].lastConversion = lead.conversion_date;
-      }
-    }
+    // Increment clicks
+    acc[key].clicks++;
     
-    // Calculate conversion rate and EPC
-    acc[key].conversionRate = acc[key].clicks > 0 
-      ? (acc[key].conversions / acc[key].clicks) * 100 
-      : 0;
+    // Calculate conversions and earnings from leads data
+    const campaignLeads = leadsData.filter(lead => lead.offers.id === campaignId);
+    acc[key].conversions = campaignLeads.filter(lead => lead.status === 'converted').length;
+    acc[key].earnings = campaignLeads.reduce((sum, lead) => 
+      lead.status === 'converted' ? sum + lead.offers.payout : sum, 0
+    );
     
-    acc[key].epc = acc[key].clicks > 0 
-      ? acc[key].earnings / acc[key].clicks 
-      : 0;
+    // Calculate rates
+    acc[key].conversionRate = (acc[key].conversions / acc[key].clicks) * 100;
+    acc[key].epc = acc[key].earnings / acc[key].clicks;
     
     return acc;
-  }, {} as Record<string, CampaignStats>);
+  }, {});
 
   if (isLoading) {
     return (
@@ -267,13 +252,11 @@ export default function Reports() {
                 <TableRow>
                   <TableHead>Campaign ID</TableHead>
                   <TableHead>Campaign Name</TableHead>
-                  <TableHead>Total Leads</TableHead>
                   <TableHead>Clicks</TableHead>
                   <TableHead>Conversions</TableHead>
                   <TableHead>Conv. Rate</TableHead>
                   <TableHead>EPC</TableHead>
                   <TableHead>Total Earnings</TableHead>
-                  <TableHead>Last Conversion</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -282,22 +265,16 @@ export default function Reports() {
                     <TableRow key={key}>
                       <TableCell className="font-mono text-sm">{stats.id.split('-')[0]}</TableCell>
                       <TableCell>{stats.name}</TableCell>
-                      <TableCell>{stats.totalLeads}</TableCell>
                       <TableCell>{stats.clicks}</TableCell>
                       <TableCell>{stats.conversions}</TableCell>
                       <TableCell>{stats.conversionRate.toFixed(2)}%</TableCell>
                       <TableCell>${stats.epc.toFixed(2)}</TableCell>
                       <TableCell>${stats.earnings.toFixed(2)}</TableCell>
-                      <TableCell>
-                        {stats.lastConversion 
-                          ? format(new Date(stats.lastConversion), 'MMM d, yyyy HH:mm:ss')
-                          : 'N/A'}
-                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-4">
+                    <TableCell colSpan={7} className="text-center py-4">
                       No matching records found
                     </TableCell>
                   </TableRow>
