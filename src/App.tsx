@@ -16,7 +16,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
+        {/* Public Routes - No Auth Required */}
         <Route path="/login" element={<Login />} />
         <Route path="/track/:affiliateId/:offerId" element={<RedirectPage />} />
         

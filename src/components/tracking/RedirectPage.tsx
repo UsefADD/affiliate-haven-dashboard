@@ -1,33 +1,22 @@
 import { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 export function RedirectPage() {
   const { affiliateId, offerId } = useParams();
-  const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const trackAndRedirect = async () => {
       try {
         if (!affiliateId || !offerId) {
           console.error("Missing parameters:", { affiliateId, offerId });
-          navigate("/");
           return;
         }
-
-        console.log("Starting redirect process for:", { affiliateId, offerId });
 
         // Get IP address for duplicate click checking
         const ipAddress = await fetch('https://api.ipify.org?format=json')
           .then(res => res.json())
           .then(data => data.ip);
-
-        console.log("IP Address:", ipAddress);
-
-        const twentyFourHoursAgo = new Date();
-        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getTime() - 24);
 
         // Check for duplicate clicks
         const { data: existingClicks } = await supabase
@@ -36,13 +25,11 @@ export function RedirectPage() {
           .eq('affiliate_id', affiliateId)
           .eq('offer_id', offerId)
           .eq('ip_address', ipAddress)
-          .gte('clicked_at', twentyFourHoursAgo.toISOString());
+          .gte('clicked_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
         if (!existingClicks || existingClicks.length === 0) {
-          console.log("Recording new click for:", { affiliateId, offerId });
-          
           // Record the click
-          const { error: clickError } = await supabase
+          await supabase
             .from('affiliate_clicks')
             .insert({
               affiliate_id: affiliateId,
@@ -51,10 +38,6 @@ export function RedirectPage() {
               referrer: document.referrer,
               user_agent: navigator.userAgent
             });
-
-          if (clickError) {
-            console.error('Error recording click:', clickError);
-          }
         }
 
         // Get the destination URL and affiliate's subdomain
@@ -70,12 +53,8 @@ export function RedirectPage() {
           .eq('id', affiliateId)
           .single();
 
-        console.log("Offer data:", offer);
-        console.log("Profile data:", profile);
-
         if (!offer?.links?.[0]) {
-          console.error('No destination URL found for offer');
-          window.location.href = '/';
+          console.error('No destination URL found');
           return;
         }
 
@@ -85,21 +64,13 @@ export function RedirectPage() {
 
         if (profile?.subdomain) {
           try {
-            // Handle URLs with or without protocol
             const url = new URL(baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`);
-            
-            // Extract domain parts
             const domainParts = url.hostname.split('.');
-            
-            // If domain has more than 2 parts (e.g. sub.example.com), take the last 2
-            // If domain has 2 or fewer parts (e.g. example.com), use the whole domain
             const baseDomain = domainParts.length > 2 
               ? domainParts.slice(-2).join('.') 
               : url.hostname;
             
-            // Construct final URL with subdomain
             destinationUrl = `${url.protocol}//${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-            console.log("Final destination URL with subdomain:", destinationUrl);
           } catch (error) {
             console.error('Error constructing subdomain URL:', error);
             destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
@@ -108,19 +79,17 @@ export function RedirectPage() {
           destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
         }
 
-        console.log("Final redirect URL:", destinationUrl);
+        // Perform the redirect
         window.location.href = destinationUrl;
 
       } catch (error) {
         console.error('Error in trackAndRedirect:', error);
-        window.location.href = '/';
       }
     };
 
     trackAndRedirect();
-  }, [affiliateId, offerId, navigate, toast]);
+  }, [affiliateId, offerId]);
 
-  // Show loading state while processing
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
