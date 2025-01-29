@@ -16,12 +16,15 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/track/:affiliateId/:offerId" element={<RedirectPage />} />
+        
+        {/* Protected Routes */}
         <Route path="/" element={<Index />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/campaigns" element={<Campaigns />} />
-        <Route path="/track/:affiliateId/:offerId" element={<RedirectPage />} />
         
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
