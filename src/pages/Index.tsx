@@ -156,14 +156,14 @@ export default function Index() {
     <DashboardLayout>
       <div className="space-y-8 w-full px-4 py-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-8 text-white">
-          <h1 className="text-3xl font-bold mb-2">Welcome to Your Dashboard</h1>
+        <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg p-8 border border-white/10 backdrop-blur-sm">
+          <h1 className="text-3xl font-bold text-white mb-2">Welcome to Your Dashboard</h1>
           <p className="text-white/80">Track your performance and manage your campaigns</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-4">
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20 hover:shadow-lg transition-all duration-300">
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-white/80">Total Leads</CardTitle>
               <Users className="h-4 w-4 text-purple-300" />
@@ -174,7 +174,7 @@ export default function Index() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20 hover:shadow-lg transition-all duration-300">
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-white/80">Total Clicks</CardTitle>
               <MousePointer className="h-4 w-4 text-purple-300" />
@@ -185,7 +185,7 @@ export default function Index() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20 hover:shadow-lg transition-all duration-300">
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-white/80">Conversion Rate</CardTitle>
               <TrendingUp className="h-4 w-4 text-purple-300" />
@@ -196,7 +196,7 @@ export default function Index() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20 hover:shadow-lg transition-all duration-300">
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-white/80">Total Earnings</CardTitle>
               <DollarSign className="h-4 w-4 text-purple-300" />
@@ -214,7 +214,7 @@ export default function Index() {
           <ClickStats affiliateId={currentUserId} />
         </div>
 
-        <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
+        <Card className="bg-white/5 backdrop-blur-sm border border-white/10">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-white">Recent Leads Performance</CardTitle>
           </CardHeader>
@@ -250,7 +250,7 @@ export default function Index() {
             <Star className="h-6 w-6 text-purple-300" />
             <h2 className="text-2xl font-bold text-white">Top Offers</h2>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-6">
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6">
             {offers.length === 0 ? (
               <div className="text-center py-10">
                 <p className="text-white/60">No top offers available at the moment.</p>
