@@ -1,2 +1,25 @@
-[functions.track-click]
-verify_jwt = false
+project_id = "ibjnokzepukzuzveseik"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[[functions]]
+name = "create-user"
+verify_jwt = true
+
+[[functions]]
+name = "delete-user"
+verify_jwt = true
+
+[[functions]]
+name = "block-user"
+verify_jwt = true

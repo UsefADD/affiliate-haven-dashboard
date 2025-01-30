@@ -141,22 +141,12 @@ export default function Users() {
         throw new Error('No session found');
       }
 
-      const response = await fetch(
-        'https://ibjnokzepukzuzveseik.supabase.co/functions/v1/block-user',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ userId }),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('block-user', {
+        body: { userId }
+      });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to block user');
+      if (error) {
+        throw error;
       }
 
       toast({
