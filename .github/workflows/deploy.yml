@@ -29,6 +29,9 @@ jobs:
           echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
           
       - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key" \
             ./dist/ \
