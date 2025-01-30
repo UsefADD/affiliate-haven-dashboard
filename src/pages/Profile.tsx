@@ -23,6 +23,7 @@ export default function Profile() {
 
   const fetchProfile = async () => {
     try {
+      console.log("Fetching profile data...");
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data, error } = await supabase
@@ -31,7 +32,11 @@ export default function Profile() {
           .eq('id', user.id)
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching profile:', error);
+          throw error;
+        }
+        console.log("Fetched profile data:", data);
         setProfile(data);
       }
     } catch (error) {
@@ -47,6 +52,7 @@ export default function Profile() {
   const updateProfile = async (formData: any) => {
     try {
       setLoading(true);
+      console.log("Updating profile with data:", formData);
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) throw new Error('No user found');
@@ -61,8 +67,12 @@ export default function Profile() {
         })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+      }
 
+      console.log("Profile updated successfully");
       toast({
         title: "Success",
         description: "Profile updated successfully",
@@ -85,6 +95,7 @@ export default function Profile() {
     e.preventDefault();
     try {
       setLoading(true);
+      console.log("Attempting password update...");
 
       if (newPassword !== confirmPassword) {
         toast({
@@ -96,12 +107,16 @@ export default function Profile() {
       }
 
       // First verify the current password
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error('No user email found');
+
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: profile.email,
+        email: user.email,
         password: currentPassword,
       });
 
       if (signInError) {
+        console.error('Current password verification failed:', signInError);
         toast({
           title: "Error",
           description: "Current password is incorrect",
@@ -117,6 +132,7 @@ export default function Profile() {
 
       if (error) throw error;
 
+      console.log("Password updated successfully");
       toast({
         title: "Success",
         description: "Password updated successfully",
@@ -138,15 +154,17 @@ export default function Profile() {
     }
   };
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
+  const handleProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    updateProfile({
+    const data = {
       first_name: formData.get('first_name'),
       last_name: formData.get('last_name'),
       company: formData.get('company'),
       subdomain: formData.get('subdomain'),
-    });
+    };
+    console.log("Submitting profile update with data:", data);
+    updateProfile(data);
   };
 
   return (
@@ -309,4 +327,4 @@ export default function Profile() {
       </div>
     </DashboardLayout>
   );
-}
+};
