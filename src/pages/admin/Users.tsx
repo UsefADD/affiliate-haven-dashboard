@@ -97,23 +97,17 @@ export default function Users() {
         throw new Error('No session found');
       }
 
-      const response = await fetch(
-        'https://ibjnokzepukzuzveseik.supabase.co/functions/v1/delete-user',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ userId }),
-        }
-      );
+      console.log('Deleting user with ID:', userId);
 
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete user');
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+      });
+
+      if (error) {
+        throw error;
       }
+
+      console.log('Delete user response:', data);
 
       toast({
         title: "Success",

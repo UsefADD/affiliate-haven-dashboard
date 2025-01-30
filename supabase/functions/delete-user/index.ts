@@ -2,11 +2,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    console.log('Delete user function called')
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -24,6 +27,8 @@ Deno.serve(async (req) => {
       throw new Error('No authorization header')
     }
 
+    console.log('Checking user authorization')
+    
     // Verify the user making the request is an admin
     const { data: { user }, error: userError } = await supabase.auth.getUser(
       authorization.replace('Bearer ', '')
@@ -47,9 +52,13 @@ Deno.serve(async (req) => {
       throw new Error('User ID is required')
     }
 
+    console.log('Deleting user:', userId)
+    
     // Delete the user
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId)
     if (deleteError) throw deleteError
+
+    console.log('User deleted successfully')
 
     return new Response(
       JSON.stringify({ message: 'User deleted successfully' }),
@@ -59,6 +68,8 @@ Deno.serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Error in delete-user function:', error)
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {
