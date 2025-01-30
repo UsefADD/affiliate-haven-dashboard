@@ -53,19 +53,53 @@ Deno.serve(async (req) => {
     }
 
     console.log('Deleting user:', userId)
-    
-    // First check if the user exists in auth.users
+
+    // First check if the user exists and get their profile
     const { data: userToDelete, error: checkUserError } = await supabase.auth.admin.getUserById(userId)
-    if (checkUserError || !userToDelete) {
+    if (checkUserError) {
       console.error('Error checking user existence:', checkUserError)
+      throw new Error('Error checking user existence')
+    }
+    
+    if (!userToDelete) {
       throw new Error('User not found')
     }
 
-    // Delete the user from auth.users first since it has the cascade delete to profiles
+    // Delete all related records from other tables first
+    console.log('Deleting related records for user:', userId)
+    
+    // Delete affiliate clicks
+    const { error: clicksError } = await supabase
+      .from('affiliate_clicks')
+      .delete()
+      .eq('affiliate_id', userId)
+    if (clicksError) {
+      console.error('Error deleting affiliate clicks:', clicksError)
+    }
+
+    // Delete affiliate links
+    const { error: linksError } = await supabase
+      .from('affiliate_links')
+      .delete()
+      .eq('affiliate_id', userId)
+    if (linksError) {
+      console.error('Error deleting affiliate links:', linksError)
+    }
+
+    // Delete leads
+    const { error: leadsError } = await supabase
+      .from('leads')
+      .delete()
+      .eq('affiliate_id', userId)
+    if (leadsError) {
+      console.error('Error deleting leads:', leadsError)
+    }
+
+    // Finally delete the user from auth.users which will cascade delete their profile
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId)
     if (deleteError) {
       console.error('Error deleting auth user:', deleteError)
-      throw deleteError
+      throw new Error('Error deleting user')
     }
 
     console.log('User deleted successfully')
