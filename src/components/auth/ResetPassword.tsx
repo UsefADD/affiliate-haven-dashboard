@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,19 @@ export function ResetPassword() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Check if we have a session when the component mounts
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log("No session found, redirecting to login");
+        navigate("/login");
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -20,6 +33,10 @@ export function ResetPassword() {
     try {
       if (newPassword !== confirmPassword) {
         throw new Error("Passwords do not match");
+      }
+
+      if (newPassword.length < 6) {
+        throw new Error("Password must be at least 6 characters long");
       }
 
       console.log("Attempting to update password");
@@ -30,15 +47,15 @@ export function ResetPassword() {
       if (error) throw error;
 
       toast({
-        title: "Password updated",
-        description: "Your password has been successfully reset",
+        title: "Success",
+        description: "Your password has been updated successfully",
       });
 
       // Redirect to login page after successful password reset
       navigate("/login");
       
     } catch (error: any) {
-      console.error("Password reset error:", error);
+      console.error("Password update error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -53,9 +70,9 @@ export function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/30">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-green-600">Reset Password</h1>
+          <h1 className="text-3xl font-bold text-green-600">Set New Password</h1>
           <p className="text-muted-foreground mt-2">
-            Enter your new password
+            Please enter your new password
           </p>
         </div>
 
@@ -70,7 +87,7 @@ export function ResetPassword() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full"
-              placeholder="Enter your new password"
+              placeholder="Enter new password"
               required
               minLength={6}
             />
@@ -78,7 +95,7 @@ export function ResetPassword() {
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
-              Confirm Password
+              Confirm New Password
             </label>
             <Input
               id="confirmPassword"
@@ -86,7 +103,7 @@ export function ResetPassword() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full"
-              placeholder="Confirm your new password"
+              placeholder="Confirm new password"
               required
               minLength={6}
             />
@@ -99,15 +116,6 @@ export function ResetPassword() {
           >
             {isLoading ? "Updating..." : "Update Password"}
           </Button>
-
-          <div className="text-center">
-            <a 
-              href="/login" 
-              className="text-sm text-green-600 hover:underline"
-            >
-              Back to Login
-            </a>
-          </div>
         </form>
       </Card>
     </div>
