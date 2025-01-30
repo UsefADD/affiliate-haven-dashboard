@@ -7,9 +7,10 @@ import { X } from "lucide-react";
 interface CampaignDetailsProps {
   campaign: Campaign | null;
   onClose: () => void;
+  trackingUrl?: string | null;
 }
 
-export function CampaignDetails({ campaign, onClose }: CampaignDetailsProps) {
+export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDetailsProps) {
   if (!campaign) return null;
 
   const handleDownloadImage = async (imageUrl: string) => {
