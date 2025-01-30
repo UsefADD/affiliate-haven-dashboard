@@ -1,85 +1,45 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Pencil, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UserForm, UserFormData } from "@/components/users/UserForm";
-import { AffiliateLeadsManager } from "@/components/leads/AffiliateLeadsManager";
+import { UserList } from "@/components/users/UserList";
 
-interface Profile {
+interface User {
   id: string;
-  role: "admin" | "affiliate";
+  email: string;
   first_name: string | null;
   last_name: string | null;
-  company: string | null;
-  email: string | null;
-  subdomain: string | null;
-  created_at: string;
+  role: string;
 }
 
 export default function Users() {
-  const [users, setUsers] = useState<Profile[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
-    checkCurrentUserRole();
   }, []);
-
-  const checkCurrentUserRole = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error("No session found");
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) {
-        console.error('Error checking user role:', error);
-        return;
-      }
-
-      console.log('Current user role:', profile?.role);
-      setCurrentUserRole(profile?.role);
-
-      if (profile?.role !== 'admin') {
-        toast({
-          title: "Access Denied",
-          description: "You must be an admin to manage users",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error in checkCurrentUserRole:', error);
-    }
-  };
 
   const fetchUsers = async () => {
     try {
       console.log("Fetching users...");
-      const { data: profiles, error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, email, first_name, last_name, role')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-
-      console.log("Fetched users:", profiles);
-      setUsers(profiles || []);
+      if (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+      }
+      
+      console.log("Fetched users:", data);
+      setUsers(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -90,111 +50,37 @@ export default function Users() {
     }
   };
 
-  const handleAddUser = async (data: UserFormData) => {
-    if (currentUserRole !== 'admin') {
-      toast({
-        title: "Error",
-        description: "Only admins can create users",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const onSubmit = async (values: UserFormData) => {
     try {
       setIsSubmitting(true);
-      console.log("Creating new user with data:", data);
+      console.log("Updating user with values:", values);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session found');
+      if (editingUser) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            first_name: values.first_name,
+            last_name: values.last_name,
+            role: values.role,
+          })
+          .eq('id', editingUser.id);
 
-      const response = await fetch(
-        'https://ibjnokzepukzuzveseik.supabase.co/functions/v1/create-user',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(data),
-        }
-      );
+        if (error) throw error;
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create user');
+        toast({
+          title: "Success",
+          description: "User updated successfully",
+        });
       }
-
-      toast({
-        title: "Success",
-        description: "User created successfully",
-      });
-
-      setIsAddDialogOpen(false);
+      
+      setIsOpen(false);
+      setEditingUser(null);
       fetchUsers();
-    } catch (error: any) {
-      console.error('Error adding user:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create user",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleEditUser = async (data: UserFormData) => {
-    if (currentUserRole !== 'admin') {
-      toast({
-        title: "Error",
-        description: "Only admins can edit users",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      console.log("Updating user:", data);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session found');
-
-      const response = await fetch(
-        'https://ibjnokzepukzuzveseik.supabase.co/functions/v1/create-user',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            ...data,
-            mode: 'edit',
-            userId: selectedUser?.id,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to update user");
-      }
-
-      toast({
-        title: "Success",
-        description: "User updated successfully",
-      });
-
-      setIsEditDialogOpen(false);
-      fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating user:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update user",
+        description: "Failed to update user",
         variant: "destructive",
       });
     } finally {
@@ -202,22 +88,32 @@ export default function Users() {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setIsOpen(true);
+  };
+
+  const handleDelete = async (user: User) => {
     try {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      console.log("Deleting user:", user.id);
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+
       if (error) throw error;
 
       toast({
         title: "Success",
         description: "User deleted successfully",
       });
-
+      
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting user:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete user",
+        description: "Failed to delete user",
         variant: "destructive",
       });
     }
@@ -227,98 +123,34 @@ export default function Users() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Users Management</h1>
-          {currentUserRole === 'admin' && (
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                </DialogHeader>
-                <UserForm
-                  mode="create"
-                  onSubmit={handleAddUser}
-                  isSubmitting={isSubmitting}
-                />
-              </DialogContent>
-            </Dialog>
-          )}
+          <h1 className="text-3xl font-bold">User Management</h1>
         </div>
 
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) setEditingUser(null);
+        }}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Edit User</DialogTitle>
             </DialogHeader>
             <UserForm
-              mode="edit"
-              initialData={selectedUser || undefined}
-              onSubmit={handleEditUser}
+              initialData={editingUser ? {
+                first_name: editingUser.first_name,
+                last_name: editingUser.last_name,
+                role: editingUser.role,
+              } : undefined}
+              onSubmit={onSubmit}
               isSubmitting={isSubmitting}
             />
           </DialogContent>
         </Dialog>
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Subdomain</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    {user.first_name && user.last_name 
-                      ? `${user.first_name} ${user.last_name}`
-                      : 'N/A'}
-                  </TableCell>
-                  <TableCell>{user.email || 'N/A'}</TableCell>
-                  <TableCell>{user.company || 'N/A'}</TableCell>
-                  <TableCell className="capitalize">{user.role || 'N/A'}</TableCell>
-                  <TableCell>{user.subdomain || 'N/A'}</TableCell>
-                  <TableCell className="text-right">
-                    {currentUserRole === 'admin' && (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsEditDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-destructive"
-                          onClick={() => handleDeleteUser(user.id)}
-                        >
-                          <UserX className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        <AffiliateLeadsManager />
+        <UserList
+          users={users}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       </div>
     </DashboardLayout>
   );

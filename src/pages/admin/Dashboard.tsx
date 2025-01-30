@@ -1,152 +1,271 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Users, Gift, FileSpreadsheet, TrendingUp } from "lucide-react";
-import { Link } from "react-router-dom";
-import { AffiliateApplicationsManager } from "@/components/admin/AffiliateApplicationsManager";
-import { ClicksOverview } from "@/components/admin/ClicksOverview";
+import { useToast } from "@/hooks/use-toast";
+import { LeadForm, LeadFormData } from "@/components/leads/LeadForm";
+import { LeadList } from "@/components/leads/LeadList";
 
-interface DashboardStats {
-  totalOffers: number;
-  totalAffiliates: number;
-  totalLeads: number;
-  activeOffers: number;
+interface Lead {
+  id: string;
+  affiliate_id: string;
+  offer_id: string;
+  status: string;
+  created_at: string;
+  conversion_date: string | null;
+  payout: number;
+  affiliate: {
+    first_name: string | null;
+    last_name: string | null;
+  };
+  offer: {
+    name: string;
+  };
 }
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalOffers: 0,
-    totalAffiliates: 0,
-    totalLeads: 0,
-    activeOffers: 0,
-  });
+interface Offer {
+  id: string;
+  name: string;
+  payout: number;
+  status: boolean;
+}
+
+export default function Leads() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchDashboardStats();
+    fetchLeads();
+    fetchOffers();
   }, []);
 
-  const fetchDashboardStats = async () => {
+  const fetchOffers = async () => {
     try {
-      const { data: offers, error: offersError } = await supabase
+      console.log("Fetching offers...");
+      const { data, error } = await supabase
         .from('offers')
-        .select('status');
+        .select('id, name, payout, status')
+        .eq('status', true);
+
+      if (error) {
+        console.error("Error fetching offers:", error);
+        throw error;
+      }
       
-      if (offersError) throw offersError;
-
-      const { data: affiliates, error: affiliatesError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('role', 'affiliate');
-      
-      if (affiliatesError) throw affiliatesError;
-
-      const { data: leads, error: leadsError } = await supabase
-        .from('leads')
-        .select('id');
-      
-      if (leadsError) throw leadsError;
-
-      setStats({
-        totalOffers: offers?.length || 0,
-        activeOffers: offers?.filter(offer => offer.status)?.length || 0,
-        totalAffiliates: affiliates?.length || 0,
-        totalLeads: leads?.length || 0,
-      });
-
+      console.log("Fetched offers:", data);
+      setOffers(data || []);
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error('Error fetching offers:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch dashboard statistics",
+        description: "Failed to fetch offers",
         variant: "destructive",
       });
     }
   };
 
-  const cards = [
-    {
-      title: "Total Offers",
-      value: stats.totalOffers,
-      description: `${stats.activeOffers} active`,
-      icon: Gift,
-      link: "/admin/offers",
-      color: "bg-purple-500"
-    },
-    {
-      title: "Total Affiliates",
-      value: stats.totalAffiliates,
-      description: "Registered affiliates",
-      icon: Users,
-      link: "/admin/users",
-      color: "bg-blue-500"
-    },
-    {
-      title: "Total Leads",
-      value: stats.totalLeads,
-      description: "All time leads",
-      icon: FileSpreadsheet,
-      link: "/admin/leads",
-      color: "bg-orange-500"
+  const fetchLeads = async () => {
+    try {
+      console.log("Fetching leads...");
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          id,
+          affiliate_id,
+          offer_id,
+          status,
+          created_at,
+          conversion_date,
+          payout,
+          affiliate:profiles!leads_affiliate_id_fkey (
+            first_name,
+            last_name
+          ),
+          offer:offers!leads_offer_id_fkey (
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching leads:", error);
+        throw error;
+      }
+      
+      console.log("Fetched leads:", data);
+      const typedLeads = data?.map(lead => ({
+        ...lead,
+        affiliate: {
+          first_name: lead.affiliate?.first_name || null,
+          last_name: lead.affiliate?.last_name || null
+        },
+        offer: {
+          name: lead.offer?.name || 'Unknown Offer'
+        }
+      })) as Lead[];
+      
+      setLeads(typedLeads || []);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch leads",
+        variant: "destructive",
+      });
     }
-  ];
+  };
+
+  const onSubmit = async (values: LeadFormData) => {
+    try {
+      setIsSubmitting(true);
+      console.log("Updating lead with values:", values);
+
+      if (editingLead) {
+        const updateData: any = {
+          status: values.status,
+          payout: values.payout,
+          offer_id: values.offer_id,
+        };
+
+        if (values.status === 'converted' && editingLead.status !== 'converted') {
+          updateData.conversion_date = new Date().toISOString();
+        } else if (values.status !== 'converted') {
+          updateData.conversion_date = null;
+        }
+
+        const { error } = await supabase
+          .from('leads')
+          .update(updateData)
+          .eq('id', editingLead.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Lead updated successfully",
+        });
+      }
+      
+      setIsOpen(false);
+      setEditingLead(null);
+      fetchLeads();
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update lead",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleLeadStatus = async (leadId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'converted' ? 'pending' : 'converted';
+      const updateData: any = {
+        status: newStatus,
+      };
+
+      if (newStatus === 'converted') {
+        updateData.conversion_date = new Date().toISOString();
+      } else {
+        updateData.conversion_date = null;
+      }
+
+      const { error } = await supabase
+        .from('leads')
+        .update(updateData)
+        .eq('id', leadId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Lead status updated",
+      });
+      
+      fetchLeads();
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update lead status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (lead: Lead) => {
+    setEditingLead(lead);
+    setIsOpen(true);
+  };
+
+  const handleDelete = async (lead: Lead) => {
+    try {
+      console.log("Deleting lead:", lead.id);
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', lead.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Lead deleted successfully",
+      });
+      
+      fetchLeads();
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete lead",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 animate-fade-in">
-        {/* Header Section */}
-        <div className="relative bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-8 text-white mb-8">
-          <div className="absolute inset-0 bg-black/10 rounded-lg"></div>
-          <div className="relative">
-            <h1 className="text-3xl font-bold mb-2">Welcome to Admin Dashboard</h1>
-            <p className="text-white/80">Manage your affiliate network and track performance</p>
-          </div>
-        </div>
-        
-        {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-3">
-          {cards.map((card, index) => (
-            <Link key={index} to={card.link} className="block transform hover:scale-105 transition-all duration-300">
-              <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow">
-                <div className={`absolute inset-0 opacity-10 ${card.color}`}></div>
-                <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-lg font-semibold">
-                    {card.title}
-                  </CardTitle>
-                  <div className={`p-2 rounded-full ${card.color} bg-opacity-20`}>
-                    <card.icon className={`h-5 w-5 ${card.color} text-white`} />
-                  </div>
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="text-3xl font-bold mb-1">{card.value}</div>
-                  <p className="text-sm text-muted-foreground">
-                    {card.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Lead Management</h1>
         </div>
 
-        {/* Click Statistics Section */}
-        <div className="mt-8 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-lg p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <BarChart className="h-5 w-5 text-purple-500" />
-            <h2 className="text-xl font-semibold">Click Statistics</h2>
-          </div>
-          <ClicksOverview />
-        </div>
+        <Dialog open={isOpen} onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) setEditingLead(null);
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Lead</DialogTitle>
+            </DialogHeader>
+            <LeadForm
+              initialData={editingLead ? {
+                status: editingLead.status,
+                payout: editingLead.payout,
+                offer_id: editingLead.offer_id,
+              } : undefined}
+              onSubmit={onSubmit}
+              isSubmitting={isSubmitting}
+              offers={offers}
+            />
+          </DialogContent>
+        </Dialog>
 
-        {/* Applications Section */}
-        <div className="mt-8 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-lg p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <TrendingUp className="h-5 w-5 text-purple-500" />
-            <h2 className="text-xl font-semibold">Recent Applications</h2>
-          </div>
-          <AffiliateApplicationsManager />
-        </div>
+        <LeadList
+          leads={leads}
+          onEdit={handleEdit}
+          onToggleStatus={toggleLeadStatus}
+          onDelete={handleDelete}
+        />
       </div>
     </DashboardLayout>
   );
