@@ -184,19 +184,26 @@ export default function Index() {
           <h1 className="text-3xl font-bold mb-2">
             Welcome, {profile?.first_name} {profile?.last_name}
           </h1>
-          <p className="text-green-100">Track your performance and manage your campaigns</p>
-          <div className="mt-4 flex items-center space-x-2 text-green-100">
-            <MessageSquare className="h-5 w-5" />
-            <p>
-              Join our Telegram channel for the latest updates and offers:{" "}
-              <Button 
-                variant="link" 
-                className="text-white hover:text-green-200 p-0 h-auto font-semibold"
-                onClick={() => window.open("https://t.me/+unqHkAExGpM1MzY8", "_blank")}
-              >
-                Click here to join
-              </Button>
+          <p className="text-green-100">Maximize Your Performance & Grow Your Earnings</p>
+          <div className="mt-4 space-y-4">
+            <p className="text-green-100 leading-relaxed">
+              Monitor your conversions, optimize your campaigns, and boost your success with real-time insights and analytics. Stay informed about exclusive offers, promotions, and important updates to help you succeed.
             </p>
+            <div className="flex items-center space-x-2 text-green-100 bg-green-700/50 p-4 rounded-lg">
+              <MessageSquare className="h-5 w-5 flex-shrink-0" />
+              <div>
+                <p className="font-medium">
+                  📢 Don't miss out! Join our Telegram channel for the latest updates, special deals, and insider tips:{" "}
+                  <Button 
+                    variant="link" 
+                    className="text-white hover:text-green-200 p-0 h-auto font-semibold"
+                    onClick={() => window.open("https://t.me/+unqHkAExGpM1MzY8", "_blank")}
+                  >
+                    Click here to join
+                  </Button>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
