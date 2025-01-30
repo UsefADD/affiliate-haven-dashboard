@@ -101,6 +101,7 @@ export type Database = {
           ip_address: string | null
           offer_id: string | null
           referrer: string | null
+          sub_id: string | null
           user_agent: string | null
         }
         Insert: {
@@ -110,6 +111,7 @@ export type Database = {
           ip_address?: string | null
           offer_id?: string | null
           referrer?: string | null
+          sub_id?: string | null
           user_agent?: string | null
         }
         Update: {
@@ -119,6 +121,7 @@ export type Database = {
           ip_address?: string | null
           offer_id?: string | null
           referrer?: string | null
+          sub_id?: string | null
           user_agent?: string | null
         }
         Relationships: [
@@ -272,6 +275,7 @@ export type Database = {
           last_name: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           subdomain: string | null
+          team_lead_id: string | null
         }
         Insert: {
           company?: string | null
@@ -283,6 +287,7 @@ export type Database = {
           last_name?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           subdomain?: string | null
+          team_lead_id?: string | null
         }
         Update: {
           company?: string | null
@@ -294,8 +299,17 @@ export type Database = {
           last_name?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           subdomain?: string | null
+          team_lead_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_team_lead_id_fkey"
+            columns: ["team_lead_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRangeSelector } from "@/components/reports/DateRangeSelector";
+import { ClickDetailsDialog } from "@/components/reports/ClickDetailsDialog";
 import { startOfDay, endOfDay } from "date-fns";
 
 interface CampaignStats {
@@ -23,6 +24,10 @@ interface CampaignStats {
 interface ClickData {
   id: string;
   clicked_at: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  referrer: string | null;
+  sub_id: string | null;
   offers: {
     id: string;
     name: string;
@@ -103,6 +108,8 @@ export default function Reports() {
     }
   };
 
+  const [clicksByOffer, setClicksByOffer] = useState<Record<string, ClickData[]>>({});
+
   const fetchClicks = async (startDate: Date, endDate: Date) => {
     try {
       console.log("Fetching clicks for date range:", { startDate, endDate });
@@ -134,6 +141,18 @@ export default function Reports() {
 
       console.log("Fetched clicks:", data);
       setClickData(data || []);
+
+      // Group clicks by offer
+      const groupedClicks = (data || []).reduce((acc: Record<string, ClickData[]>, click) => {
+        if (!click.offers?.id) return acc;
+        if (!acc[click.offers.id]) {
+          acc[click.offers.id] = [];
+        }
+        acc[click.offers.id].push(click);
+        return acc;
+      }, {});
+
+      setClicksByOffer(groupedClicks);
     } catch (error) {
       console.error('Error in fetchClicks:', error);
       toast({
@@ -267,7 +286,12 @@ export default function Reports() {
                       <TableRow key={key}>
                         <TableCell className="font-mono text-sm">{stats.id.split('-')[0]}</TableCell>
                         <TableCell>{stats.name}</TableCell>
-                        <TableCell>{stats.clicks}</TableCell>
+                        <TableCell>
+                          <ClickDetailsDialog 
+                            clicks={clicksByOffer[stats.id] || []}
+                            campaignName={stats.name}
+                          />
+                        </TableCell>
                         <TableCell>{stats.conversions}</TableCell>
                         <TableCell>{stats.conversionRate.toFixed(2)}%</TableCell>
                         <TableCell>${stats.epc.toFixed(2)}</TableCell>
