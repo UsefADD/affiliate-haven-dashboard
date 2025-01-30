@@ -268,6 +268,7 @@ export type Database = {
           email: string | null
           first_name: string | null
           id: string
+          is_blocked: boolean | null
           last_name: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           subdomain: string | null
@@ -278,6 +279,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id: string
+          is_blocked?: boolean | null
           last_name?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           subdomain?: string | null
@@ -288,6 +290,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_blocked?: boolean | null
           last_name?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           subdomain?: string | null
@@ -373,10 +376,10 @@ export type TablesUpdate<
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
     ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
+      Update: infer U
+    }
+    ? U
+    : never
     : never
 
 export type Enums<
