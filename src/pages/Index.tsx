@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, TrendingUp, Users, Star, MousePointer } from "lucide-react";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { OfferList } from "@/components/offers/OfferList";
 import { ClickStats } from "@/components/analytics/ClickStats";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { DollarSign, TrendingUp, Users, Star, MousePointer } from "lucide-react";
 
 interface Offer {
   id: string;
@@ -154,116 +154,118 @@ export default function Index() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 w-full">
+      <div className="space-y-8">
         {/* Welcome Section */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 border border-white/20">
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome to Your Dashboard</h1>
-          <p className="text-white/80">Track your performance and manage your campaigns</p>
+        <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-8 text-white">
+          <h1 className="text-3xl font-bold mb-2">Welcome to Your Dashboard</h1>
+          <p className="text-green-100">Track your performance and manage your campaigns</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-4">
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
+          <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-white">Total Leads</CardTitle>
-              <Users className="h-4 w-4 text-purple-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Leads</CardTitle>
+              <Users className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalLeads}</div>
-              <p className="text-xs text-white/80 mt-1">Total leads generated</p>
+              <div className="text-2xl font-bold text-green-600">{stats.totalLeads}</div>
+              <p className="text-xs text-muted-foreground mt-1">Total leads generated</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
+          <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-white">Total Clicks</CardTitle>
-              <MousePointer className="h-4 w-4 text-purple-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Clicks</CardTitle>
+              <MousePointer className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalClicks}</div>
-              <p className="text-xs text-white/80 mt-1">Total clicks tracked</p>
+              <div className="text-2xl font-bold text-green-600">{stats.totalClicks}</div>
+              <p className="text-xs text-muted-foreground mt-1">Total clicks tracked</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
+          <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-white">Conversion Rate</CardTitle>
-              <TrendingUp className="h-4 w-4 text-purple-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Conversion Rate</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.conversionRate.toFixed(2)}%</div>
-              <p className="text-xs text-white/80 mt-1">Clicks to conversions</p>
+              <div className="text-2xl font-bold text-green-600">{stats.conversionRate.toFixed(2)}%</div>
+              <p className="text-xs text-muted-foreground mt-1">Clicks to conversions</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
+          <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-white">Total Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-purple-300" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">${stats.totalEarnings.toFixed(2)}</div>
-              <p className="text-xs text-white/80 mt-1">Total revenue earned</p>
+              <div className="text-2xl font-bold text-green-600">${stats.totalEarnings.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">Total revenue earned</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Click Statistics */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-white">Click Statistics</h2>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-            <ClickStats affiliateId={currentUserId} />
-          </div>
+          <h2 className="text-2xl font-bold text-green-600">Click Statistics</h2>
+          <ClickStats affiliateId={currentUserId} />
         </div>
 
-        {/* Recent Leads Performance */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Recent Leads Performance</h2>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.recentLeads}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
-                <XAxis dataKey="date" stroke="#fff" opacity={0.7} />
-                <YAxis stroke="#fff" opacity={0.7} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
-                />
-                <Bar 
-                  dataKey="count" 
-                  fill="#9b87f5" 
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <Card className="bg-white/80 backdrop-blur-sm border border-green-100">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-green-600">Recent Leads Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.recentLeads}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="count" 
+                    fill="#059669" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Top Offers */}
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <Star className="h-6 w-6 text-purple-300" />
-            <h2 className="text-2xl font-bold text-white">Top Offers</h2>
+            <Star className="h-6 w-6 text-green-600" />
+            <h2 className="text-2xl font-bold text-green-600">Top Offers</h2>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-6">
-            {offers.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-white/80">No top offers available at the moment.</p>
-              </div>
-            ) : (
-              <OfferList
-                offers={offers}
-                onEdit={() => {}}
-                onDelete={() => {}}
-                onToggleStatus={() => {}}
-                isAdmin={false}
-              />
-            )}
-          </div>
+          <Card className="bg-white/80 backdrop-blur-sm border border-green-100">
+            <CardContent className="p-6">
+              {offers.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">No top offers available at the moment.</p>
+                </div>
+              ) : (
+                <OfferList
+                  offers={offers}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                  onToggleStatus={() => {}}
+                  isAdmin={false}
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>
