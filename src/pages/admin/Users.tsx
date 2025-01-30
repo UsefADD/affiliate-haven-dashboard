@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Pencil, UserX } from "lucide-react";
+import { UserPlus, Pencil, UserX, Ban } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UserForm, UserFormData } from "@/components/users/UserForm";
 import { AffiliateLeadsManager } from "@/components/leads/AffiliateLeadsManager";
@@ -30,6 +30,8 @@ export default function Users() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<Profile | null>(null);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [userToBlock, setUserToBlock] = useState<Profile | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -125,6 +127,51 @@ export default function Users() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBlockUser = async (userId: string) => {
+    try {
+      console.log('Blocking user with ID:', userId);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No session found');
+      }
+
+      const response = await fetch(
+        'https://ibjnokzepukzuzveseik.supabase.co/functions/v1/block-user',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to block user');
+      }
+
+      toast({
+        title: "Success",
+        description: "User blocked successfully",
+      });
+
+      setBlockDialogOpen(false);
+      setUserToBlock(null);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to block user",
         variant: "destructive",
       });
     }
@@ -305,6 +352,28 @@ export default function Users() {
           </AlertDialogContent>
         </AlertDialog>
 
+        <AlertDialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Block User Sign In</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to block 
+                {userToBlock && ` ${userToBlock.first_name} ${userToBlock.last_name}`} 
+                from signing in? They will not be able to access their account until you unblock them.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => userToBlock && handleBlockUser(userToBlock.id)}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                Block Sign In
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -341,6 +410,17 @@ export default function Users() {
                           }}
                         >
                           <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-yellow-600"
+                          onClick={() => {
+                            setUserToBlock(user);
+                            setBlockDialogOpen(true);
+                          }}
+                        >
+                          <Ban className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
