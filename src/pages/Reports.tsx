@@ -4,7 +4,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFoo
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, PlayCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRangeSelector } from "@/components/reports/DateRangeSelector";
@@ -250,7 +250,19 @@ export default function Reports() {
           <h2 className="text-2xl font-bold">Campaigns Report</h2>
           
           <div className="space-y-4">
-            <DateRangeSelector onDateChange={handleDateRangeChange} />
+            <div className="flex items-center gap-4">
+              <DateRangeSelector onDateChange={handleDateRangeChange} />
+              <Button 
+                onClick={() => handleDateRangeChange({ 
+                  from: new Date(), 
+                  to: new Date() 
+                })}
+                className="flex items-center gap-2"
+              >
+                <PlayCircle className="h-4 w-4" />
+                Run Report
+              </Button>
+            </div>
             
             <div className="flex gap-4">
               <Input
