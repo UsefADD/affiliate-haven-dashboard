@@ -72,30 +72,37 @@ export function ClickStats({ affiliateId }: { affiliateId?: string }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
-            <MousePointer className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-white/80">Total Clicks</CardTitle>
+            <MousePointer className="h-4 w-4 text-purple-300" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalClicks}</div>
+            <div className="text-2xl font-bold text-white">{stats.totalClicks}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Click Trend</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-white/80">Click Trend</CardTitle>
+            <TrendingUp className="h-4 w-4 text-purple-300" />
           </CardHeader>
           <CardContent>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.clicksByDate}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+                  <XAxis dataKey="date" stroke="#fff" opacity={0.7} />
+                  <YAxis stroke="#fff" opacity={0.7} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '8px',
+                      color: '#fff'
+                    }}
+                  />
+                  <Bar dataKey="count" fill="#9b87f5" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
