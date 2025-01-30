@@ -13,25 +13,23 @@ export function RedirectPage() {
           return;
         }
 
-        // Get IP address for tracking purposes only
-        const ipAddress = await fetch('https://api.ipify.org?format=json')
-          .then(res => res.json())
-          .then(data => data.ip);
+        console.log("Recording click for:", { affiliateId, offerId });
 
-        // Clean the IP address - take only the first IP if multiple are present
-        const cleanIpAddress = ipAddress.split(',')[0].trim();
-        console.log("Recording click from IP:", cleanIpAddress);
-
-        // Record every click without duplicate checking
-        await supabase
-          .from('affiliate_clicks')
-          .insert({
-            affiliate_id: affiliateId,
-            offer_id: offerId,
-            ip_address: cleanIpAddress,
+        // Call the Edge Function to record the click
+        const { data, error } = await supabase.functions.invoke('track-click', {
+          body: {
+            affiliateId,
+            offerId,
             referrer: document.referrer,
-            user_agent: navigator.userAgent
-          });
+            userAgent: navigator.userAgent
+          }
+        });
+
+        if (error) {
+          console.error("Error recording click:", error);
+        } else {
+          console.log("Click recorded successfully:", data);
+        }
 
         // Get the destination URL and affiliate's subdomain
         const { data: offer } = await supabase

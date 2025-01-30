@@ -19,20 +19,26 @@ serve(async (req) => {
     );
 
     const { affiliateId, offerId, referrer, userAgent } = await req.json();
-
     console.log(`Processing click for affiliate ${affiliateId} and offer ${offerId}`);
 
     if (!affiliateId || !offerId) {
       throw new Error('Missing affiliate ID or offer ID');
     }
 
-    // Record the click
+    // Get IP address from various possible headers
+    const ipAddress = req.headers.get('x-forwarded-for') || 
+                     req.headers.get('x-real-ip') || 
+                     req.headers.get('cf-connecting-ip');
+
+    console.log('IP Address:', ipAddress);
+
+    // Record the click using service role key to bypass RLS
     const { error: clickError } = await supabaseClient
       .from('affiliate_clicks')
       .insert({
         affiliate_id: affiliateId,
         offer_id: offerId,
-        ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        ip_address: ipAddress,
         user_agent: userAgent,
         referrer: referrer,
       });
