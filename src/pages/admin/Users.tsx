@@ -142,12 +142,17 @@ export default function Users() {
       }
 
       const { data, error } = await supabase.functions.invoke('block-user', {
-        body: { userId }
+        body: { userId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {
         throw error;
       }
+
+      console.log('Block user response:', data);
 
       toast({
         title: "Success",
