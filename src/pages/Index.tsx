@@ -5,7 +5,8 @@ import { OfferList } from "@/components/offers/OfferList";
 import { ClickStats } from "@/components/analytics/ClickStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, TrendingUp, Users, Star, MousePointer } from "lucide-react";
+import { DollarSign, TrendingUp, Users, Star, MousePointer, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Offer {
   id: string;
@@ -47,16 +48,39 @@ export default function Index() {
     recentLeads: []
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
+      if (user?.id) {
+        fetchUserProfile(user.id);
+      }
     };
     getCurrentUser();
     fetchOffers();
     fetchDashboardStats();
   }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return;
+      }
+
+      setProfile(profile);
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+    }
+  };
 
   const fetchOffers = async () => {
     try {
@@ -157,8 +181,23 @@ export default function Index() {
       <div className="space-y-8">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-8 text-white">
-          <h1 className="text-3xl font-bold mb-2">Welcome to Your Dashboard</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            Welcome {profile?.first_name} {profile?.last_name}
+          </h1>
           <p className="text-green-100">Track your performance and manage your campaigns</p>
+          <div className="mt-4 flex items-center space-x-2 text-green-100">
+            <MessageSquare className="h-5 w-5" />
+            <p>
+              Join our Telegram channel for the latest updates and offers:{" "}
+              <Button 
+                variant="link" 
+                className="text-white hover:text-green-200 p-0 h-auto font-semibold"
+                onClick={() => window.open("https://t.me/+unqHkAExGpM1MzY8", "_blank")}
+              >
+                Click here to join
+              </Button>
+            </p>
+          </div>
         </div>
 
         {/* Stats Cards */}
