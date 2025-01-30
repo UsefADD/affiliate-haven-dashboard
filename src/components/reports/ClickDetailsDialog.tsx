@@ -22,20 +22,17 @@ interface ClickDetailsProps {
 const getBrowserInfo = (userAgent: string | null): string => {
   if (!userAgent) return 'N/A';
   
-  // Common browser patterns
-  const browsers = [
-    { name: 'Firefox', pattern: /Firefox\/([0-9.]+)/ },
-    { name: 'Chrome', pattern: /Chrome\/([0-9.]+)/ },
-    { name: 'Safari', pattern: /Safari\/([0-9.]+)/ },
-    { name: 'Opera', pattern: /OPR\/([0-9.]+)/ },
-    { name: 'Edge', pattern: /Edg\/([0-9.]+)/ }
-  ];
-
-  for (const browser of browsers) {
-    const match = userAgent.match(browser.pattern);
-    if (match) {
-      return `${browser.name} ${match[1]}`;
-    }
+  // More specific browser patterns
+  if (userAgent.includes('Edg/')) {
+    return 'Microsoft Edge';
+  } else if (userAgent.includes('Firefox/')) {
+    return 'Mozilla Firefox';
+  } else if (userAgent.includes('Chrome/') && !userAgent.includes('Edg/')) {
+    return 'Google Chrome';
+  } else if (userAgent.includes('Safari/') && !userAgent.includes('Chrome/')) {
+    return 'Safari';
+  } else if (userAgent.includes('OPR/') || userAgent.includes('Opera/')) {
+    return 'Opera';
   }
 
   return 'Unknown Browser';
@@ -44,6 +41,7 @@ const getBrowserInfo = (userAgent: string | null): string => {
 // Helper function to get first IP address
 const getFirstIpAddress = (ipString: string | null): string => {
   if (!ipString) return 'N/A';
+  // Get only the first IP address and remove any whitespace
   return ipString.split(',')[0].trim();
 };
 
