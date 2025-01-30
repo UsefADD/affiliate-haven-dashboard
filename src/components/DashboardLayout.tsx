@@ -1,157 +1,161 @@
 import { useState, useEffect } from "react";
-import { BarChart2, Link, LogOut, FileText, UserRound } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useNavigate, Link, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
-
-export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
+export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    checkUserRole();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        navigate('/login');
-      }
-    });
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Current session:", session);
 
-    return () => {
-      subscription.unsubscribe();
+        if (!session?.user) {
+          console.log("No session found, redirecting to login");
+          navigate("/login");
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          return;
+        }
+
+        console.log("User profile:", profile);
+        setUserRole(profile?.role || null);
+        setIsLoading(false);
+
+      } catch (error) {
+        console.error("Session check failed:", error);
+        setIsLoading(false);
+      }
     };
+
+    checkSession();
   }, [navigate]);
-
-  const checkUserRole = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.log('No active session found');
-        navigate('/login');
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching profile:', error);
-        throw error;
-      }
-      
-      setIsAdmin(profile?.role === 'admin');
-      setProfile(profile);
-    } catch (error) {
-      console.error('Session error:', error);
-      localStorage.removeItem("isLoggedIn");
-      navigate('/login');
-    }
-  };
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
-      localStorage.removeItem("isLoggedIn");
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      
       navigate("/login");
-    } catch (error) {
-      console.error('Error signing out:', error);
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const affiliateNavItems = [
-    { icon: BarChart2, label: "Dashboard", href: "/" },
-    { icon: Link, label: "Campaigns", href: "/campaigns" },
-    { icon: FileText, label: "Reports", href: "/reports" },
-  ];
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-primary to-blue-600">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+      </div>
+    );
+  }
 
-  const adminNavItems = [
-    { icon: BarChart2, label: "Dashboard", href: "/admin" },
-    { icon: Link, label: "Users", href: "/admin/users" },
-    { icon: FileText, label: "Offers", href: "/admin/offers" },
-    { icon: FileText, label: "Leads", href: "/admin/leads" },
-  ];
-
-  const navItems = isAdmin ? adminNavItems : affiliateNavItems;
-
-  const getInitials = (firstName?: string, lastName?: string) => {
-    if (!firstName && !lastName) return "U";
-    return `${(firstName?.[0] || "").toUpperCase()}${(lastName?.[0] || "").toUpperCase()}`;
-  };
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
-      <header className="sticky top-0 z-30 glass-card border-b">
-        <div className="container mx-auto">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-semibold text-green-600">ClixAgent</h1>
-              <nav className="hidden md:flex items-center space-x-6">
-                {navItems.map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-                      location.pathname === item.href ? "text-primary" : "text-muted-foreground"
-                    )}
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-primary to-blue-600">
+      <div className="absolute inset-0 bg-grid-white/[0.05]" />
+      <div className="relative">
+        {/* Header */}
+        <header className="bg-white/10 backdrop-blur-lg border-b border-white/10">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              {/* Logo */}
+              <Link to="/" className="flex items-center">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+                  ClixAgent
+                </h1>
+              </Link>
+
+              {/* Navigation */}
+              <nav className="flex items-center space-x-1">
+                <Link to="/">
+                  <Button
+                    variant="ghost"
+                    className={`text-white hover:bg-white/10 ${
+                      isActive("/") ? "bg-white/20" : ""
+                    }`}
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </a>
-                ))}
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link to="/campaigns">
+                  <Button
+                    variant="ghost"
+                    className={`text-white hover:bg-white/10 ${
+                      isActive("/campaigns") ? "bg-white/20" : ""
+                    }`}
+                  >
+                    Campaigns
+                  </Button>
+                </Link>
+                <Link to="/reports">
+                  <Button
+                    variant="ghost"
+                    className={`text-white hover:bg-white/10 ${
+                      isActive("/reports") ? "bg-white/20" : ""
+                    }`}
+                  >
+                    Reports
+                  </Button>
+                </Link>
+                {userRole === 'admin' && (
+                  <Link to="/admin">
+                    <Button
+                      variant="ghost"
+                      className={`text-white hover:bg-white/10 ${
+                        location.pathname.startsWith("/admin") ? "bg-white/20" : ""
+                      }`}
+                    >
+                      Admin
+                    </Button>
+                  </Link>
+                )}
+                <Button
+                  variant="ghost"
+                  className="text-white hover:bg-white/10"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
               </nav>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-muted-foreground">
-                Welcome back, {profile?.first_name || (isAdmin ? 'Admin' : 'Affiliate')}
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <Avatar>
-                      <AvatarFallback>
-                        {getInitials(profile?.first_name, profile?.last_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
-                    <UserRound className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
           </div>
-        </div>
-      </header>
-      <main className="container mx-auto py-8 animate-in">
-        {children}
-      </main>
+        </header>
+
+        {/* Main Content */}
+        <main className="container mx-auto px-4 py-8">
+          <div className="bg-white/80 backdrop-blur-lg rounded-lg shadow-xl p-6 animate-fade-in">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
