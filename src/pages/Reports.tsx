@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRangeSelector } from "@/components/reports/DateRangeSelector";
 import { ClickDetailsDialog } from "@/components/reports/ClickDetailsDialog";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { startOfDay, endOfDay } from "date-fns";
 
 interface CampaignStats {
