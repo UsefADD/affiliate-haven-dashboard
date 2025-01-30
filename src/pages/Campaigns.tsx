@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Campaign } from "@/types/campaign";
 import DashboardLayout from "@/components/DashboardLayout";
+import { Campaign } from "@/types/campaign";
 import { CampaignList } from "@/components/campaigns/CampaignList";
 import { CampaignDetails } from "@/components/campaigns/CampaignDetails";
 import { SearchBar } from "@/components/campaigns/SearchBar";
 import { Offer } from "@/types/offer";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Campaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);

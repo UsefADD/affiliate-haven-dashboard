@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -163,7 +163,6 @@ export default function Reports() {
     });
   };
 
-  // Calculate campaign stats from clicks and leads
   const campaignStats = clickData.reduce((acc: Record<string, CampaignStats>, click) => {
     if (!click.offers) return acc;
     
@@ -183,24 +182,20 @@ export default function Reports() {
       };
     }
     
-    // Increment clicks
     acc[key].clicks++;
     
-    // Calculate conversions from leads
     const campaignLeads = leadsData.filter(lead => lead.offers?.id === campaignId);
     acc[key].conversions = campaignLeads.filter(lead => lead.status === 'converted').length;
     acc[key].earnings = campaignLeads
       .filter(lead => lead.status === 'converted')
       .reduce((sum, lead) => sum + (lead.offers?.payout || 0), 0);
     
-    // Calculate rates
     acc[key].conversionRate = (acc[key].conversions / acc[key].clicks) * 100;
     acc[key].epc = acc[key].earnings / acc[key].clicks;
     
     return acc;
   }, {});
 
-  // Calculate totals
   const calculateTotals = () => {
     const totals = Object.values(campaignStats).reduce((acc, stats) => {
       return {
@@ -210,7 +205,6 @@ export default function Reports() {
       };
     }, { clicks: 0, conversions: 0, earnings: 0 });
 
-    // Calculate overall rates
     const conversionRate = totals.clicks > 0 
       ? (totals.conversions / totals.clicks) * 100 
       : 0;
