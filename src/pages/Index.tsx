@@ -211,7 +211,9 @@ export default function Index() {
         {/* Click Statistics */}
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-white">Click Statistics</h2>
-          <ClickStats affiliateId={currentUserId} />
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+            <ClickStats affiliateId={currentUserId} />
+          </div>
         </div>
 
         <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
