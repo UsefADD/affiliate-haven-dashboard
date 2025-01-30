@@ -27,7 +27,7 @@ export default function Login() {
         if (session?.user) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, is_blocked')
             .eq('id', session.user.id)
             .maybeSingle();
 
@@ -37,6 +37,17 @@ export default function Login() {
           }
 
           console.log("User profile:", profile);
+          
+          if (profile?.is_blocked) {
+            await supabase.auth.signOut();
+            toast({
+              title: "Account Disabled",
+              description: "Your account has been disabled. Please contact support for assistance.",
+              variant: "destructive",
+            });
+            return;
+          }
+
           if (profile?.role === 'admin') {
             navigate("/admin");
           } else {
@@ -57,7 +68,7 @@ export default function Login() {
         try {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, is_blocked')
             .eq('id', session.user.id)
             .maybeSingle();
 
@@ -67,6 +78,17 @@ export default function Login() {
           }
 
           console.log("User profile after auth change:", profile);
+          
+          if (profile?.is_blocked) {
+            await supabase.auth.signOut();
+            toast({
+              title: "Account Disabled",
+              description: "Your account has been disabled. Please contact support for assistance.",
+              variant: "destructive",
+            });
+            return;
+          }
+
           if (profile?.role === 'admin') {
             navigate("/admin");
           } else {
@@ -81,7 +103,7 @@ export default function Login() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +111,6 @@ export default function Login() {
     console.log("Attempting login with email:", email);
 
     try {
-      // Trim whitespace from email and password
       const trimmedEmail = email.trim();
       const trimmedPassword = password.trim();
 
@@ -122,7 +143,7 @@ export default function Login() {
       if (authData.user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, is_blocked')
           .eq('id', authData.user.id)
           .maybeSingle();
 
@@ -137,13 +158,21 @@ export default function Login() {
           });
           return;
         }
+
+        if (profile?.is_blocked) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Account Disabled",
+            description: "Your account has been disabled. Please contact support for assistance.",
+            variant: "destructive",
+          });
+          return;
+        }
         
         toast({
           title: "Login successful",
           description: "Welcome back!",
         });
-
-        // Navigation will be handled by the auth state change listener
       }
     } catch (error: any) {
       console.error("Login error:", error);
