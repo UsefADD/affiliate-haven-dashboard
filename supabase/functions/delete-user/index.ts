@@ -54,18 +54,14 @@ Deno.serve(async (req) => {
 
     console.log('Deleting user:', userId)
     
-    // First delete related records from profiles table
-    const { error: profileDeleteError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', userId)
-    
-    if (profileDeleteError) {
-      console.error('Error deleting profile:', profileDeleteError)
-      throw new Error('Database error deleting profile')
+    // First check if the user exists in auth.users
+    const { data: userToDelete, error: checkUserError } = await supabase.auth.admin.getUserById(userId)
+    if (checkUserError || !userToDelete) {
+      console.error('Error checking user existence:', checkUserError)
+      throw new Error('User not found')
     }
 
-    // Then delete the user from auth.users
+    // Delete the user from auth.users first since it has the cascade delete to profiles
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId)
     if (deleteError) {
       console.error('Error deleting auth user:', deleteError)
