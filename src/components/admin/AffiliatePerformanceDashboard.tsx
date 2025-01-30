@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, MousePointer, TrendingUp, Users } from "lucide-react";
+import { format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 interface Profile {
   id: string;
@@ -30,6 +33,8 @@ interface AffiliateStats {
 export function AffiliatePerformanceDashboard() {
   const [affiliates, setAffiliates] = useState<Profile[]>([]);
   const [selectedAffiliate, setSelectedAffiliate] = useState<string>("");
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [stats, setStats] = useState<AffiliateStats>({
     totalClicks: 0,
     totalLeads: 0,
@@ -45,10 +50,10 @@ export function AffiliatePerformanceDashboard() {
   }, []);
 
   useEffect(() => {
-    if (selectedAffiliate) {
+    if (selectedAffiliate && (startDate || endDate)) {
       fetchAffiliateStats(selectedAffiliate);
     }
-  }, [selectedAffiliate]);
+  }, [selectedAffiliate, startDate, endDate]);
 
   const fetchAffiliates = async () => {
     try {
@@ -72,12 +77,18 @@ export function AffiliatePerformanceDashboard() {
     }
   };
 
+  const setMonthToDate = () => {
+    const now = new Date();
+    setStartDate(startOfMonth(now));
+    setEndDate(now);
+  };
+
   const fetchAffiliateStats = async (affiliateId: string) => {
     try {
       console.log("Fetching stats for affiliate:", affiliateId);
       
-      // Fetch clicks
-      const { data: clicks, error: clicksError } = await supabase
+      // Fetch clicks with date filtering
+      let clicksQuery = supabase
         .from('affiliate_clicks')
         .select(`
           *,
@@ -88,10 +99,19 @@ export function AffiliatePerformanceDashboard() {
         `)
         .eq('affiliate_id', affiliateId);
 
+      if (startDate) {
+        clicksQuery = clicksQuery.gte('clicked_at', startDate.toISOString());
+      }
+      if (endDate) {
+        clicksQuery = clicksQuery.lte('clicked_at', endDate.toISOString());
+      }
+
+      const { data: clicks, error: clicksError } = await clicksQuery;
+
       if (clicksError) throw clicksError;
 
-      // Fetch leads
-      const { data: leads, error: leadsError } = await supabase
+      // Fetch leads with date filtering
+      let leadsQuery = supabase
         .from('leads')
         .select(`
           *,
@@ -102,6 +122,15 @@ export function AffiliatePerformanceDashboard() {
         `)
         .eq('affiliate_id', affiliateId)
         .eq('status', 'converted');
+
+      if (startDate) {
+        leadsQuery = leadsQuery.gte('created_at', startDate.toISOString());
+      }
+      if (endDate) {
+        leadsQuery = leadsQuery.lte('created_at', endDate.toISOString());
+      }
+
+      const { data: leads, error: leadsError } = await leadsQuery;
 
       if (leadsError) throw leadsError;
 
@@ -160,23 +189,41 @@ export function AffiliatePerformanceDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-2xl font-bold">Affiliate Performance Dashboard</h2>
-        <Select
-          value={selectedAffiliate}
-          onValueChange={setSelectedAffiliate}
-        >
-          <SelectTrigger className="w-[300px]">
-            <SelectValue placeholder="Select an affiliate" />
-          </SelectTrigger>
-          <SelectContent>
-            {affiliates.map((affiliate) => (
-              <SelectItem key={affiliate.id} value={affiliate.id}>
-                {affiliate.first_name} {affiliate.last_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+          <Select
+            value={selectedAffiliate}
+            onValueChange={setSelectedAffiliate}
+          >
+            <SelectTrigger className="w-[300px]">
+              <SelectValue placeholder="Select an affiliate" />
+            </SelectTrigger>
+            <SelectContent>
+              {affiliates.map((affiliate) => (
+                <SelectItem key={affiliate.id} value={affiliate.id}>
+                  {affiliate.first_name} {affiliate.last_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <div className="flex items-center gap-2">
+            <DatePicker
+              selected={startDate}
+              onChange={setStartDate}
+              placeholderText="Start Date"
+            />
+            <DatePicker
+              selected={endDate}
+              onChange={setEndDate}
+              placeholderText="End Date"
+            />
+            <Button onClick={setMonthToDate} variant="outline">
+              Month to Date
+            </Button>
+          </div>
+        </div>
       </div>
 
       {selectedAffiliate && (
