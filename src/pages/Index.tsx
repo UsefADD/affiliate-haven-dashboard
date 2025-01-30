@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { OfferList } from "@/components/offers/OfferList";
-import { ClickStats } from "@/components/analytics/ClickStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, Users, Star, MousePointer } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { OfferList } from "@/components/offers/OfferList";
+import { ClickStats } from "@/components/analytics/ClickStats";
 
 interface Offer {
   id: string;
@@ -156,54 +156,54 @@ export default function Index() {
     <DashboardLayout>
       <div className="space-y-8 w-full px-4 py-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg p-8 border border-white/10 backdrop-blur-sm">
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 border border-white/20">
           <h1 className="text-3xl font-bold text-white mb-2">Welcome to Your Dashboard</h1>
           <p className="text-white/80">Track your performance and manage your campaigns</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-4">
-          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300">
+          <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-white/80">Total Leads</CardTitle>
+              <CardTitle className="text-sm font-medium text-white">Total Leads</CardTitle>
               <Users className="h-4 w-4 text-purple-300" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{stats.totalLeads}</div>
-              <p className="text-xs text-white/60 mt-1">Total leads generated</p>
+              <p className="text-xs text-white/80 mt-1">Total leads generated</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300">
+          <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-white/80">Total Clicks</CardTitle>
+              <CardTitle className="text-sm font-medium text-white">Total Clicks</CardTitle>
               <MousePointer className="h-4 w-4 text-purple-300" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{stats.totalClicks}</div>
-              <p className="text-xs text-white/60 mt-1">Total clicks tracked</p>
+              <p className="text-xs text-white/80 mt-1">Total clicks tracked</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300">
+          <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-white/80">Conversion Rate</CardTitle>
+              <CardTitle className="text-sm font-medium text-white">Conversion Rate</CardTitle>
               <TrendingUp className="h-4 w-4 text-purple-300" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{stats.conversionRate.toFixed(2)}%</div>
-              <p className="text-xs text-white/60 mt-1">Clicks to conversions</p>
+              <p className="text-xs text-white/80 mt-1">Clicks to conversions</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300">
+          <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-white/80">Total Earnings</CardTitle>
+              <CardTitle className="text-sm font-medium text-white">Total Earnings</CardTitle>
               <DollarSign className="h-4 w-4 text-purple-300" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">${stats.totalEarnings.toFixed(2)}</div>
-              <p className="text-xs text-white/60 mt-1">Total revenue earned</p>
+              <p className="text-xs text-white/80 mt-1">Total revenue earned</p>
             </CardContent>
           </Card>
         </div>
@@ -214,7 +214,7 @@ export default function Index() {
           <ClickStats affiliateId={currentUserId} />
         </div>
 
-        <Card className="bg-white/5 backdrop-blur-sm border border-white/10">
+        <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-white">Recent Leads Performance</CardTitle>
           </CardHeader>
@@ -250,10 +250,10 @@ export default function Index() {
             <Star className="h-6 w-6 text-purple-300" />
             <h2 className="text-2xl font-bold text-white">Top Offers</h2>
           </div>
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6">
+          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-6">
             {offers.length === 0 ? (
               <div className="text-center py-10">
-                <p className="text-white/60">No top offers available at the moment.</p>
+                <p className="text-white/80">No top offers available at the moment.</p>
               </div>
             ) : (
               <OfferList
