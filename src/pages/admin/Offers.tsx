@@ -9,8 +9,14 @@ import { OfferList } from "@/components/offers/OfferList";
 interface Offer {
   id: string;
   name: string;
+  description: string | null;
   payout: number;
-  status: boolean;
+  status: boolean | null;
+  created_at: string;
+  created_by: string;
+  creatives: any | null;
+  links: string[] | null;
+  is_top_offer: boolean | null;
 }
 
 export default function Offers() {
@@ -29,8 +35,8 @@ export default function Offers() {
       console.log("Fetching offers...");
       const { data, error } = await supabase
         .from('offers')
-        .select('id, name, payout, status')
-        .eq('status', true);
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching offers:", error);
@@ -57,7 +63,16 @@ export default function Offers() {
       if (editingOffer) {
         const { error } = await supabase
           .from('offers')
-          .update(values)
+          .update({
+            name: values.name,
+            description: values.description,
+            payout: values.payout,
+            status: values.status,
+            creatives: values.creatives,
+            links: values.links,
+            is_top_offer: values.is_top_offer,
+            created_by: editingOffer.created_by // Preserve the original creator
+          })
           .eq('id', editingOffer.id);
 
         if (error) throw error;
@@ -67,9 +82,13 @@ export default function Offers() {
           description: "Offer updated successfully",
         });
       } else {
+        // For new offers, we need to include the created_by field
         const { error } = await supabase
           .from('offers')
-          .insert(values);
+          .insert({
+            ...values,
+            created_by: (await supabase.auth.getUser()).data.user?.id || '',
+          });
 
         if (error) throw error;
 
@@ -130,6 +149,12 @@ export default function Offers() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Offer Management</h1>
+          <button
+            onClick={() => setIsOpen(true)}
+            className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
+          >
+            Create Offer
+          </button>
         </div>
 
         <Dialog open={isOpen} onOpenChange={(open) => {
@@ -143,8 +168,12 @@ export default function Offers() {
             <OfferForm
               initialData={editingOffer ? {
                 name: editingOffer.name,
+                description: editingOffer.description || "",
                 payout: editingOffer.payout,
-                status: editingOffer.status,
+                status: editingOffer.status || false,
+                creatives: editingOffer.creatives || [],
+                links: editingOffer.links || [],
+                is_top_offer: editingOffer.is_top_offer || false,
               } : undefined}
               onSubmit={onSubmit}
               isSubmitting={isSubmitting}
@@ -161,4 +190,3 @@ export default function Offers() {
     </DashboardLayout>
   );
 }
-

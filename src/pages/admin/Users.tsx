@@ -8,10 +8,10 @@ import { UserList } from "@/components/users/UserList";
 
 interface User {
   id: string;
-  email: string;
+  email: string | null;
   first_name: string | null;
   last_name: string | null;
-  role: string;
+  role: "admin" | "affiliate";
 }
 
 export default function Users() {
@@ -135,9 +135,11 @@ export default function Users() {
               <DialogTitle>Edit User</DialogTitle>
             </DialogHeader>
             <UserForm
+              mode="edit"
               initialData={editingUser ? {
-                first_name: editingUser.first_name,
-                last_name: editingUser.last_name,
+                email: editingUser.email || "",
+                first_name: editingUser.first_name || "",
+                last_name: editingUser.last_name || "",
                 role: editingUser.role,
               } : undefined}
               onSubmit={onSubmit}
