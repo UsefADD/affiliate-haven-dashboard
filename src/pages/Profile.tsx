@@ -63,7 +63,6 @@ export default function Profile() {
           first_name: formData.first_name,
           last_name: formData.last_name,
           company: formData.company,
-          subdomain: formData.subdomain,
         })
         .eq('id', user.id);
 
@@ -161,7 +160,6 @@ export default function Profile() {
       first_name: formData.get('first_name'),
       last_name: formData.get('last_name'),
       company: formData.get('company'),
-      subdomain: formData.get('subdomain'),
     };
     console.log("Submitting profile update with data:", data);
     updateProfile(data);
@@ -231,15 +229,6 @@ export default function Profile() {
                       id="company" 
                       name="company"
                       defaultValue={profile?.company || ''}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subdomain">Subdomain</Label>
-                    <Input 
-                      id="subdomain" 
-                      name="subdomain"
-                      defaultValue={profile?.subdomain || ''}
-                      placeholder="e.g., yourcompany"
                     />
                   </div>
                   <Button type="submit" disabled={loading}>
