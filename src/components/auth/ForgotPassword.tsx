@@ -17,7 +17,7 @@ export function ForgotPassword() {
     try {
       console.log("Attempting to send reset password email to:", email);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password#`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) throw error;
