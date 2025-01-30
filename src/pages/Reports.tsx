@@ -3,14 +3,12 @@ import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format, startOfDay, endOfDay } from "date-fns";
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DateRangeSelector } from "@/components/reports/DateRangeSelector";
+import { startOfDay, endOfDay } from "date-fns";
 
 interface CampaignStats {
   id: string;
@@ -43,29 +41,34 @@ interface LeadData {
 }
 
 export default function Reports() {
-  const [date, setDate] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState("");
   const [clickData, setClickData] = useState<ClickData[]>([]);
   const [leadsData, setLeadsData] = useState<LeadData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    handleRunReport();
-  }, []);
+  const handleDateRangeChange = async ({ from, to }: { from: Date; to: Date }) => {
+    setIsLoading(true);
+    await Promise.all([
+      fetchClicks(from, to),
+      fetchLeads(from, to)
+    ]);
+    
+    toast({
+      title: "Report Generated",
+      description: `Showing results for selected date range`,
+    });
+  };
 
-  const fetchLeads = async (selectedDate: Date) => {
+  const fetchLeads = async (startDate: Date, endDate: Date) => {
     try {
-      console.log("Fetching leads for date:", format(selectedDate, "yyyy-MM-dd"));
+      console.log("Fetching leads for date range:", { startDate, endDate });
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         console.error("No user found");
         return;
       }
-
-      const startDate = startOfDay(selectedDate);
-      const endDate = endOfDay(selectedDate);
 
       const { data, error } = await supabase
         .from('leads')
@@ -80,15 +83,15 @@ export default function Reports() {
           )
         `)
         .eq('affiliate_id', user.id)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
+        .gte('created_at', startOfDay(startDate).toISOString())
+        .lte('created_at', endOfDay(endDate).toISOString());
 
       if (error) {
         console.error("Error fetching leads:", error);
         throw error;
       }
 
-      console.log("Fetched leads for date:", data);
+      console.log("Fetched leads:", data);
       setLeadsData(data || []);
     } catch (error) {
       console.error('Error in fetchLeads:', error);
@@ -100,18 +103,15 @@ export default function Reports() {
     }
   };
 
-  const fetchClicks = async (selectedDate: Date) => {
+  const fetchClicks = async (startDate: Date, endDate: Date) => {
     try {
-      console.log("Fetching clicks for date:", format(selectedDate, "yyyy-MM-dd"));
+      console.log("Fetching clicks for date range:", { startDate, endDate });
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         console.error("No user found");
         return;
       }
-
-      const startDate = startOfDay(selectedDate);
-      const endDate = endOfDay(selectedDate);
 
       const { data, error } = await supabase
         .from('affiliate_clicks')
@@ -124,15 +124,15 @@ export default function Reports() {
           )
         `)
         .eq('affiliate_id', user.id)
-        .gte('clicked_at', startDate.toISOString())
-        .lte('clicked_at', endDate.toISOString());
+        .gte('clicked_at', startOfDay(startDate).toISOString())
+        .lte('clicked_at', endOfDay(endDate).toISOString());
 
       if (error) {
         console.error("Error fetching clicks:", error);
         throw error;
       }
 
-      console.log("Fetched clicks for date:", data);
+      console.log("Fetched clicks:", data);
       setClickData(data || []);
     } catch (error) {
       console.error('Error in fetchClicks:', error);
@@ -144,23 +144,6 @@ export default function Reports() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleRunReport = async () => {
-    setIsLoading(true);
-    const selectedDate = date || new Date();
-    
-    console.log("Running report for date:", format(selectedDate, "yyyy-MM-dd"));
-    
-    await Promise.all([
-      fetchClicks(selectedDate),
-      fetchLeads(selectedDate)
-    ]);
-    
-    toast({
-      title: "Report Generated",
-      description: `Showing results for ${format(selectedDate, "MMM d, yyyy")}`,
-    });
   };
 
   // Calculate campaign stats from clicks and leads
@@ -183,17 +166,14 @@ export default function Reports() {
       };
     }
     
-    // Increment clicks
     acc[key].clicks++;
     
-    // Calculate conversions from leads
     const campaignLeads = leadsData.filter(lead => lead.offers?.id === campaignId);
     acc[key].conversions = campaignLeads.filter(lead => lead.status === 'converted').length;
     acc[key].earnings = campaignLeads
       .filter(lead => lead.status === 'converted')
       .reduce((sum, lead) => sum + (lead.offers?.payout || 0), 0);
     
-    // Calculate rates
     acc[key].conversionRate = (acc[key].conversions / acc[key].clicks) * 100;
     acc[key].epc = acc[key].earnings / acc[key].clicks;
     
@@ -210,7 +190,6 @@ export default function Reports() {
       };
     }, { clicks: 0, conversions: 0, earnings: 0 });
 
-    // Calculate overall rates
     const conversionRate = totals.clicks > 0 
       ? (totals.conversions / totals.clicks) * 100 
       : 0;
@@ -224,6 +203,11 @@ export default function Reports() {
       epc,
     };
   };
+
+  useEffect(() => {
+    // Initialize with today's date
+    handleDateRangeChange({ from: new Date(), to: new Date() });
+  }, []);
 
   if (isLoading) {
     return (
@@ -246,42 +230,18 @@ export default function Reports() {
         <div className="space-y-6">
           <h2 className="text-2xl font-bold">Campaigns Report</h2>
           
-          <div className="flex flex-col md:flex-row gap-4">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full md:w-[300px] justify-start text-left font-normal"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(date, "PPP")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(newDate) => setDate(newDate || new Date())}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+          <div className="space-y-4">
+            <DateRangeSelector onDateChange={handleDateRangeChange} />
             
-            <Input
-              type="text"
-              placeholder="Search Campaigns..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full md:w-[300px]"
-            />
-            <Button 
-              className="bg-green-600 hover:bg-green-700 ml-auto"
-              onClick={handleRunReport}
-            >
-              Run Report
-            </Button>
+            <div className="flex gap-4">
+              <Input
+                type="text"
+                placeholder="Search Campaigns..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full md:w-[300px]"
+              />
+            </div>
           </div>
 
           <div className="rounded-md border">
@@ -317,7 +277,7 @@ export default function Reports() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-4">
-                      No data found for selected date
+                      No data found for selected date range
                     </TableCell>
                   </TableRow>
                 )}
