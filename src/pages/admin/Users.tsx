@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Pencil, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +28,8 @@ export default function Users() {
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<Profile | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -114,6 +117,8 @@ export default function Users() {
         description: "User deleted successfully",
       });
 
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
       fetchUsers();
     } catch (error: any) {
       console.error('Error deleting user:', error);
@@ -278,6 +283,28 @@ export default function Users() {
           </DialogContent>
         </Dialog>
 
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the user
+                {userToDelete && ` ${userToDelete.first_name} ${userToDelete.last_name}`} 
+                and all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => userToDelete && handleDeleteUser(userToDelete.id)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -319,7 +346,10 @@ export default function Users() {
                           variant="ghost" 
                           size="icon" 
                           className="text-destructive"
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => {
+                            setUserToDelete(user);
+                            setDeleteDialogOpen(true);
+                          }}
                         >
                           <UserX className="h-4 w-4" />
                         </Button>
