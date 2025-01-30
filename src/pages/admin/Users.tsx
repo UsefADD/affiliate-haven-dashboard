@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Pencil, UserX, Ban } from "lucide-react";
+import { UserPlus, Pencil, UserX, Ban, Unlock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UserForm, UserFormData } from "@/components/users/UserForm";
 import { AffiliateLeadsManager } from "@/components/leads/AffiliateLeadsManager";
@@ -19,6 +19,7 @@ interface Profile {
   email: string | null;
   subdomain: string | null;
   created_at: string;
+  is_blocked: boolean | null;
 }
 
 export default function Users() {
@@ -167,6 +168,46 @@ export default function Users() {
       toast({
         title: "Error",
         description: error.message || "Failed to block user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnblockUser = async (userId: string) => {
+    try {
+      console.log('Unblocking user with ID:', userId);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No session found');
+      }
+
+      const { data, error } = await supabase.functions.invoke('unblock-user', {
+        body: { userId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('Unblock user response:', data);
+
+      toast({
+        title: "Success",
+        description: "User unblocked successfully",
+      });
+
+      setBlockDialogOpen(false);
+      setUserToBlock(null);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unblock user",
         variant: "destructive",
       });
     }
@@ -406,17 +447,28 @@ export default function Users() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="text-yellow-600"
-                          onClick={() => {
-                            setUserToBlock(user);
-                            setBlockDialogOpen(true);
-                          }}
-                        >
-                          <Ban className="h-4 w-4" />
-                        </Button>
+                        {user.is_blocked ? (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="text-green-600"
+                            onClick={() => handleUnblockUser(user.id)}
+                          >
+                            <Unlock className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="text-yellow-600"
+                            onClick={() => {
+                              setUserToBlock(user);
+                              setBlockDialogOpen(true);
+                            }}
+                          >
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="icon" 
