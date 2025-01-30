@@ -12,14 +12,12 @@ port = 54322
 enabled = true
 port = 54323
 
-[[functions]]
-name = "create-user"
+[functions]
+[functions.create-user]
 verify_jwt = true
 
-[[functions]]
-name = "delete-user"
+[functions.delete-user]
 verify_jwt = true
 
-[[functions]]
-name = "block-user"
+[functions.block-user]
 verify_jwt = true
