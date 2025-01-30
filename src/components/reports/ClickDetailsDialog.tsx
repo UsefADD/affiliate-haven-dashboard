@@ -19,6 +19,29 @@ interface ClickDetailsProps {
   campaignName: string;
 }
 
+function getBrowserInfo(userAgent: string | null): string {
+  if (!userAgent) return 'N/A';
+  
+  if (userAgent.includes("Chrome")) {
+    return "Chrome";
+  } else if (userAgent.includes("Firefox")) {
+    return "Firefox";
+  } else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
+    return "Safari";
+  } else if (userAgent.includes("Edge")) {
+    return "Edge";
+  } else if (userAgent.includes("Opera")) {
+    return "Opera";
+  }
+  
+  return "Other";
+}
+
+function getFirstIP(ipString: string | null): string {
+  if (!ipString) return 'N/A';
+  return ipString.split(',')[0].trim();
+}
+
 export function ClickDetailsDialog({ clicks, campaignName }: ClickDetailsProps) {
   return (
     <Dialog>
@@ -43,10 +66,8 @@ export function ClickDetailsDialog({ clicks, campaignName }: ClickDetailsProps) 
             {clicks.map((click) => (
               <TableRow key={click.id}>
                 <TableCell>{format(new Date(click.clicked_at), 'PPp')}</TableCell>
-                <TableCell>{click.ip_address || 'N/A'}</TableCell>
-                <TableCell className="max-w-[200px] truncate" title={click.user_agent || ''}>
-                  {click.user_agent || 'N/A'}
-                </TableCell>
+                <TableCell>{getFirstIP(click.ip_address)}</TableCell>
+                <TableCell>{getBrowserInfo(click.user_agent)}</TableCell>
                 <TableCell>{click.referrer || 'Direct'}</TableCell>
                 <TableCell>{click.sub_id || 'N/A'}</TableCell>
               </TableRow>
