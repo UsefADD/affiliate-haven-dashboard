@@ -187,7 +187,7 @@ export default function Index() {
           <p className="text-green-100">Maximize Your Performance & Grow Your Earnings</p>
           <div className="mt-4 space-y-4">
             <p className="text-green-100 leading-relaxed">
-              Monitor your conversions, optimize your campaigns, and boost your success with real-time insights and analytics. Stay informed about exclusive offers, promotions, and important updates to help you succeed.
+              Stay informed about exclusive offers, promotions, and important updates to help you succeed.
             </p>
             <div className="flex items-center space-x-2 text-green-100 bg-green-700/50 p-4 rounded-lg">
               <MessageSquare className="h-5 w-5 flex-shrink-0" />
