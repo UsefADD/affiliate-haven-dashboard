@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRangeSelector } from "@/components/reports/DateRangeSelector";
 import { ClickDetailsDialog } from "@/components/reports/ClickDetailsDialog";
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { startOfDay, endOfDay } from "date-fns";
 
 interface CampaignStats {
@@ -50,18 +50,13 @@ export default function Reports() {
   const [clickData, setClickData] = useState<ClickData[]>([]);
   const [leadsData, setLeadsData] = useState<LeadData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedDateRange, setSelectedDateRange] = useState({ from: new Date(), to: new Date() });
   const { toast } = useToast();
 
-  const handleDateRangeChange = ({ from, to }: { from: Date; to: Date }) => {
-    setSelectedDateRange({ from, to });
-  };
-
-  const handleRunReport = async () => {
+  const handleDateRangeChange = async ({ from, to }: { from: Date; to: Date }) => {
     setIsLoading(true);
     await Promise.all([
-      fetchClicks(selectedDateRange.from, selectedDateRange.to),
-      fetchLeads(selectedDateRange.from, selectedDateRange.to)
+      fetchClicks(from, to),
+      fetchLeads(from, to)
     ]);
     
     toast({
@@ -229,7 +224,8 @@ export default function Reports() {
   };
 
   useEffect(() => {
-    handleRunReport();
+    // Initialize with today's date
+    handleDateRangeChange({ from: new Date(), to: new Date() });
   }, []);
 
   if (isLoading) {
@@ -254,17 +250,7 @@ export default function Reports() {
           <h2 className="text-2xl font-bold">Campaigns Report</h2>
           
           <div className="space-y-4">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end">
-              <div className="flex-1">
-                <DateRangeSelector onDateChange={handleDateRangeChange} />
-              </div>
-              <Button 
-                onClick={handleRunReport}
-                className="w-full md:w-auto"
-              >
-                Run Report
-              </Button>
-            </div>
+            <DateRangeSelector onDateChange={handleDateRangeChange} />
             
             <div className="flex gap-4">
               <Input

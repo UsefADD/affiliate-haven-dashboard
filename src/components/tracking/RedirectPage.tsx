@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 export function RedirectPage() {
-  const { affiliateId, offerId, subId } = useParams();
+  const { affiliateId, offerId } = useParams();
 
   useEffect(() => {
     const trackAndRedirect = async () => {
@@ -13,14 +13,13 @@ export function RedirectPage() {
           return;
         }
 
-        console.log("Recording click for:", { affiliateId, offerId, subId });
+        console.log("Recording click for:", { affiliateId, offerId });
 
         // Call the Edge Function to record the click
         const { data, error } = await supabase.functions.invoke('track-click', {
           body: {
             affiliateId,
             offerId,
-            subId,
             referrer: document.referrer,
             userAgent: navigator.userAgent
           }
@@ -80,7 +79,7 @@ export function RedirectPage() {
     };
 
     trackAndRedirect();
-  }, [affiliateId, offerId, subId]);
+  }, [affiliateId, offerId]);
 
   // Return null instead of loading screen for instant redirect
   return null;
