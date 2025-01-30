@@ -162,17 +162,22 @@ export default function Login() {
   }
 
   return (
-    <>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/30">
-        <Card className="w-full max-w-md p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-primary to-blue-600">
+      <div className="absolute inset-0 bg-grid-white/[0.05] bg-grid-white/[0.05]" />
+      <div className="absolute inset-0 flex items-center justify-center bg-white/5 backdrop-blur-sm">
+        <Card className="w-full max-w-md p-8 bg-white/90 backdrop-blur-lg shadow-xl animate-fade-in">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-green-600">ClixAgent</h1>
-            <p className="text-muted-foreground mt-2">Sign in to your account</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              ClixAgent
+            </h1>
+            <p className="text-muted-foreground mt-2 text-sm">
+              Sign in to your account to continue
+            </p>
           </div>
           
           <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
               </label>
               <Input
@@ -180,14 +185,14 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full"
+                className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                 placeholder="Enter your email"
                 required
               />
             </div>
             
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2">
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
               <Input
@@ -195,7 +200,7 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full"
+                className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                 placeholder="Enter your password"
                 required
               />
@@ -203,17 +208,27 @@ export default function Login() {
 
             <Button 
               type="submit" 
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 transition-opacity"
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing in...
+                </span>
+              ) : (
+                "Sign in"
+              )}
             </Button>
 
-            <div className="text-center space-y-2">
+            <div className="flex flex-col items-center space-y-4 pt-4">
               <Button
                 type="button"
                 variant="link"
-                className="text-sm text-green-600 hover:underline"
+                className="text-sm text-primary hover:text-purple-600 transition-colors"
                 onClick={() => setShowForgotPassword(true)}
               >
                 Forgot Password?
@@ -221,10 +236,10 @@ export default function Login() {
               <Button
                 type="button"
                 variant="link"
-                className="text-sm text-green-600 hover:underline block mx-auto"
+                className="text-sm text-primary hover:text-purple-600 transition-colors"
                 onClick={() => setShowApplicationForm(true)}
               >
-                Affiliate Application
+                Apply as Affiliate
               </Button>
             </div>
           </form>
@@ -242,6 +257,6 @@ export default function Login() {
           />
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
