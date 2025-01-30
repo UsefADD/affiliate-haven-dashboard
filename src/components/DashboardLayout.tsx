@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BarChart2, Link, LogOut, FileText, UserRound } from "lucide-react";
+import { BarChart2, Link, LogOut, FileText, UserRound, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -96,34 +98,72 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return `${(firstName?.[0] || "").toUpperCase()}${(lastName?.[0] || "").toUpperCase()}`;
   };
 
+  const handleLogoClick = () => {
+    navigate(isAdmin ? '/admin' : '/');
+  };
+
+  const NavLinks = () => (
+    <nav className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-6">
+      {navItems.map((item) => (
+        <a
+          key={item.label}
+          href={item.href}
+          className={cn(
+            "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
+            location.pathname === item.href ? "text-primary" : "text-muted-foreground"
+          )}
+          onClick={(e) => {
+            e.preventDefault();
+            navigate(item.href);
+            setIsMobileMenuOpen(false);
+          }}
+        >
+          <item.icon className="h-4 w-4" />
+          <span>{item.label}</span>
+        </a>
+      ))}
+    </nav>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
       <header className="sticky top-0 z-30 glass-card border-b">
         <div className="container mx-auto">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-semibold text-green-600">ClixAgent</h1>
-              <nav className="hidden md:flex items-center space-x-6">
-                {navItems.map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-                      location.pathname === item.href ? "text-primary" : "text-muted-foreground"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </a>
-                ))}
-              </nav>
+              <h1 
+                onClick={handleLogoClick}
+                className="text-xl font-semibold text-green-600 cursor-pointer hover:text-green-700 transition-colors"
+              >
+                ClixAgent
+              </h1>
+              <div className="hidden md:block">
+                <NavLinks />
+              </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground hidden md:block">
                 Welcome back, {profile?.first_name || (isAdmin ? 'Admin' : 'Affiliate')}
               </div>
+              
+              {/* Mobile Menu */}
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                  <div className="py-4">
+                    <div className="text-sm text-muted-foreground mb-4">
+                      Welcome back, {profile?.first_name || (isAdmin ? 'Admin' : 'Affiliate')}
+                    </div>
+                    <NavLinks />
+                  </div>
+                </SheetContent>
+              </Sheet>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
