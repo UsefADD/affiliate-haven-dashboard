@@ -182,7 +182,7 @@ export default function Index() {
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-8 text-white">
           <h1 className="text-3xl font-bold mb-2">
-            Welcome {profile?.first_name} {profile?.last_name}
+            Welcome, {profile?.first_name} {profile?.last_name}
           </h1>
           <p className="text-green-100">Track your performance and manage your campaigns</p>
           <div className="mt-4 flex items-center space-x-2 text-green-100">

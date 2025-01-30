@@ -12,6 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Profile() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -33,6 +36,11 @@ export default function Profile() {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch profile data",
+        variant: "destructive",
+      });
     }
   };
 
@@ -49,6 +57,7 @@ export default function Profile() {
           first_name: formData.first_name,
           last_name: formData.last_name,
           company: formData.company,
+          subdomain: formData.subdomain,
         })
         .eq('id', user.id);
 
@@ -72,11 +81,38 @@ export default function Profile() {
     }
   };
 
-  const updatePassword = async (formData: any) => {
+  const updatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       setLoading(true);
+
+      if (newPassword !== confirmPassword) {
+        toast({
+          title: "Error",
+          description: "New passwords do not match",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // First verify the current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast({
+          title: "Error",
+          description: "Current password is incorrect",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If current password is correct, update to new password
       const { error } = await supabase.auth.updateUser({
-        password: formData.new_password
+        password: newPassword
       });
 
       if (error) throw error;
@@ -85,6 +121,11 @@ export default function Profile() {
         title: "Success",
         description: "Password updated successfully",
       });
+
+      // Clear password fields
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (error) {
       console.error('Error updating password:', error);
       toast({
@@ -104,31 +145,14 @@ export default function Profile() {
       first_name: formData.get('first_name'),
       last_name: formData.get('last_name'),
       company: formData.get('company'),
+      subdomain: formData.get('subdomain'),
     });
-  };
-
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const newPassword = formData.get('new_password');
-    const confirmPassword = formData.get('confirm_password');
-
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    updatePassword({ new_password: newPassword });
   };
 
   return (
     <DashboardLayout>
       <div className="container max-w-4xl">
-        <h1 className="text-3xl font-bold mb-6">Account Details</h1>
+        <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
         
         <Tabs defaultValue="contact">
           <TabsList className="mb-4">
@@ -149,6 +173,7 @@ export default function Profile() {
                         id="first_name" 
                         name="first_name"
                         defaultValue={profile?.first_name || ''}
+                        required
                       />
                     </div>
                     <div className="space-y-2">
@@ -157,6 +182,7 @@ export default function Profile() {
                         id="last_name" 
                         name="last_name"
                         defaultValue={profile?.last_name || ''}
+                        required
                       />
                     </div>
                     <div className="space-y-2">
@@ -166,14 +192,6 @@ export default function Profile() {
                         type="email"
                         value={profile?.email || ''}
                         disabled
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input 
-                        id="phone" 
-                        name="phone"
-                        defaultValue={profile?.phone || ''}
                       />
                     </div>
                   </div>
@@ -198,11 +216,12 @@ export default function Profile() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="website">Website</Label>
+                    <Label htmlFor="subdomain">Subdomain</Label>
                     <Input 
-                      id="website" 
-                      name="website"
-                      defaultValue={profile?.website || ''}
+                      id="subdomain" 
+                      name="subdomain"
+                      defaultValue={profile?.subdomain || ''}
+                      placeholder="e.g., yourcompany"
                     />
                   </div>
                   <Button type="submit" disabled={loading}>
@@ -216,22 +235,23 @@ export default function Profile() {
           <TabsContent value="marketing">
             <Card>
               <CardContent className="pt-6">
-                <form className="space-y-4">
+                <form onSubmit={handleProfileSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="website_url">Website URL</Label>
-                    <Input id="website_url" name="website_url" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="site_category">Site Category</Label>
-                    <Input id="site_category" name="site_category" />
+                    <Input 
+                      id="website_url" 
+                      name="website_url"
+                      defaultValue={profile?.website_url || ''}
+                      placeholder="https://"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="marketing_strategy">How do you market your site?</Label>
-                    <Textarea id="marketing_strategy" name="marketing_strategy" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="comments">Comments</Label>
-                    <Textarea id="comments" name="comments" />
+                    <Textarea 
+                      id="marketing_strategy" 
+                      name="marketing_strategy"
+                      defaultValue={profile?.marketing_strategy || ''}
+                    />
                   </div>
                   <Button type="submit" disabled={loading}>
                     Save Changes
@@ -244,22 +264,37 @@ export default function Profile() {
           <TabsContent value="login">
             <Card>
               <CardContent className="pt-6">
-                <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <form onSubmit={updatePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="current_password">Current Password</Label>
+                    <Input 
+                      id="current_password"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                      placeholder="Enter your current password"
+                    />
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="new_password">New Password</Label>
                     <Input 
-                      id="new_password" 
-                      name="new_password" 
+                      id="new_password"
                       type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
                       placeholder="Enter new password"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm_password">Confirm Password</Label>
+                    <Label htmlFor="confirm_password">Confirm New Password</Label>
                     <Input 
-                      id="confirm_password" 
-                      name="confirm_password" 
+                      id="confirm_password"
                       type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
                       placeholder="Confirm new password"
                     />
                   </div>
