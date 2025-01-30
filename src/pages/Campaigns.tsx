@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Campaign } from "@/types/campaign";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { CampaignList } from "@/components/campaigns/CampaignList";
 import { CampaignDetails } from "@/components/campaigns/CampaignDetails";
 import { SearchBar } from "@/components/campaigns/SearchBar";
