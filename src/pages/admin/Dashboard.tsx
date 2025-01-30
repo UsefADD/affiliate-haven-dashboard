@@ -7,6 +7,7 @@ import { BarChart, Users, Gift, FileSpreadsheet, TrendingUp } from "lucide-react
 import { Link } from "react-router-dom";
 import { AffiliateApplicationsManager } from "@/components/admin/AffiliateApplicationsManager";
 import { ClicksOverview } from "@/components/admin/ClicksOverview";
+import { AffiliatePerformanceDashboard } from "@/components/admin/AffiliatePerformanceDashboard";
 
 interface DashboardStats {
   totalOffers: number;
@@ -100,7 +101,7 @@ export default function AdminDashboard() {
         <div className="relative bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-8 text-white mb-8">
           <div className="absolute inset-0 bg-black/10 rounded-lg"></div>
           <div className="relative">
-            <h1 className="text-3xl font-bold mb-2">Welcome to Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
             <p className="text-white/80">Manage your affiliate network and track performance</p>
           </div>
         </div>
@@ -128,6 +129,11 @@ export default function AdminDashboard() {
               </Card>
             </Link>
           ))}
+        </div>
+
+        {/* Affiliate Performance Dashboard */}
+        <div className="mt-8 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-lg p-6">
+          <AffiliatePerformanceDashboard />
         </div>
 
         {/* Click Statistics Section */}
