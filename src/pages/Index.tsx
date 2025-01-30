@@ -154,55 +154,55 @@ export default function Index() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 w-full">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-8 text-white">
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-8 text-white">
           <h1 className="text-3xl font-bold mb-2">Welcome to Your Dashboard</h1>
-          <p className="text-green-100">Track your performance and manage your campaigns</p>
+          <p className="text-white/80">Track your performance and manage your campaigns</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-4">
-          <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
+          <Card className="bg-white/80 backdrop-blur-sm border border-purple-100/20 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Leads</CardTitle>
-              <Users className="h-4 w-4 text-green-600" />
+              <Users className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.totalLeads}</div>
+              <div className="text-2xl font-bold text-purple-600">{stats.totalLeads}</div>
               <p className="text-xs text-muted-foreground mt-1">Total leads generated</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
+          <Card className="bg-white/80 backdrop-blur-sm border border-purple-100/20 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Clicks</CardTitle>
-              <MousePointer className="h-4 w-4 text-green-600" />
+              <MousePointer className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.totalClicks}</div>
+              <div className="text-2xl font-bold text-purple-600">{stats.totalClicks}</div>
               <p className="text-xs text-muted-foreground mt-1">Total clicks tracked</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
+          <Card className="bg-white/80 backdrop-blur-sm border border-purple-100/20 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">Conversion Rate</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.conversionRate.toFixed(2)}%</div>
+              <div className="text-2xl font-bold text-purple-600">{stats.conversionRate.toFixed(2)}%</div>
               <p className="text-xs text-muted-foreground mt-1">Clicks to conversions</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border border-green-100 hover:shadow-lg transition-all duration-300">
+          <Card className="bg-white/80 backdrop-blur-sm border border-purple-100/20 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
+              <DollarSign className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">${stats.totalEarnings.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-purple-600">${stats.totalEarnings.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">Total revenue earned</p>
             </CardContent>
           </Card>
@@ -210,13 +210,13 @@ export default function Index() {
 
         {/* Click Statistics */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-green-600">Click Statistics</h2>
+          <h2 className="text-2xl font-bold text-purple-600">Click Statistics</h2>
           <ClickStats affiliateId={currentUserId} />
         </div>
 
-        <Card className="bg-white/80 backdrop-blur-sm border border-green-100">
+        <Card className="bg-white/80 backdrop-blur-sm border border-purple-100/20">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-green-600">Recent Leads Performance</CardTitle>
+            <CardTitle className="text-lg font-semibold text-purple-600">Recent Leads Performance</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -228,13 +228,13 @@ export default function Index() {
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
+                      border: '1px solid rgba(139, 92, 246, 0.1)',
                       borderRadius: '8px'
                     }}
                   />
                   <Bar 
                     dataKey="count" 
-                    fill="#059669" 
+                    fill="#9b87f5" 
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
@@ -246,10 +246,10 @@ export default function Index() {
         {/* Top Offers */}
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <Star className="h-6 w-6 text-green-600" />
-            <h2 className="text-2xl font-bold text-green-600">Top Offers</h2>
+            <Star className="h-6 w-6 text-purple-600" />
+            <h2 className="text-2xl font-bold text-purple-600">Top Offers</h2>
           </div>
-          <Card className="bg-white/80 backdrop-blur-sm border border-green-100">
+          <Card className="bg-white/80 backdrop-blur-sm border border-purple-100/20">
             <CardContent className="p-6">
               {offers.length === 0 ? (
                 <div className="text-center py-10">
