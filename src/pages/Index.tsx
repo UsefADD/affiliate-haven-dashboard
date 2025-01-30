@@ -154,7 +154,7 @@ export default function Index() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 w-full px-4 py-6">
+      <div className="space-y-8 w-full">
         {/* Welcome Section */}
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 border border-white/20">
           <h1 className="text-3xl font-bold text-white mb-2">Welcome to Your Dashboard</h1>
@@ -216,35 +216,32 @@ export default function Index() {
           </div>
         </div>
 
-        <Card className="bg-white/10 backdrop-blur-sm border border-white/20">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-white">Recent Leads Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.recentLeads}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
-                  <XAxis dataKey="date" stroke="#fff" opacity={0.7} />
-                  <YAxis stroke="#fff" opacity={0.7} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="count" 
-                    fill="#9b87f5" 
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Recent Leads Performance */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Recent Leads Performance</h2>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.recentLeads}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+                <XAxis dataKey="date" stroke="#fff" opacity={0.7} />
+                <YAxis stroke="#fff" opacity={0.7} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                />
+                <Bar 
+                  dataKey="count" 
+                  fill="#9b87f5" 
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
         {/* Top Offers */}
         <div className="space-y-4">

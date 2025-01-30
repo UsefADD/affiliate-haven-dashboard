@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode } from "react";
-import { useNavigate, Link, Outlet, useLocation } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,9 +155,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
-          <div className="bg-white/80 backdrop-blur-lg rounded-lg shadow-xl p-6 animate-fade-in">
-            {children}
-          </div>
+          {children}
         </main>
       </div>
     </div>
