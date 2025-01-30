@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format, subDays, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DateRange {
   from: Date;
@@ -22,7 +23,7 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
     to: new Date()
   });
 
-  const handlePresetClick = (preset: string) => {
+  const handlePresetSelect = (preset: string) => {
     const today = new Date();
     let from = today;
     let to = today;
@@ -60,99 +61,64 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
     if (range.from && range.to) {
       setDateRange({ from: range.from, to: range.to });
       onDateChange({ from: range.from, to: range.to });
-      setIsCalendarOpen(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 md:flex-row md:gap-4">
-        <div className="w-[200px] space-y-1">
+    <div>
+      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+        <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="w-full justify-start text-left font-normal"
-            onClick={() => handlePresetClick("today")}
+            className={cn(
+              "w-[280px] justify-start text-left font-normal",
+              !dateRange && "text-muted-foreground"
+            )}
           >
-            Today
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {dateRange?.from ? (
+              dateRange.to ? (
+                <>
+                  {format(dateRange.from, "LLL dd, y")} -{" "}
+                  {format(dateRange.to, "LLL dd, y")}
+                </>
+              ) : (
+                format(dateRange.from, "LLL dd, y")
+              )
+            ) : (
+              <span>Pick a date</span>
+            )}
           </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start text-left font-normal"
-            onClick={() => handlePresetClick("yesterday")}
-          >
-            Yesterday
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start text-left font-normal"
-            onClick={() => handlePresetClick("last7")}
-          >
-            Last 7 Days
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start text-left font-normal"
-            onClick={() => handlePresetClick("last30")}
-          >
-            Last 30 Days
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start text-left font-normal"
-            onClick={() => handlePresetClick("thisMonth")}
-          >
-            This Month
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start text-left font-normal"
-            onClick={() => handlePresetClick("lastMonth")}
-          >
-            Last Month
-          </Button>
-        </div>
-
-        <div>
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !dateRange && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "LLL dd, y")} -{" "}
-                      {format(dateRange.to, "LLL dd, y")}
-                    </>
-                  ) : (
-                    format(dateRange.from, "LLL dd, y")
-                  )
-                ) : (
-                  <span>Custom Range</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={{
-                  from: dateRange?.from,
-                  to: dateRange?.to,
-                }}
-                onSelect={handleCustomRangeSelect}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <div className="p-3 border-b">
+            <Select onValueChange={handlePresetSelect}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="yesterday">Yesterday</SelectItem>
+                <SelectItem value="last7">Last 7 Days</SelectItem>
+                <SelectItem value="last30">Last 30 Days</SelectItem>
+                <SelectItem value="thisMonth">This Month</SelectItem>
+                <SelectItem value="lastMonth">Last Month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={dateRange?.from}
+            selected={{
+              from: dateRange?.from,
+              to: dateRange?.to,
+            }}
+            onSelect={handleCustomRangeSelect}
+            numberOfMonths={2}
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
