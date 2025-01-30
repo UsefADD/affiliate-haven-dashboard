@@ -1,41 +1,31 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Campaign } from "@/types/campaign";
-import { Copy, X } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { X } from "lucide-react";
 
 interface CampaignDetailsProps {
   campaign: Campaign | null;
   onClose: () => void;
-  trackingUrl: string | null;
 }
 
-export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDetailsProps) {
-  const [subId, setSubId] = useState("");
-  const { toast } = useToast();
-
+export function CampaignDetails({ campaign, onClose }: CampaignDetailsProps) {
   if (!campaign) return null;
 
-  const getTrackingUrlWithSubId = () => {
-    if (!trackingUrl) return "";
-    return subId ? `${trackingUrl}/${subId}` : trackingUrl;
-  };
-
-  const handleCopy = async () => {
+  const handleDownloadImage = async (imageUrl: string) => {
     try {
-      await navigator.clipboard.writeText(getTrackingUrlWithSubId());
-      toast({
-        title: "Copied!",
-        description: "Tracking URL copied to clipboard",
-      });
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `campaign-${campaign.id}-image.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to copy URL",
-        variant: "destructive",
-      });
+      console.error('Error downloading image:', error);
     }
   };
 
@@ -62,31 +52,6 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
               )}
             </div>
           </div>
-
-          {trackingUrl && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium mb-2">Tracking URL</h3>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter Sub ID (optional)"
-                    value={subId}
-                    onChange={(e) => setSubId(e.target.value)}
-                  />
-                  <Button onClick={handleCopy}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Add a Sub ID to track clicks from different sources
-                </p>
-              </div>
-              <div className="p-2 bg-muted rounded-md">
-                <code className="text-sm break-all">{getTrackingUrlWithSubId()}</code>
-              </div>
-            </div>
-          )}
 
           {campaign.creatives && campaign.creatives.length > 0 && (
             <div>
@@ -133,12 +98,21 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
                       <span className="font-medium">Images:</span>
                       <div className="grid grid-cols-2 gap-4 mt-2">
                         {creative.images.map((image, i) => (
-                          <img
-                            key={i}
-                            src={image}
-                            alt={`Creative ${index + 1} Image ${i + 1}`}
-                            className="rounded-md w-full h-32 object-cover"
-                          />
+                          <div key={i} className="relative group">
+                            <img
+                              src={image}
+                              alt={`Creative ${index + 1} Image ${i + 1}`}
+                              className="rounded-md w-full h-32 object-cover"
+                            />
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleDownloadImage(image)}
+                            >
+                              Download
+                            </Button>
+                          </div>
                         ))}
                       </div>
                     </div>
