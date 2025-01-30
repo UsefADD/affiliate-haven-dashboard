@@ -20,11 +20,7 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
 
   const getTrackingUrlWithSubId = () => {
     if (!trackingUrl) return "";
-    const url = new URL(trackingUrl);
-    if (subId) {
-      url.searchParams.set("sub_id", subId);
-    }
-    return url.toString();
+    return subId ? `${trackingUrl}/${subId}` : trackingUrl;
   };
 
   const handleCopy = async () => {
@@ -82,10 +78,73 @@ export function CampaignDetails({ campaign, onClose, trackingUrl }: CampaignDeta
                     Copy
                   </Button>
                 </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Add a Sub ID to track clicks from different sources
+                </p>
               </div>
               <div className="p-2 bg-muted rounded-md">
                 <code className="text-sm break-all">{getTrackingUrlWithSubId()}</code>
               </div>
+            </div>
+          )}
+
+          {campaign.creatives && campaign.creatives.length > 0 && (
+            <div>
+              <h3 className="font-medium mb-2">Creatives</h3>
+              {campaign.creatives.map((creative, index) => (
+                <div key={index} className="space-y-4 border rounded-lg p-4 mt-2">
+                  <p><span className="font-medium">Type:</span> {creative.type}</p>
+                  
+                  {creative.content && (
+                    <div>
+                      <span className="font-medium">Content:</span>
+                      <div className="mt-1 whitespace-pre-wrap">{creative.content}</div>
+                    </div>
+                  )}
+
+                  {creative.type === "email" && creative.details && (
+                    <div className="space-y-2">
+                      {creative.details.fromNames && creative.details.fromNames.length > 0 && (
+                        <div>
+                          <span className="font-medium">From Names:</span>
+                          <ul className="list-disc pl-5 mt-1">
+                            {creative.details.fromNames.map((name, i) => (
+                              <li key={i}>{name}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {creative.details.subjects && creative.details.subjects.length > 0 && (
+                        <div>
+                          <span className="font-medium">Subject Lines:</span>
+                          <ul className="list-disc pl-5 mt-1">
+                            {creative.details.subjects.map((subject, i) => (
+                              <li key={i}>{subject}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {creative.images && creative.images.length > 0 && (
+                    <div>
+                      <span className="font-medium">Images:</span>
+                      <div className="grid grid-cols-2 gap-4 mt-2">
+                        {creative.images.map((image, i) => (
+                          <img
+                            key={i}
+                            src={image}
+                            alt={`Creative ${index + 1} Image ${i + 1}`}
+                            className="rounded-md w-full h-32 object-cover"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

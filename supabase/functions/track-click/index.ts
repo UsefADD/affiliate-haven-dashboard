@@ -18,15 +18,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { affiliateId, offerId, referrer, userAgent } = await req.json();
-    console.log(`Processing click for affiliate ${affiliateId} and offer ${offerId}`);
+    const { affiliateId, offerId, referrer, userAgent, subId } = await req.json();
+    console.log(`Processing click for affiliate ${affiliateId} and offer ${offerId} with subId ${subId}`);
 
     if (!affiliateId || !offerId) {
       throw new Error('Missing affiliate ID or offer ID');
     }
 
     // Get IP address from various possible headers
-    const ipAddress = req.headers.get('x-forwarded-for') || 
+    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
                      req.headers.get('x-real-ip') || 
                      req.headers.get('cf-connecting-ip');
 
@@ -41,6 +41,7 @@ serve(async (req) => {
         ip_address: ipAddress,
         user_agent: userAgent,
         referrer: referrer,
+        sub_id: subId
       });
 
     if (clickError) {
