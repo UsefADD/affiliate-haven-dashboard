@@ -11,7 +11,7 @@ interface Offer {
   name: string;
   description: string | null;
   payout: number;
-  status: boolean | null;
+  status: boolean;
   created_at: string;
   created_by: string;
   creatives: any | null;
@@ -60,19 +60,21 @@ export default function Offers() {
       setIsSubmitting(true);
       console.log("Updating offer with values:", values);
 
+      const offerData = {
+        name: values.name,
+        description: values.description,
+        payout: values.payout,
+        status: values.status,
+        creatives: values.creatives,
+        links: values.links,
+        is_top_offer: values.is_top_offer,
+        created_by: (await supabase.auth.getUser()).data.user?.id || '',
+      };
+
       if (editingOffer) {
         const { error } = await supabase
           .from('offers')
-          .update({
-            name: values.name,
-            description: values.description,
-            payout: values.payout,
-            status: values.status,
-            creatives: values.creatives,
-            links: values.links,
-            is_top_offer: values.is_top_offer,
-            created_by: editingOffer.created_by // Preserve the original creator
-          })
+          .update(offerData)
           .eq('id', editingOffer.id);
 
         if (error) throw error;
@@ -82,13 +84,9 @@ export default function Offers() {
           description: "Offer updated successfully",
         });
       } else {
-        // For new offers, we need to include the created_by field
         const { error } = await supabase
           .from('offers')
-          .insert({
-            ...values,
-            created_by: (await supabase.auth.getUser()).data.user?.id || '',
-          });
+          .insert(offerData);
 
         if (error) throw error;
 
@@ -144,6 +142,56 @@ export default function Offers() {
     }
   };
 
+  const handleToggleStatus = async (offerId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('offers')
+        .update({ status: !currentStatus })
+        .eq('id', offerId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Offer ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      });
+      
+      fetchOffers();
+    } catch (error) {
+      console.error('Error toggling offer status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update offer status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleTopOffer = async (offerId: string, currentTopStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('offers')
+        .update({ is_top_offer: !currentTopStatus })
+        .eq('id', offerId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Offer ${!currentTopStatus ? 'marked as top' : 'unmarked as top'} successfully`,
+      });
+      
+      fetchOffers();
+    } catch (error) {
+      console.error('Error toggling top offer status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update top offer status",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -177,6 +225,7 @@ export default function Offers() {
               } : undefined}
               onSubmit={onSubmit}
               isSubmitting={isSubmitting}
+              isAdmin={true}
             />
           </DialogContent>
         </Dialog>
@@ -185,6 +234,9 @@ export default function Offers() {
           offers={offers}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onToggleStatus={handleToggleStatus}
+          onToggleTopOffer={handleToggleTopOffer}
+          isAdmin={true}
         />
       </div>
     </DashboardLayout>
