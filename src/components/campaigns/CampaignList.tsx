@@ -81,27 +81,43 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       return null;
     }
 
-    // Generate tracking URL with proper path parameters
-    return `/track/${userProfile.id}/${offer.id}`;
+    // Construct the tracking URL using the domain from window.location
+    const domain = window.location.hostname;
+    return `https://${domain}/track/${userProfile.id}/${offer.id}`;
   };
 
   const handleCopyLink = async (offer: Offer) => {
     const trackingUrl = getTrackingUrl(offer);
     if (trackingUrl) {
       try {
-        const fullUrl = `${window.location.origin}${trackingUrl}`;
-        await navigator.clipboard.writeText(fullUrl);
+        await navigator.clipboard.writeText(trackingUrl);
+        console.log("Successfully copied tracking URL:", trackingUrl);
         toast({
           title: "Success",
           description: "Tracking link copied to clipboard",
         });
       } catch (error) {
         console.error('Error copying to clipboard:', error);
-        toast({
-          title: "Error",
-          description: "Failed to copy tracking link",
-          variant: "destructive",
-        });
+        // Fallback method for copying
+        const textArea = document.createElement('textarea');
+        textArea.value = trackingUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          toast({
+            title: "Success",
+            description: "Tracking link copied to clipboard",
+          });
+        } catch (err) {
+          console.error('Fallback copy failed:', err);
+          toast({
+            title: "Error",
+            description: "Failed to copy tracking link. Please try copying manually.",
+            variant: "destructive",
+          });
+        }
+        document.body.removeChild(textArea);
       }
     }
   };
@@ -143,7 +159,7 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
                   {trackingUrl ? (
                     <div className="flex items-center space-x-2">
                       <span className="text-sm truncate max-w-[200px]">
-                        {`${window.location.origin}${trackingUrl}`}
+                        {trackingUrl}
                       </span>
                       <Button
                         variant="ghost"
