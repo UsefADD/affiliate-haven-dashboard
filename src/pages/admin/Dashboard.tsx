@@ -31,6 +31,8 @@ export default function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
+      console.log("Fetching dashboard stats...");
+      
       const { data: offers, error: offersError } = await supabase
         .from('offers')
         .select('status');
