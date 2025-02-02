@@ -11,6 +11,11 @@ import AdminLeads from "./pages/admin/Leads";
 import { Toaster } from "@/components/ui/toaster";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { RedirectPage } from "@/components/tracking/RedirectPage";
+import { lazy, Suspense } from "react";
+
+// Lazy load these components as they're not needed for initial login
+const AffiliateApplicationForm = lazy(() => import("@/components/affiliate/AffiliateApplicationForm"));
+const ForgotPassword = lazy(() => import("@/components/auth/ForgotPassword"));
 
 function App() {
   return (
@@ -19,6 +24,22 @@ function App() {
         {/* Public Routes - No Auth Required */}
         <Route path="/login" element={<Login />} />
         <Route path="/track/:affiliateId/:offerId" element={<RedirectPage />} />
+        <Route 
+          path="/affiliate-application" 
+          element={
+            <Suspense fallback={<div>Loading...</div>}>
+              <AffiliateApplicationForm onSuccess={() => {}} onCancel={() => {}} />
+            </Suspense>
+          } 
+        />
+        <Route 
+          path="/forgot-password" 
+          element={
+            <Suspense fallback={<div>Loading...</div>}>
+              <ForgotPassword />
+            </Suspense>
+          } 
+        />
         
         {/* Protected Routes */}
         <Route path="/" element={<Index />} />
