@@ -17,13 +17,13 @@ const ForgotPassword = () => {
     try {
       console.log("Attempting to send reset password email to:", email);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `https://partner.clixagent.com/reset-password`,
       });
 
       if (error) throw error;
 
       // Send custom email using our edge function
-      const resetLink = `${window.location.origin}/reset-password`;
+      const resetLink = `https://partner.clixagent.com/reset-password`;
       const { error: emailError } = await supabase.functions.invoke('send-reset-password', {
         body: { email, resetLink }
       });
