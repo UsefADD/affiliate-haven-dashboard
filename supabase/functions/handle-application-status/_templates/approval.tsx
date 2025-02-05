@@ -23,7 +23,7 @@ interface ApprovalEmailProps {
 export const ApprovalEmail = ({ name, email, password }: ApprovalEmailProps) => (
   <Html>
     <Head />
-    <Preview>Welcome to ClixAgent Partner Program!</Preview>
+    <Preview>Welcome to ClixAgent Partner Program - Your Application is Approved! 🎉</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={headerSection}>
@@ -206,3 +206,4 @@ const footer = {
 }
 
 export default ApprovalEmail
+
