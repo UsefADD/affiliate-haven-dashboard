@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,28 +89,45 @@ export default function Index() {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching profile:', fetchError);
+        throw fetchError;
+      }
 
       if (!existingProfile) {
-        // Create new profile if it doesn't exist
+        console.log("No profile found, creating new profile...");
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
-          .insert([{ id: userId }])
-          .select()
-          .single();
+          .insert([{ 
+            id: userId,
+            role: 'affiliate',
+            email: (await supabase.auth.getUser()).data.user?.email
+          }])
+          .select('*')
+          .maybeSingle();
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          throw insertError;
+        }
         
+        if (!newProfile) {
+          throw new Error('Failed to create new profile');
+        }
+
+        console.log("New profile created:", newProfile);
         setProfile(newProfile);
         return;
       }
 
+      console.log("Existing profile found:", existingProfile);
       setProfile(existingProfile);
     } catch (error: any) {
       console.error('Profile fetch/create error:', error);
