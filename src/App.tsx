@@ -1,6 +1,7 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState, lazy, Suspense } from "react";
+import React from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -15,9 +16,22 @@ import { Toaster } from "@/components/ui/toaster";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { RedirectPage } from "@/components/tracking/RedirectPage";
 
-// Lazy load components with proper error boundaries
-const AffiliateApplicationForm = lazy(() => import("@/components/affiliate/AffiliateApplicationForm"));
-const ForgotPassword = lazy(() => import("@/components/auth/ForgotPassword"));
+// Lazy load components with proper error boundaries and retry logic
+const AffiliateApplicationForm = lazy(() => 
+  import("@/components/affiliate/AffiliateApplicationForm")
+    .catch(error => {
+      console.error("Error loading AffiliateApplicationForm:", error);
+      return import("@/components/affiliate/AffiliateApplicationForm");
+    })
+);
+
+const ForgotPassword = lazy(() => 
+  import("@/components/auth/ForgotPassword")
+    .catch(error => {
+      console.error("Error loading ForgotPassword:", error);
+      return import("@/components/auth/ForgotPassword");
+    })
+);
 
 // Loading fallback component
 const LoadingFallback = () => (
