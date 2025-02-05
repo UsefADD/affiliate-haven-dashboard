@@ -14,7 +14,6 @@ import AdminLeads from "./pages/admin/Leads";
 import { Toaster } from "@/components/ui/toaster";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { RedirectPage } from "@/components/tracking/RedirectPage";
-import { useNavigate } from "react-router-dom";
 
 // Lazy load these components as they're not needed for initial login
 const AffiliateApplicationForm = lazy(() => import("@/components/affiliate/AffiliateApplicationForm"));
@@ -120,3 +119,4 @@ function App() {
 }
 
 export default App;
+

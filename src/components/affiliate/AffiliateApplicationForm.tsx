@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +44,7 @@ interface AffiliateApplicationFormProps {
   onCancel?: () => void;
 }
 
-export function AffiliateApplicationForm({ onSuccess, onCancel }: AffiliateApplicationFormProps) {
+function AffiliateApplicationForm({ onSuccess, onCancel }: AffiliateApplicationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const { toast } = useToast();
@@ -506,4 +507,7 @@ export function AffiliateApplicationForm({ onSuccess, onCancel }: AffiliateAppli
     </>
   );
 }
+
+// Add default export
+export default AffiliateApplicationForm;
 
