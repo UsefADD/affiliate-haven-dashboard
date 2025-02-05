@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,14 +56,28 @@ export default function Index() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+        
+        if (!session) {
+          navigate('/login');
+          return;
+        }
+        
+        setCurrentUserId(session.user.id);
+        if (session.user.id) {
+          await fetchUserProfile(session.user.id);
+        }
+      } catch (error: any) {
+        console.error('Session check error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to check authentication status",
+          variant: "destructive",
+        });
         navigate('/login');
-        return;
-      }
-      setCurrentUserId(session.user.id);
-      if (session.user.id) {
-        fetchUserProfile(session.user.id);
       }
     };
     
@@ -75,59 +88,34 @@ export default function Index() {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data: profile, error } = await supabase
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        toast({
-          title: "Error",
-          description: "Unable to fetch user profile",
-          variant: "destructive",
-        });
+
+      if (fetchError) throw fetchError;
+
+      if (!existingProfile) {
+        // Create new profile if it doesn't exist
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: userId }])
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        
+        setProfile(newProfile);
         return;
       }
 
-      if (!profile) {
-        console.log('No profile found, creating one for user:', userId);
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert([{ id: userId }]);
-          
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
-          toast({
-            title: "Error",
-            description: "Unable to create user profile",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        // Fetch the newly created profile
-        const { data: newProfile, error: fetchError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-          
-        if (fetchError) {
-          console.error('Error fetching new profile:', fetchError);
-          return;
-        }
-        
-        setProfile(newProfile);
-      } else {
-        setProfile(profile);
-      }
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
+      setProfile(existingProfile);
+    } catch (error: any) {
+      console.error('Profile fetch/create error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred while fetching your profile",
+        description: "Failed to load or create user profile",
         variant: "destructive",
       });
     }
