@@ -22,32 +22,36 @@ export const RejectionEmail = ({ name }: RejectionEmailProps) => (
     <Preview>Update on Your ClixAgent Partner Program Application</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Section>
-          <Heading style={h1}>Application Update</Heading>
+        <Section style={header}>
+          <Text style={brandText}>ClixAgent</Text>
+        </Section>
+        
+        <Section style={content}>
+          <Heading style={h1}>Application Status Update</Heading>
           <Text style={text}>Dear {name},</Text>
           <Text style={text}>
-            Thank you for your interest in joining the ClixAgent Partner Program. We have carefully reviewed your application, and we regret to inform you that we are unable to accept your application at this time.
+            Thank you for your interest in joining the ClixAgent Partner Program. After careful review of your application, we regret to inform you that we are unable to accept your application at this time.
           </Text>
           
           <Text style={text}>
-            While we appreciate your interest in partnering with us, we have to be selective in our approval process to maintain the quality and standards of our affiliate program.
+            The affiliate marketing landscape is constantly evolving, and our selection process takes into account various factors to ensure mutual success in our partnerships.
           </Text>
 
           <Hr style={hr} />
           
           <Text style={text}>
-            You are welcome to apply again in the future if your circumstances change. Some factors that we consider in our evaluation include:
+            Some key factors we consider in our evaluation include:
           </Text>
           
           <ul style={list}>
-            <li>Marketing experience and track record</li>
-            <li>Quality of traffic sources</li>
-            <li>Alignment with our target market</li>
-            <li>Compliance with our terms and conditions</li>
+            <li style={listItem}>Marketing experience and demonstrated track record</li>
+            <li style={listItem}>Quality and sustainability of traffic sources</li>
+            <li style={listItem}>Alignment with our target market and business goals</li>
+            <li style={listItem}>Compliance with industry regulations and our terms of service</li>
           </ul>
 
           <Text style={text}>
-            We wish you the best in your future endeavors.
+            We encourage you to continue developing your marketing expertise and consider reapplying in the future when you feel your application better aligns with our program requirements.
           </Text>
 
           <Text style={footer}>
@@ -69,17 +73,37 @@ const main = {
 const container = {
   backgroundColor: "#ffffff",
   margin: "0 auto",
-  padding: "20px 0 48px",
   marginBottom: "64px",
+  borderRadius: "5px",
+  overflow: "hidden",
+}
+
+const header = {
+  backgroundColor: "#10B981",
+  padding: "20px 0",
+  textAlign: "center" as const,
+}
+
+const brandText = {
+  color: "#ffffff",
+  fontSize: "32px",
+  fontWeight: "bold",
+  margin: "0",
+  textAlign: "center" as const,
+  textTransform: "uppercase" as const,
+  letterSpacing: "2px",
+}
+
+const content = {
+  padding: "40px",
 }
 
 const h1 = {
   color: "#333",
   fontSize: "24px",
   fontWeight: "bold",
-  margin: "40px 0",
+  margin: "0 0 20px",
   padding: "0",
-  textAlign: "center" as const,
 }
 
 const text = {
@@ -99,6 +123,11 @@ const list = {
   fontSize: "16px",
   lineHeight: "24px",
   margin: "16px 0",
+  paddingLeft: "24px",
+}
+
+const listItem = {
+  margin: "8px 0",
 }
 
 const footer = {
