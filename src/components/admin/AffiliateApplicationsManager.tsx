@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -8,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface AffiliateApplication {
   id: string;
@@ -41,6 +43,7 @@ export function AffiliateApplicationsManager() {
   const [applications, setApplications] = useState<AffiliateApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<AffiliateApplication | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -71,30 +74,34 @@ export function AffiliateApplicationsManager() {
     }
   };
 
-  const updateApplicationStatus = async (id: string, newStatus: string) => {
+  const handleStatusUpdate = async (id: string, newStatus: 'approved' | 'rejected') => {
     try {
-      console.log(`Updating application ${id} status to ${newStatus}`);
-      const { error } = await supabase
-        .from('affiliate_applications')
-        .update({ status: newStatus })
-        .eq('id', id);
+      setIsProcessing(true);
+      console.log(`Processing application ${id} with status ${newStatus}`);
+
+      const { error } = await supabase.functions.invoke('handle-application-status', {
+        body: { applicationId: id, status: newStatus },
+      });
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Application status updated successfully",
+        description: `Application ${newStatus} successfully`,
       });
 
-      // Refresh the applications list
-      fetchApplications();
+      // Remove the processed application from the list
+      setApplications(prev => prev.filter(app => app.id !== id));
+      setSelectedApplication(null);
     } catch (error) {
       console.error('Error updating application status:', error);
       toast({
         title: "Error",
-        description: "Failed to update application status",
+        description: `Failed to ${newStatus} application. Please try again.`,
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -165,6 +172,59 @@ export function AffiliateApplicationsManager() {
               </div>
             )}
           </ScrollArea>
+          {selectedApplication?.status === 'pending' && (
+            <div className="flex justify-end space-x-2 mt-4">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isProcessing}>
+                    Reject
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will reject the application and send a rejection email to the applicant. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleStatusUpdate(selectedApplication.id, 'rejected')}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Reject Application
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button className="bg-green-600 hover:bg-green-700" disabled={isProcessing}>
+                    Approve
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Approve Application</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will approve the application, create a user account, and send login credentials to the applicant. Would you like to proceed?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleStatusUpdate(selectedApplication.id, 'approved')}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Approve Application
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -216,19 +276,19 @@ export function AffiliateApplicationsManager() {
                             >
                               View Details
                             </Button>
-                            {app.status === 'pending' && (
+                            {app.status === 'pending' && !isProcessing && (
                               <>
                                 <Button
                                   size="sm"
                                   className="bg-green-600 hover:bg-green-700"
-                                  onClick={() => updateApplicationStatus(app.id, 'approved')}
+                                  onClick={() => handleStatusUpdate(app.id, 'approved')}
                                 >
                                   Approve
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => updateApplicationStatus(app.id, 'rejected')}
+                                  onClick={() => handleStatusUpdate(app.id, 'rejected')}
                                 >
                                   Reject
                                 </Button>
