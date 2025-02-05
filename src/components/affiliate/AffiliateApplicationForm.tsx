@@ -114,16 +114,16 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       onSuccess?.();
       
       toast({
-        title: "Success!",
-        description: "Your application has been submitted successfully.",
+        title: "Application Submitted Successfully! 🎉",
+        description: "Your affiliate application has been received. Check your email for confirmation.",
         variant: "default",
         className: "bg-green-500 text-white border-green-600"
       });
     } catch (error: any) {
       console.error("Error submitting application:", error);
       toast({
-        title: "Error",
-        description: "There was an error submitting your application. Please try again.",
+        title: "Error Submitting Application",
+        description: "We encountered an error while submitting your application. Please try again or contact support.",
         variant: "destructive",
       });
     } finally {
@@ -136,20 +136,31 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       <Dialog open={showThankYou} onOpenChange={setShowThankYou}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2 text-green-600">
-              <Check className="h-6 w-6 text-green-500" />
-              Application Submitted Successfully!
+            <DialogTitle className="text-2xl font-bold text-center flex flex-col items-center justify-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-2">
+                <Check className="h-6 w-6 text-green-500" />
+              </div>
+              <span className="text-green-600">Application Submitted Successfully!</span>
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-center text-gray-600">
-              Thank you for submitting your affiliate application to ClixAgent. We're excited about the possibility of working together!
+            <p className="text-center text-gray-700 font-medium text-lg">
+              Thank you for choosing to partner with ClixAgent!
             </p>
-            <p className="text-center text-gray-500">
-              We've sent you a confirmation email with more details. Our team will review your application and get back to you within 2-3 business days.
-            </p>
-            <Button onClick={() => setShowThankYou(false)} className="w-full bg-green-500 hover:bg-green-600 text-white">
-              Close
+            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+              <p className="text-gray-600">What happens next:</p>
+              <ul className="list-disc list-inside text-gray-600 space-y-1">
+                <li>Check your email for a confirmation</li>
+                <li>Application review (2-3 business days)</li>
+                <li>Decision notification via email</li>
+                <li>If approved, receive onboarding details</li>
+              </ul>
+            </div>
+            <Button 
+              onClick={() => setShowThankYou(false)} 
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-medium"
+            >
+              Got it, thanks!
             </Button>
           </div>
         </DialogContent>
