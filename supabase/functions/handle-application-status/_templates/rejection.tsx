@@ -80,18 +80,17 @@ const container = {
 
 const header = {
   backgroundColor: "#10B981",
-  padding: "20px 0",
+  padding: "40px 0", // Increased padding to make header bigger
   textAlign: "center" as const,
 }
 
 const brandText = {
   color: "#ffffff",
-  fontSize: "32px",
+  fontSize: "42px", // Increased font size
   fontWeight: "bold",
   margin: "0",
   textAlign: "center" as const,
-  textTransform: "uppercase" as const,
-  letterSpacing: "2px",
+  letterSpacing: "1px",
 }
 
 const content = {

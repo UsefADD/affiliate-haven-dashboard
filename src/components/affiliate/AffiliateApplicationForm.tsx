@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, memo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,6 @@ import { PaymentInformation } from "./sections/PaymentInformation";
 import { AdditionalInformation } from "./sections/AdditionalInformation";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { memo } from 'react';
 
 // Memoize form sections for better performance
 const MemoizedPersonalInformation = memo(PersonalInformation);
@@ -36,6 +35,14 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const { toast } = useToast();
+  const [canRedirect, setCanRedirect] = useState(false);
+
+  // Effect to handle redirection after dialog is closed
+  useEffect(() => {
+    if (canRedirect && !showThankYou) {
+      onSuccess?.();
+    }
+  }, [canRedirect, showThankYou, onSuccess]);
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
@@ -132,7 +139,6 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       }
 
       setShowThankYou(true);
-      onSuccess?.();
       
     } catch (error: any) {
       console.error("Error in application submission:", error);
@@ -148,7 +154,12 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-8">
-      <Dialog open={showThankYou} onOpenChange={setShowThankYou}>
+      <Dialog open={showThankYou} onOpenChange={(open) => {
+        setShowThankYou(open);
+        if (!open) {
+          setCanRedirect(true);
+        }
+      }}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center flex flex-col items-center justify-center gap-2">
