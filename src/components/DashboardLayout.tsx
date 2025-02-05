@@ -89,6 +89,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: Link, label: "Users", href: "/admin/users" },
     { icon: FileText, label: "Offers", href: "/admin/offers" },
     { icon: FileText, label: "Leads", href: "/admin/leads" },
+    { icon: UserRound, label: "Applications", href: "/admin/applications" },
   ];
 
   const navItems = isAdmin ? adminNavItems : affiliateNavItems;

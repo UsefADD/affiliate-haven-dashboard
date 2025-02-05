@@ -98,7 +98,12 @@ Deno.serve(async (req) => {
         email: payload.email,
         password: payload.password,
         email_confirm: true,
-      })
+        user_metadata: {
+          first_name: payload.first_name,
+          last_name: payload.last_name,
+          company: payload.company,
+        }
+      });
 
       if (createError) {
         console.error('Error creating user:', createError)

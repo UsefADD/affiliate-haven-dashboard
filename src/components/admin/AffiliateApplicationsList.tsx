@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -41,9 +40,10 @@ interface AffiliateApplication {
 
 interface Props {
   showAll?: boolean;
+  statusFilter?: 'pending' | 'approved' | 'rejected';
 }
 
-export function AffiliateApplicationsList({ showAll = false }: Props) {
+export function AffiliateApplicationsList({ showAll = false, statusFilter }: Props) {
   const [applications, setApplications] = useState<AffiliateApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<AffiliateApplication | null>(null);
@@ -52,7 +52,7 @@ export function AffiliateApplicationsList({ showAll = false }: Props) {
 
   useEffect(() => {
     fetchApplications();
-  }, [showAll]);
+  }, [showAll, statusFilter]);
 
   const fetchApplications = async () => {
     try {
@@ -62,7 +62,9 @@ export function AffiliateApplicationsList({ showAll = false }: Props) {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!showAll) {
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      } else if (!showAll) {
         query = query.eq('status', 'pending');
       }
 
@@ -277,4 +279,3 @@ export function AffiliateApplicationsList({ showAll = false }: Props) {
     </>
   );
 }
-
