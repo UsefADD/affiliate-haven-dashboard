@@ -13,7 +13,7 @@ export function BusinessInformation({ form }: BusinessInformationProps) {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-        <Building className="h-5 w-5 text-primary" />
+        <Building className="h-5 w-5 text-green-500" />
         Business Information
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

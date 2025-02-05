@@ -14,7 +14,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-        <CreditCard className="h-5 w-5 text-primary" />
+        <CreditCard className="h-5 w-5 text-green-500" />
         Payment Information
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

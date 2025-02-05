@@ -13,7 +13,7 @@ export function AddressInformation({ form }: AddressInformationProps) {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-        <MapPin className="h-5 w-5 text-primary" />
+        <MapPin className="h-5 w-5 text-green-500" />
         Address Information
       </h3>
       <FormField
