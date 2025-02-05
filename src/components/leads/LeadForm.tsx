@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -11,6 +12,7 @@ const formSchema = z.object({
   status: z.string(),
   payout: z.number().min(0),
   offer_id: z.string().uuid(),
+  variable_payout: z.boolean().default(false),
 });
 
 export type LeadFormData = z.infer<typeof formSchema>;
@@ -35,13 +37,19 @@ export function LeadForm({ initialData, onSubmit, isSubmitting, offers }: LeadFo
       status: initialData?.status || 'pending',
       payout: initialData?.payout || 0,
       offer_id: initialData?.offer_id || '',
+      variable_payout: initialData?.variable_payout || false,
     },
   });
 
   const handleOfferChange = (offerId: string) => {
     const selectedOffer = offers.find(offer => offer.id === offerId);
     if (selectedOffer) {
-      form.setValue('payout', selectedOffer.payout);
+      if (selectedOffer.payout === 0) {
+        form.setValue('variable_payout', true);
+      } else {
+        form.setValue('variable_payout', false);
+        form.setValue('payout', selectedOffer.payout);
+      }
     }
     form.setValue('offer_id', offerId);
   };
@@ -65,7 +73,7 @@ export function LeadForm({ initialData, onSubmit, isSubmitting, offers }: LeadFo
                 <SelectContent>
                   {offers.map((offer) => (
                     <SelectItem key={offer.id} value={offer.id}>
-                      {offer.name} (${offer.payout})
+                      {offer.name} ({offer.payout === 0 ? 'Variable' : `$${offer.payout}`})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -110,6 +118,48 @@ export function LeadForm({ initialData, onSubmit, isSubmitting, offers }: LeadFo
 
         <FormField
           control={form.control}
+          name="variable_payout"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Payout Type</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={(value) => {
+                    field.onChange(value === 'variable');
+                    if (value === 'fixed') {
+                      const selectedOffer = offers.find(offer => offer.id === form.getValues('offer_id'));
+                      if (selectedOffer) {
+                        form.setValue('payout', selectedOffer.payout);
+                      }
+                    }
+                  }}
+                  value={field.value ? 'variable' : 'fixed'}
+                  className="flex flex-col space-y-1"
+                >
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="fixed" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Fixed Payout
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="variable" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Variable per Sale
+                    </FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="payout"
           render={({ field }) => (
             <FormItem>
@@ -119,7 +169,7 @@ export function LeadForm({ initialData, onSubmit, isSubmitting, offers }: LeadFo
                   type="number"
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  disabled
+                  disabled={!form.watch('variable_payout') && !form.getValues('offer_id')}
                 />
               </FormControl>
             </FormItem>

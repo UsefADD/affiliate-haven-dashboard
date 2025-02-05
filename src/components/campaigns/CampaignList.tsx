@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Campaign } from "@/types/campaign";
 import { Offer } from "@/types/offer";
@@ -81,7 +82,6 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
       return null;
     }
 
-    // Construct the tracking URL using the domain from window.location
     const domain = window.location.hostname;
     return `https://${domain}/track/${userProfile.id}/${offer.id}`;
   };
@@ -98,7 +98,6 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
         });
       } catch (error) {
         console.error('Error copying to clipboard:', error);
-        // Fallback method for copying
         const textArea = document.createElement('textarea');
         textArea.value = trackingUrl;
         document.body.appendChild(textArea);
@@ -146,7 +145,11 @@ export function CampaignList({ campaigns, onViewDetails }: CampaignListProps) {
                 <TableCell className="font-mono text-sm">{campaign.id.split('-')[0]}</TableCell>
                 <TableCell className="font-medium">{campaign.name}</TableCell>
                 <TableCell className="text-green-600 font-semibold">
-                  ${campaign.payout}
+                  {campaign.payout === 0 ? (
+                    "Variable per sale"
+                  ) : (
+                    `$${campaign.payout}`
+                  )}
                 </TableCell>
                 <TableCell>
                   <Badge 
