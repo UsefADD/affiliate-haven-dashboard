@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2 } from "lucide-react";
+import { Building2, Check } from "lucide-react";
 import { applicationSchema, ApplicationFormData } from "./schema";
 import { PersonalInformation } from "./sections/PersonalInformation";
 import { AddressInformation } from "./sections/AddressInformation";
@@ -66,8 +66,24 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
       if (error) throw error;
 
+      // Send confirmation email
+      const { error: emailError } = await supabase.functions.invoke('send-affiliate-confirmation', {
+        body: { name: data.first_name, email: data.email }
+      });
+
+      if (emailError) {
+        console.error("Error sending confirmation email:", emailError);
+        // Don't throw error here to avoid blocking the success flow
+      }
+
       setShowThankYou(true);
       onSuccess?.();
+      
+      toast({
+        title: "Application Submitted Successfully!",
+        description: "We'll review your application and get back to you soon.",
+        variant: "success",
+      });
     } catch (error: any) {
       console.error("Error submitting application:", error);
       toast({
@@ -81,16 +97,23 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-8">
       <Dialog open={showThankYou} onOpenChange={setShowThankYou}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center text-primary">Thank You for Your Application!</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2 text-primary">
+              <Check className="h-6 w-6 text-green-500" />
+              Application Submitted Successfully!
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-center text-gray-600">Thank you for submitting your affiliate application. Our team will review your information carefully and get back to you soon.</p>
-            <p className="text-center text-gray-500">We typically respond within 2-3 business days.</p>
-            <Button onClick={() => setShowThankYou(false)} className="w-full bg-primary hover:bg-primary/90">
+            <p className="text-center text-gray-600">
+              Thank you for submitting your affiliate application to ClixAgent. We're excited about the possibility of working together!
+            </p>
+            <p className="text-center text-gray-500">
+              We've sent you a confirmation email with more details. Our team will review your application and get back to you within 2-3 business days.
+            </p>
+            <Button onClick={() => setShowThankYou(false)} className="w-full bg-green-500 hover:bg-green-600">
               Close
             </Button>
           </div>
@@ -99,7 +122,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
       <Card className="max-w-4xl mx-auto shadow-lg border-0 bg-white/80 backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
             Affiliate Application
           </CardTitle>
           <CardDescription className="text-gray-500">
@@ -113,7 +136,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
                 <PersonalInformation form={form} />
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-primary" />
+                    <Building2 className="h-5 w-5 text-green-500" />
                     Company Information
                   </h3>
                   <FormField
@@ -150,7 +173,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
                 <Button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full md:w-auto bg-primary hover:bg-primary/90"
+                  className="w-full md:w-auto bg-green-500 hover:bg-green-600"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Application"}
                 </Button>
