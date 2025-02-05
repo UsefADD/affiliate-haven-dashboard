@@ -128,13 +128,50 @@ export function AffiliateApplicationsList({ showAll = false }: Props) {
 
   return (
     <>
-      <Dialog open={!!selectedApplication} onOpenChange={() => setSelectedApplication(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Application Details</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[80vh]">
-            {selectedApplication && (
+      <Card>
+        <CardContent className="p-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {applications.map((application) => (
+                <TableRow key={application.id}>
+                  <TableCell>{application.first_name} {application.last_name}</TableCell>
+                  <TableCell>{application.email}</TableCell>
+                  <TableCell>{application.company || 'N/A'}</TableCell>
+                  <TableCell>{format(new Date(application.created_at), 'MMM dd, yyyy')}</TableCell>
+                  <TableCell>{getStatusBadge(application.status)}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedApplication(application)}
+                    >
+                      View Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {selectedApplication && (
+        <Dialog open={!!selectedApplication} onOpenChange={() => setSelectedApplication(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Application Details</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[80vh]">
               <div className="space-y-4 p-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -180,50 +217,63 @@ export function AffiliateApplicationsList({ showAll = false }: Props) {
                   )}
                 </div>
               </div>
-            )}
-          </ScrollArea>
-          {selectedApplication?.status === 'pending' && (
-            <div className="flex justify-end space-x-2 mt-4">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isProcessing}>
-                    Reject
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will reject the application and send a rejection email to the applicant. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleStatusUpdate(selectedApplication.id, 'rejected')}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      Reject Application
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            </ScrollArea>
+            {selectedApplication?.status === 'pending' && (
+              <div className="flex justify-end space-x-2 mt-4">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isProcessing}>
+                      Reject
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will reject the application and send a rejection email to the applicant. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleStatusUpdate(selectedApplication.id, 'rejected')}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Reject Application
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
 
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button className="bg-green-600 hover:bg-green-700" disabled={isProcessing}>
-                    Approve
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Approve Application</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will approve the application, create a user account, and send login credentials to the applicant. Would you like to proceed?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleStatusUpdate(selectedApplication.id, 'approved')}
-                      className="bg
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700" disabled={isProcessing}>
+                      Approve
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Approve Application</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will approve the application, create a user account, and send login credentials to the applicant. Would you like to proceed?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleStatusUpdate(selectedApplication.id, 'approved')}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Approve Application
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+}
