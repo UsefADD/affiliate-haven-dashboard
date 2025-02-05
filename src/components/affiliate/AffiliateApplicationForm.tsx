@@ -16,6 +16,8 @@ import { CommunicationDetails } from "./sections/CommunicationDetails";
 import { BusinessInformation } from "./sections/BusinessInformation";
 import { PaymentInformation } from "./sections/PaymentInformation";
 import { AdditionalInformation } from "./sections/AdditionalInformation";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
 interface AffiliateApplicationFormProps {
   onSuccess?: () => void;
@@ -118,10 +120,13 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
                     control={form.control}
                     name="company"
                     render={({ field }) => (
-                      <div className="form-item">
-                        <label className="form-label">Company (Optional)</label>
-                        <input {...field} className="form-input" />
-                      </div>
+                      <FormItem>
+                        <FormLabel>Company (Optional)</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="bg-white" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
                   />
                 </div>
