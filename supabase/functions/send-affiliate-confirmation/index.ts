@@ -23,14 +23,23 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log("Starting email send process...");
     const { name, email }: EmailRequest = await req.json();
+    console.log("Received request:", { name, email });
 
+    if (!email || !name) {
+      console.error("Missing required fields:", { email, name });
+      throw new Error("Email and name are required");
+    }
+
+    console.log("Rendering email template...");
     const html = await renderAsync(
       ConfirmationEmail({ name })
     );
 
+    console.log("Sending email via Resend...");
     const emailResponse = await resend.emails.send({
-      from: "ClixAgent <onboarding@resend.dev>",
+      from: "ClixAgent Affiliates <affiliates@clixagent.com>",
       to: [email],
       subject: "Your ClixAgent Affiliate Application Has Been Received",
       html: html,
@@ -47,8 +56,15 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error sending confirmation email:", error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+    });
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: "Check function logs for more information" 
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

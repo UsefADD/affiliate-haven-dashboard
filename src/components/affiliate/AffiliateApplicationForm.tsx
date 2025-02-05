@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,61 +68,77 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
   const onSubmit = async (data: ApplicationFormData) => {
     setIsSubmitting(true);
     try {
-      const applicationData = {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        phone: data.phone,
-        company: data.company || null,
-        address: data.address,
-        apt_suite: data.apt_suite || null,
-        city: data.city,
-        state: data.state,
-        zip_postal: data.zip_postal,
-        country: data.country,
-        telegram: data.telegram,
-        im: data.im || null,
-        im_type: data.im_type || null,
-        title: data.title || null,
-        website_url: data.website_url || null,
-        payment_method: data.payment_method,
-        pay_to: data.pay_to,
-        marketing_comments: data.marketing_comments || null,
-        site_marketing: data.site_marketing || null,
-        known_contacts: data.known_contacts,
-        current_advertisers: data.current_advertisers,
-        status: 'pending'
-      };
-
-      const { error } = await supabase
+      console.log("Starting application submission...");
+      
+      // First submit the application data
+      const { error: submissionError } = await supabase
         .from("affiliate_applications")
-        .insert(applicationData);
+        .insert({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone: data.phone,
+          company: data.company || null,
+          address: data.address,
+          apt_suite: data.apt_suite || null,
+          city: data.city,
+          state: data.state,
+          zip_postal: data.zip_postal,
+          country: data.country,
+          telegram: data.telegram,
+          im: data.im || null,
+          im_type: data.im_type || null,
+          title: data.title || null,
+          website_url: data.website_url || null,
+          payment_method: data.payment_method,
+          pay_to: data.pay_to,
+          marketing_comments: data.marketing_comments || null,
+          site_marketing: data.site_marketing || null,
+          known_contacts: data.known_contacts,
+          current_advertisers: data.current_advertisers,
+          status: 'pending'
+        });
 
-      if (error) throw error;
+      if (submissionError) throw submissionError;
 
-      // Send confirmation email
-      const { error: emailError } = await supabase.functions.invoke("send-affiliate-confirmation", {
-        body: { name: data.first_name, email: data.email }
-      });
+      console.log("Application submitted, sending confirmation email...");
+      
+      // Then send the confirmation email
+      const { error: emailError } = await supabase.functions.invoke(
+        "send-affiliate-confirmation",
+        {
+          body: { 
+            name: data.first_name, 
+            email: data.email 
+          }
+        }
+      );
 
       if (emailError) {
         console.error("Error sending confirmation email:", emailError);
+        toast({
+          title: "Application Submitted",
+          description: "Your application was received but we encountered an issue sending the confirmation email. Don't worry, we have your application!",
+          variant: "default",
+          className: "bg-yellow-500 text-white border-yellow-600"
+        });
+      } else {
+        toast({
+          title: "Application Submitted Successfully! 🎉",
+          description: "Check your email for confirmation details.",
+          variant: "default",
+          className: "bg-green-500 text-white border-green-600"
+        });
       }
 
       setShowThankYou(true);
       onSuccess?.();
       
-      toast({
-        title: "Application Submitted Successfully! 🎉",
-        description: "Your affiliate application has been received. Check your email for confirmation.",
-        variant: "default",
-        className: "bg-green-500 text-white border-green-600"
-      });
     } catch (error: any) {
-      console.error("Error submitting application:", error);
+      console.error("Error in application submission:", error);
       toast({
         title: "Error Submitting Application",
-        description: "We encountered an error while submitting your application. Please try again or contact support.",
+        description: "We encountered an error. Please try again or contact support.",
         variant: "destructive",
       });
     } finally {
