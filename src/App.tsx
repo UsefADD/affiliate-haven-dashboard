@@ -15,9 +15,34 @@ import { Toaster } from "@/components/ui/toaster";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { RedirectPage } from "@/components/tracking/RedirectPage";
 
-// Lazy load these components as they're not needed for initial login
+// Lazy load components with proper error boundaries
 const AffiliateApplicationForm = lazy(() => import("@/components/affiliate/AffiliateApplicationForm"));
 const ForgotPassword = lazy(() => import("@/components/auth/ForgotPassword"));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="text-center space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+      <p className="text-gray-600">Loading...</p>
+    </div>
+  </div>
+);
+
+// Error boundary component
+const ErrorFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="text-center space-y-4">
+      <p className="text-red-600">There was an error loading this page.</p>
+      <button 
+        onClick={() => window.location.reload()} 
+        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+      >
+        Try Again
+      </button>
+    </div>
+  </div>
+);
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -41,7 +66,7 @@ function App() {
 
   // Show loading state while checking auth
   if (isAuthenticated === null) {
-    return <div>Loading...</div>;
+    return <LoadingFallback />;
   }
 
   return (
@@ -56,23 +81,27 @@ function App() {
         <Route 
           path="/affiliate-application" 
           element={
-            <Suspense fallback={<div>Loading...</div>}>
-              <AffiliateApplicationForm 
-                onSuccess={() => {
-                  window.location.href = "/login";
-                }} 
-                onCancel={() => {
-                  window.location.href = "/login";
-                }} 
-              />
+            <Suspense fallback={<LoadingFallback />}>
+              <ErrorBoundary fallback={<ErrorFallback />}>
+                <AffiliateApplicationForm 
+                  onSuccess={() => {
+                    window.location.href = "/login";
+                  }} 
+                  onCancel={() => {
+                    window.location.href = "/login";
+                  }} 
+                />
+              </ErrorBoundary>
             </Suspense>
           } 
         />
         <Route 
           path="/forgot-password" 
           element={
-            <Suspense fallback={<div>Loading...</div>}>
-              <ForgotPassword />
+            <Suspense fallback={<LoadingFallback />}>
+              <ErrorBoundary fallback={<ErrorFallback />}>
+                <ForgotPassword />
+              </ErrorBoundary>
             </Suspense>
           } 
         />
@@ -118,5 +147,32 @@ function App() {
   );
 }
 
-export default App;
+// Error Boundary Component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error:', error);
+    console.error('Error Info:', errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+
+    return this.props.children;
+  }
+}
+
+export default App;
