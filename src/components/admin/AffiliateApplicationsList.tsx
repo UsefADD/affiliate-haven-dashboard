@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -51,6 +52,7 @@ export function AffiliateApplicationsList({ showAll = false, statusFilter }: Pro
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('Fetching applications with filters:', { showAll, statusFilter });
     fetchApplications();
   }, [showAll, statusFilter]);
 
@@ -102,8 +104,8 @@ export function AffiliateApplicationsList({ showAll = false, statusFilter }: Pro
         description: `Application ${newStatus} successfully`,
       });
 
-      // Remove the processed application from the list
-      setApplications(prev => prev.filter(app => app.id !== id));
+      // Refresh the list after updating status
+      await fetchApplications();
       setSelectedApplication(null);
     } catch (error) {
       console.error('Error updating application status:', error);
@@ -132,38 +134,44 @@ export function AffiliateApplicationsList({ showAll = false, statusFilter }: Pro
     <>
       <Card>
         <CardContent className="p-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {applications.map((application) => (
-                <TableRow key={application.id}>
-                  <TableCell>{application.first_name} {application.last_name}</TableCell>
-                  <TableCell>{application.email}</TableCell>
-                  <TableCell>{application.company || 'N/A'}</TableCell>
-                  <TableCell>{format(new Date(application.created_at), 'MMM dd, yyyy')}</TableCell>
-                  <TableCell>{getStatusBadge(application.status)}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedApplication(application)}
-                    >
-                      View Details
-                    </Button>
-                  </TableCell>
+          {isLoading ? (
+            <div className="text-center py-4">Loading applications...</div>
+          ) : applications.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">No applications found</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {applications.map((application) => (
+                  <TableRow key={application.id}>
+                    <TableCell>{application.first_name} {application.last_name}</TableCell>
+                    <TableCell>{application.email}</TableCell>
+                    <TableCell>{application.company || 'N/A'}</TableCell>
+                    <TableCell>{format(new Date(application.created_at), 'MMM dd, yyyy')}</TableCell>
+                    <TableCell>{getStatusBadge(application.status)}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedApplication(application)}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
