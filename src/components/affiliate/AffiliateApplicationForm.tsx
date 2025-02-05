@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -60,29 +59,56 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
   const onSubmit = async (data: ApplicationFormData) => {
     setIsSubmitting(true);
     try {
+      // Ensure all required fields are present and match the database schema
+      const applicationData = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone,
+        company: data.company || null,
+        address: data.address,
+        apt_suite: data.apt_suite || null,
+        city: data.city,
+        state: data.state,
+        zip_postal: data.zip_postal,
+        country: data.country,
+        telegram: data.telegram,
+        im: data.im || null,
+        im_type: data.im_type || null,
+        title: data.title || null,
+        website_url: data.website_url || null,
+        payment_method: data.payment_method,
+        pay_to: data.pay_to,
+        marketing_comments: data.marketing_comments || null,
+        site_marketing: data.site_marketing || null,
+        known_contacts: data.known_contacts,
+        current_advertisers: data.current_advertisers,
+        status: 'pending'
+      };
+
       const { error } = await supabase
         .from("affiliate_applications")
-        .insert(data);
+        .insert(applicationData);
 
       if (error) throw error;
 
       // Send confirmation email
-      const { error: emailError } = await supabase.functions.invoke('send-affiliate-confirmation', {
+      const { error: emailError } = await supabase.functions.invoke("send-affiliate-confirmation", {
         body: { name: data.first_name, email: data.email }
       });
 
       if (emailError) {
         console.error("Error sending confirmation email:", emailError);
-        // Don't throw error here to avoid blocking the success flow
       }
 
       setShowThankYou(true);
       onSuccess?.();
       
       toast({
-        title: "Application Submitted Successfully!",
-        description: "We'll review your application and get back to you soon.",
-        variant: "success",
+        title: "Success!",
+        description: "Your application has been submitted successfully.",
+        variant: "default",
+        className: "bg-green-500 text-white"
       });
     } catch (error: any) {
       console.error("Error submitting application:", error);
