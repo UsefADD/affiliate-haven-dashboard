@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, Users, Star, MousePointer, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface Offer {
   id: string;
@@ -49,6 +50,7 @@ export default function Index() {
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -69,16 +71,35 @@ export default function Index() {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching user profile:', error);
+        toast({
+          title: "Error",
+          description: "Unable to fetch user profile",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!profile) {
+        console.log('No profile found for user:', userId);
+        toast({
+          title: "Profile Not Found",
+          description: "Your profile information is not available",
+          variant: "destructive",
+        });
         return;
       }
 
       setProfile(profile);
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while fetching your profile",
+      });
     }
   };
 
