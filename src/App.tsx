@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,7 @@ import AdminLeads from "./pages/admin/Leads";
 import { Toaster } from "@/components/ui/toaster";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { RedirectPage } from "@/components/tracking/RedirectPage";
+import { useNavigate } from "react-router-dom";
 
 // Lazy load these components as they're not needed for initial login
 const AffiliateApplicationForm = lazy(() => import("@/components/affiliate/AffiliateApplicationForm"));
@@ -56,7 +58,14 @@ function App() {
           path="/affiliate-application" 
           element={
             <Suspense fallback={<div>Loading...</div>}>
-              <AffiliateApplicationForm onSuccess={() => {}} onCancel={() => {}} />
+              <AffiliateApplicationForm 
+                onSuccess={() => {
+                  window.location.href = "/login";
+                }} 
+                onCancel={() => {
+                  window.location.href = "/login";
+                }} 
+              />
             </Suspense>
           } 
         />
