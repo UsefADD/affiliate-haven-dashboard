@@ -160,7 +160,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
           <CardTitle className="text-3xl font-bold text-green-600">
             Affiliate Application
           </CardTitle>
-          <CardDescription className="text-green-700">
+          <CardDescription className="text-gray-600">
             Join our affiliate program and start earning today
           </CardDescription>
         </CardHeader>
@@ -170,7 +170,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
               <div className="space-y-6">
                 <MemoizedPersonalInformation form={form} />
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-green-700 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-green-500" />
                     Company Information
                   </h3>
@@ -179,7 +179,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
                     name="company"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-700">Company (Optional)</FormLabel>
+                        <FormLabel className="text-gray-700">Company (Optional)</FormLabel>
                         <FormControl>
                           <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                         </FormControl>
