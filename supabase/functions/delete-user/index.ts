@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -24,7 +25,7 @@ Deno.serve(async (req) => {
     // Get the session from the request
     const authorization = req.headers.get('Authorization')
     if (!authorization) {
-      throw new Error('No authorization header')
+      throw new Error('Auth session missing!')
     }
 
     console.log('Checking user authorization')
