@@ -43,7 +43,7 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Error boundary component
+// Error fallback component
 const ErrorFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
     <div className="text-center space-y-4">
