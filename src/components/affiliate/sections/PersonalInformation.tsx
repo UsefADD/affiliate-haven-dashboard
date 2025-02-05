@@ -12,8 +12,8 @@ interface PersonalInformationProps {
 export function PersonalInformation({ form }: PersonalInformationProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-        <User className="h-5 w-5 text-primary" />
+      <h3 className="text-lg font-semibold text-green-700 flex items-center gap-2">
+        <User className="h-5 w-5 text-green-500" />
         Personal Information
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -22,9 +22,9 @@ export function PersonalInformation({ form }: PersonalInformationProps) {
           name="first_name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>First Name</FormLabel>
+              <FormLabel className="text-green-700">First Name</FormLabel>
               <FormControl>
-                <Input {...field} className="bg-white" />
+                <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -35,9 +35,9 @@ export function PersonalInformation({ form }: PersonalInformationProps) {
           name="last_name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Last Name</FormLabel>
+              <FormLabel className="text-green-700">Last Name</FormLabel>
               <FormControl>
-                <Input {...field} className="bg-white" />
+                <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -50,9 +50,9 @@ export function PersonalInformation({ form }: PersonalInformationProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel className="text-green-700">Email</FormLabel>
               <FormControl>
-                <Input type="email" {...field} className="bg-white" />
+                <Input type="email" {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -63,9 +63,9 @@ export function PersonalInformation({ form }: PersonalInformationProps) {
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone</FormLabel>
+              <FormLabel className="text-green-700">Phone</FormLabel>
               <FormControl>
-                <Input type="tel" {...field} className="bg-white" />
+                <Input type="tel" {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
               </FormControl>
               <FormMessage />
             </FormItem>

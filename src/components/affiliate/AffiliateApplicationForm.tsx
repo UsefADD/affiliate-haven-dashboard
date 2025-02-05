@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,15 @@ import { PaymentInformation } from "./sections/PaymentInformation";
 import { AdditionalInformation } from "./sections/AdditionalInformation";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { memo } from 'react';
+
+// Memoize form sections for better performance
+const MemoizedPersonalInformation = memo(PersonalInformation);
+const MemoizedAddressInformation = memo(AddressInformation);
+const MemoizedCommunicationDetails = memo(CommunicationDetails);
+const MemoizedBusinessInformation = memo(BusinessInformation);
+const MemoizedPaymentInformation = memo(PaymentInformation);
+const MemoizedAdditionalInformation = memo(AdditionalInformation);
 
 interface AffiliateApplicationFormProps {
   onSuccess?: () => void;
@@ -59,7 +69,6 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
   const onSubmit = async (data: ApplicationFormData) => {
     setIsSubmitting(true);
     try {
-      // Ensure all required fields are present and match the database schema
       const applicationData = {
         first_name: data.first_name,
         last_name: data.last_name,
@@ -108,7 +117,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
         title: "Success!",
         description: "Your application has been submitted successfully.",
         variant: "default",
-        className: "bg-green-500 text-white"
+        className: "bg-green-500 text-white border-green-600"
       });
     } catch (error: any) {
       console.error("Error submitting application:", error);
@@ -125,9 +134,9 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-8">
       <Dialog open={showThankYou} onOpenChange={setShowThankYou}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2 text-primary">
+            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2 text-green-600">
               <Check className="h-6 w-6 text-green-500" />
               Application Submitted Successfully!
             </DialogTitle>
@@ -139,7 +148,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
             <p className="text-center text-gray-500">
               We've sent you a confirmation email with more details. Our team will review your application and get back to you within 2-3 business days.
             </p>
-            <Button onClick={() => setShowThankYou(false)} className="w-full bg-green-500 hover:bg-green-600">
+            <Button onClick={() => setShowThankYou(false)} className="w-full bg-green-500 hover:bg-green-600 text-white">
               Close
             </Button>
           </div>
@@ -148,10 +157,10 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
       <Card className="max-w-4xl mx-auto shadow-lg border-0 bg-white/80 backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
+          <CardTitle className="text-3xl font-bold text-green-600">
             Affiliate Application
           </CardTitle>
-          <CardDescription className="text-gray-500">
+          <CardDescription className="text-green-700">
             Join our affiliate program and start earning today
           </CardDescription>
         </CardHeader>
@@ -159,9 +168,9 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="space-y-6">
-                <PersonalInformation form={form} />
+                <MemoizedPersonalInformation form={form} />
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-green-700 flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-green-500" />
                     Company Information
                   </h3>
@@ -170,20 +179,20 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
                     name="company"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Company (Optional)</FormLabel>
+                        <FormLabel className="text-green-700">Company (Optional)</FormLabel>
                         <FormControl>
-                          <Input {...field} className="bg-white" />
+                          <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-                <AddressInformation form={form} />
-                <CommunicationDetails form={form} />
-                <BusinessInformation form={form} />
-                <PaymentInformation form={form} />
-                <AdditionalInformation form={form} />
+                <MemoizedAddressInformation form={form} />
+                <MemoizedCommunicationDetails form={form} />
+                <MemoizedBusinessInformation form={form} />
+                <MemoizedPaymentInformation form={form} />
+                <MemoizedAdditionalInformation form={form} />
               </div>
 
               <div className="flex justify-end space-x-2 pt-6">
@@ -192,14 +201,14 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
                   variant="outline"
                   onClick={onCancel}
                   disabled={isSubmitting}
-                  className="w-full md:w-auto"
+                  className="w-full md:w-auto border-green-500 text-green-600 hover:bg-green-50"
                 >
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full md:w-auto bg-green-500 hover:bg-green-600"
+                  className="w-full md:w-auto bg-green-500 hover:bg-green-600 text-white"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Application"}
                 </Button>
