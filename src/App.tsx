@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminUsers from "./pages/admin/Users";
 import AdminOffers from "./pages/admin/Offers";
 import AdminLeads from "./pages/admin/Leads";
+import Applications from "./pages/admin/Applications";
 import { Toaster } from "@/components/ui/toaster";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { RedirectPage } from "@/components/tracking/RedirectPage";
@@ -154,6 +155,10 @@ function App() {
         <Route 
           path="/admin/leads" 
           element={<AdminRoute><AdminLeads /></AdminRoute>} 
+        />
+        <Route 
+          path="/admin/applications" 
+          element={<AdminRoute><Applications /></AdminRoute>} 
         />
       </Routes>
       <Toaster />
