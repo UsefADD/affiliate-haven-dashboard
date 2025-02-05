@@ -35,14 +35,11 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const { toast } = useToast();
-  const [canRedirect, setCanRedirect] = useState(false);
 
-  // Effect to handle redirection after dialog is closed
-  useEffect(() => {
-    if (canRedirect && !showThankYou) {
-      onSuccess?.();
-    }
-  }, [canRedirect, showThankYou, onSuccess]);
+  const handleCloseDialog = () => {
+    setShowThankYou(false);
+    onSuccess?.(); // Call onSuccess directly when closing dialog
+  };
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
@@ -139,7 +136,6 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       }
 
       setShowThankYou(true);
-      
     } catch (error: any) {
       console.error("Error in application submission:", error);
       toast({
@@ -154,12 +150,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-8">
-      <Dialog open={showThankYou} onOpenChange={(open) => {
-        setShowThankYou(open);
-        if (!open) {
-          setCanRedirect(true);
-        }
-      }}>
+      <Dialog open={showThankYou} onOpenChange={handleCloseDialog}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center flex flex-col items-center justify-center gap-2">
@@ -183,7 +174,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
               </ul>
             </div>
             <Button 
-              onClick={() => setShowThankYou(false)} 
+              onClick={handleCloseDialog}
               className="w-full bg-green-500 hover:bg-green-600 text-white font-medium"
             >
               Got it, thanks!
