@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { DollarSign, TrendingUp, Users, Star, MousePointer, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface Offer {
   id: string;
@@ -51,19 +53,25 @@ export default function Index() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-      if (user?.id) {
-        fetchUserProfile(user.id);
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/login');
+        return;
+      }
+      setCurrentUserId(session.user.id);
+      if (session.user.id) {
+        fetchUserProfile(session.user.id);
       }
     };
-    getCurrentUser();
+    
+    checkSession();
     fetchOffers();
     fetchDashboardStats();
-  }, []);
+  }, [navigate]);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -84,21 +92,43 @@ export default function Index() {
       }
 
       if (!profile) {
-        console.log('No profile found for user:', userId);
-        toast({
-          title: "Profile Not Found",
-          description: "Your profile information is not available",
-          variant: "destructive",
-        });
-        return;
+        console.log('No profile found, creating one for user:', userId);
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: userId }]);
+          
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          toast({
+            title: "Error",
+            description: "Unable to create user profile",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Fetch the newly created profile
+        const { data: newProfile, error: fetchError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+          
+        if (fetchError) {
+          console.error('Error fetching new profile:', fetchError);
+          return;
+        }
+        
+        setProfile(newProfile);
+      } else {
+        setProfile(profile);
       }
-
-      setProfile(profile);
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while fetching your profile",
+        variant: "destructive",
       });
     }
   };
@@ -203,7 +233,7 @@ export default function Index() {
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-8 text-white">
           <h1 className="text-3xl font-bold mb-2">
-            Welcome, {profile?.first_name} {profile?.last_name}
+            Welcome{profile?.first_name ? `, ${profile.first_name}` : ''}
           </h1>
           <p className="text-green-100">Maximize Your Performance & Grow Your Earnings</p>
           <div className="mt-4 space-y-4">
