@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,7 +101,7 @@ export default function Index() {
         throw fetchError;
       }
 
-      console.log("Profile data:", existingProfile); // Added log to debug profile data
+      console.log("Profile data:", existingProfile);
 
       if (!existingProfile) {
         console.log("No profile found, creating new profile...");
@@ -110,8 +111,8 @@ export default function Index() {
             id: userId,
             role: 'affiliate',
             email: (await supabase.auth.getUser()).data.user?.email,
-            first_name: '', // Initialize with empty string
-            last_name: '' // Initialize with empty string
+            first_name: '', 
+            last_name: ''
           }])
           .select('*')
           .maybeSingle();
@@ -263,7 +264,7 @@ export default function Index() {
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-8 text-white">
           <h1 className="text-3xl font-bold mb-2">
-            Welcome{profile?.first_name ? `, ${profile.first_name}` : ''}
+            Welcome{profile?.first_name || profile?.last_name ? `, ${[profile.first_name, profile.last_name].filter(Boolean).join(' ')}` : ''}
           </h1>
           <p className="text-green-100">Maximize Your Performance & Grow Your Earnings</p>
           <div className="mt-4 space-y-4">
