@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
@@ -73,8 +74,9 @@ Deno.serve(async (req) => {
         throw new Error('Failed to update user profile')
       }
 
-      // Update password if provided
+      // Only update password if it's provided and not empty
       if (payload.password && payload.password.trim() !== '') {
+        console.log('Updating password for user:', payload.userId)
         const { error: passwordError } = await supabase.auth.admin.updateUserById(
           payload.userId,
           { password: payload.password }
