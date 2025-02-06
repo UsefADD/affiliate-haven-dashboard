@@ -100,6 +100,8 @@ export default function Index() {
         throw fetchError;
       }
 
+      console.log("Profile data:", existingProfile); // Added log to debug profile data
+
       if (!existingProfile) {
         console.log("No profile found, creating new profile...");
         const { data: newProfile, error: insertError } = await supabase
@@ -107,7 +109,9 @@ export default function Index() {
           .insert([{ 
             id: userId,
             role: 'affiliate',
-            email: (await supabase.auth.getUser()).data.user?.email
+            email: (await supabase.auth.getUser()).data.user?.email,
+            first_name: '', // Initialize with empty string
+            last_name: '' // Initialize with empty string
           }])
           .select('*')
           .maybeSingle();
