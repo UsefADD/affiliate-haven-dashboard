@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -8,26 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { OfferForm, OfferFormData } from "@/components/offers/OfferForm";
 import { OfferList } from "@/components/offers/OfferList";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-
-interface Offer {
-  id: string;
-  name: string;
-  description: string | null;
-  payout: number;
-  status: boolean;
-  created_at: string;
-  links?: string[];
-  is_top_offer?: boolean;
-  creatives?: {
-    type: "image" | "email";
-    content: string;
-    details?: {
-      fromNames?: string[];
-      subjects?: string[];
-    };
-    images?: string[];
-  }[];
-}
+import { Offer } from "@/types/offer";
 
 export default function Offers() {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -164,11 +146,39 @@ export default function Offers() {
       if (leadsError) throw leadsError;
 
       if (leads && leads.length > 0) {
-        setDeleteError("Cannot delete this offer because it has associated leads. Please delete the leads first.");
+        setDeleteError("Cannot delete this offer because it has associated leads.");
         return;
       }
 
-      // If no leads, proceed with deletion
+      // Check for affiliate clicks
+      const { data: clicks, error: clicksError } = await supabase
+        .from('affiliate_clicks')
+        .select('id')
+        .eq('offer_id', offerToDelete.id)
+        .limit(1);
+
+      if (clicksError) throw clicksError;
+
+      if (clicks && clicks.length > 0) {
+        setDeleteError("Cannot delete this offer because it has associated clicks.");
+        return;
+      }
+
+      // Check for affiliate links
+      const { data: links, error: linksError } = await supabase
+        .from('affiliate_links')
+        .select('id')
+        .eq('offer_id', offerToDelete.id)
+        .limit(1);
+
+      if (linksError) throw linksError;
+
+      if (links && links.length > 0) {
+        setDeleteError("Cannot delete this offer because it has associated affiliate links.");
+        return;
+      }
+
+      // If no related data, proceed with deletion
       const { error } = await supabase
         .from('offers')
         .delete()
