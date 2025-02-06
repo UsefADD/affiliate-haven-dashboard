@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
@@ -80,37 +81,38 @@ export default function Reports() {
       const { data, error } = await supabase
         .from('leads')
         .select(`
-        id,
-        status,
-        created_at,
-        payout,
-        variable_payout,
-        offers (
           id,
-          name,
-          payout
-        )
-      `)
-      .eq('affiliate_id', user.id)
-      .gte('created_at', startOfDay(startDate).toISOString())
-      .lte('created_at', endOfDay(endDate).toISOString());
+          status,
+          payout,
+          variable_payout,
+          offers (
+            id,
+            name,
+            payout
+          )
+        `)
+        .eq('affiliate_id', user.id)
+        .gte('created_at', startOfDay(startDate).toISOString())
+        .lte('created_at', endOfDay(endDate).toISOString());
 
-    if (error) {
-      console.error("Error fetching leads:", error);
-      throw error;
+      if (error) {
+        console.error("Error fetching leads:", error);
+        throw error;
+      }
+
+      console.log("Fetched leads:", data);
+      setLeadsData(data || []);
+    } catch (error) {
+      console.error('Error in fetchLeads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch leads data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    console.log("Fetched leads:", data);
-    setLeadsData(data || []);
-  } catch (error) {
-    console.error('Error in fetchLeads:', error);
-    toast({
-      title: "Error",
-      description: "Failed to fetch leads data",
-      variant: "destructive",
-    });
-  }
-};
+  };
 
   const [clicksByOffer, setClicksByOffer] = useState<Record<string, ClickData[]>>({});
 
@@ -164,8 +166,6 @@ export default function Reports() {
         description: "Failed to fetch clicks data",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -191,12 +191,28 @@ export default function Reports() {
     
     acc[key].clicks++;
     
-    const campaignLeads = leadsData.filter(lead => lead.offers?.id === campaignId);
+    // Calculate conversions and earnings for this campaign
+    const campaignLeads = leadsData.filter(lead => {
+      console.log("Checking lead:", {
+        leadOfferId: lead.offers?.id,
+        campaignId,
+        status: lead.status,
+        payout: lead.payout
+      });
+      return lead.offers?.id === campaignId;
+    });
+
+    // Log campaign leads for debugging
+    console.log(`Campaign ${campaignName} leads:`, campaignLeads);
+    
     acc[key].conversions = campaignLeads.filter(lead => lead.status === 'converted').length;
     acc[key].earnings = campaignLeads
-      .filter(lead => lead.status === 'converted')
+      .filter(lead => {
+        console.log(`Lead ${lead.id} status:`, lead.status);
+        return lead.status === 'converted';
+      })
       .reduce((sum, lead) => {
-        // Use the lead's payout value regardless of whether it's variable or fixed
+        console.log(`Adding payout for lead ${lead.id}:`, lead.payout);
         return sum + (lead.payout || 0);
       }, 0);
     
