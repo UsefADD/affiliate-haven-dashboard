@@ -189,6 +189,7 @@ export type Database = {
           offer_id: string
           payout: number
           status: string
+          variable_payout: boolean | null
         }
         Insert: {
           affiliate_id: string
@@ -198,6 +199,7 @@ export type Database = {
           offer_id: string
           payout: number
           status: string
+          variable_payout?: boolean | null
         }
         Update: {
           affiliate_id?: string
@@ -207,6 +209,7 @@ export type Database = {
           offer_id?: string
           payout?: number
           status?: string
+          variable_payout?: boolean | null
         }
         Relationships: [
           {
