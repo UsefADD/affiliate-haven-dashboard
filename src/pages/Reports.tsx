@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
@@ -201,17 +200,20 @@ export default function Reports() {
         payout: lead.payout,
         isVariable: lead.variable_payout
       });
-      return lead.offers?.id === campaignId;
+      return lead.offers?.id === campaignId && lead.status === 'converted';
     });
     
-    acc[key].conversions = campaignLeads.filter(lead => lead.status === 'converted').length;
-    acc[key].earnings = campaignLeads
-      .filter(lead => lead.status === 'converted')
-      .reduce((sum, lead) => {
-        const leadPayout = lead.payout || 0;
-        console.log(`Adding ${lead.variable_payout ? 'variable' : 'fixed'} payout for lead ${lead.id}:`, leadPayout);
-        return sum + leadPayout;
-      }, 0);
+    acc[key].conversions = campaignLeads.length;
+    acc[key].earnings = campaignLeads.reduce((sum, lead) => {
+      // For converted leads, use the actual payout value regardless of whether it's variable or fixed
+      const leadPayout = Number(lead.payout) || 0;
+      console.log(`Adding payout for lead ${lead.id}:`, {
+        leadId: lead.id,
+        payout: leadPayout,
+        isVariable: lead.variable_payout
+      });
+      return sum + leadPayout;
+    }, 0);
     
     acc[key].conversionRate = (acc[key].conversions / acc[key].clicks) * 100;
     acc[key].epc = acc[key].earnings / acc[key].clicks;

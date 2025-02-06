@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -178,10 +177,17 @@ export default function Index() {
         return;
       }
 
-      // Fetch leads
+      // Fetch leads with payout information
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
-        .select('*, offers(payout)')
+        .select(`
+          *,
+          offers (
+            id,
+            name,
+            payout
+          )
+        `)
         .eq('affiliate_id', user.id);
 
       if (leadsError) {
@@ -205,27 +211,41 @@ export default function Index() {
 
       const totalLeads = leadsData?.length || 0;
       const totalClicks = clicksData?.length || 0;
-      const totalEarnings = leadsData?.reduce((sum, lead) => sum + (lead.offers?.payout || 0), 0) || 0;
+      
+      // Calculate total earnings including both fixed and variable payouts
+      const totalEarnings = leadsData
+        ?.filter(lead => lead.status === 'converted')
+        .reduce((sum, lead) => {
+          const leadPayout = Number(lead.payout) || 0;
+          console.log(`Processing lead earnings:`, {
+            leadId: lead.id,
+            payout: leadPayout,
+            isVariable: lead.variable_payout
+          });
+          return sum + leadPayout;
+        }, 0) || 0;
+
       const convertedLeads = leadsData?.filter(lead => lead.status === 'converted').length || 0;
       const conversionRate = totalClicks > 0 ? (convertedLeads / totalClicks) * 100 : 0;
-
-      const recentLeads = leadsData?.reduce((acc: any[], lead) => {
-        const date = new Date(lead.created_at).toLocaleDateString();
-        const existingDate = acc.find(item => item.date === date);
-        if (existingDate) {
-          existingDate.count++;
-        } else {
-          acc.push({ date, count: 1 });
-        }
-        return acc;
-      }, []).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(-7) || [];
 
       setStats({
         totalLeads,
         totalEarnings,
         conversionRate,
         totalClicks,
-        recentLeads
+        recentLeads: leadsData
+          ?.reduce((acc: any[], lead) => {
+            const date = new Date(lead.created_at).toLocaleDateString();
+            const existingDate = acc.find(item => item.date === date);
+            if (existingDate) {
+              existingDate.count++;
+            } else {
+              acc.push({ date, count: 1 });
+            }
+            return acc;
+          }, [])
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .slice(-7) || []
       });
 
     } catch (error) {
