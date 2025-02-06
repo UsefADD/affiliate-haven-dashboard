@@ -60,27 +60,21 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
     setIsCalendarOpen(false);
   };
 
-  const handleCustomRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
+  const handleCustomRangeSelect = (range: DateRange | undefined) => {
     if (!range) return;
-
-    // Always update the local state with whatever we have
-    const newRange = { 
-      from: range.from || dateRange.from,
-      to: range.to || range.from || dateRange.to
+    
+    // Set the new range with both from and to dates
+    const newRange = {
+      from: range.from,
+      to: range.to || range.from
     };
     
     setDateRange(newRange);
+    onDateChange(newRange);
     
-    // Only trigger the parent callback when we have both dates
-    // or when we have a single date selected (treating it as both from and to)
-    if (range.from) {
-      onDateChange({
-        from: range.from,
-        to: range.to || range.from
-      });
-      if (range.to || !isCalendarOpen) {
-        setIsCalendarOpen(false);
-      }
+    // Only close the popover when both dates are selected or a single date is selected
+    if (range.to || !isCalendarOpen) {
+      setIsCalendarOpen(false);
     }
   };
 
@@ -97,7 +91,7 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {dateRange.from ? (
-              dateRange.to && dateRange.to !== dateRange.from ? (
+              dateRange.to && dateRange.from !== dateRange.to ? (
                 <>
                   {format(dateRange.from, "LLL dd, y")} -{" "}
                   {format(dateRange.to, "LLL dd, y")}

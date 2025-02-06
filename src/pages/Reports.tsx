@@ -55,6 +55,7 @@ export default function Reports() {
   const { toast } = useToast();
 
   const handleDateRangeChange = async ({ from, to }: { from: Date; to: Date }) => {
+    console.log("Handling date range change:", { from, to });
     setIsLoading(true);
     try {
       await Promise.all([
@@ -62,10 +63,17 @@ export default function Reports() {
         fetchLeads(from, to)
       ]);
       
-      toast({
-        title: "Report Generated",
-        description: `Showing results for selected date range`,
-      });
+      if (clickData.length === 0 && leadsData.length === 0) {
+        toast({
+          title: "No Data Available",
+          description: `No reports found for the selected date range`,
+        });
+      } else {
+        toast({
+          title: "Report Generated",
+          description: `Showing results for selected date range`,
+        });
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -237,8 +245,8 @@ export default function Reports() {
   };
 
   useEffect(() => {
-    // Initialize with today's date
-    handleDateRangeChange({ from: new Date(), to: new Date() });
+    const today = new Date();
+    handleDateRangeChange({ from: today, to: today });
   }, []);
 
   if (isLoading) {
