@@ -193,27 +193,24 @@ export default function Reports() {
     
     // Calculate conversions and earnings for this campaign
     const campaignLeads = leadsData.filter(lead => {
-      console.log("Checking lead:", {
-        leadOfferId: lead.offers?.id,
-        campaignId,
+      console.log("Processing lead for campaign stats:", {
+        leadId: lead.id,
+        offerId: lead.offers?.id,
+        campaignId: campaignId,
         status: lead.status,
-        payout: lead.payout
+        payout: lead.payout,
+        isVariable: lead.variable_payout
       });
       return lead.offers?.id === campaignId;
     });
-
-    // Log campaign leads for debugging
-    console.log(`Campaign ${campaignName} leads:`, campaignLeads);
     
     acc[key].conversions = campaignLeads.filter(lead => lead.status === 'converted').length;
     acc[key].earnings = campaignLeads
-      .filter(lead => {
-        console.log(`Lead ${lead.id} status:`, lead.status);
-        return lead.status === 'converted';
-      })
+      .filter(lead => lead.status === 'converted')
       .reduce((sum, lead) => {
-        console.log(`Adding payout for lead ${lead.id}:`, lead.payout);
-        return sum + (lead.payout || 0);
+        const leadPayout = lead.payout || 0;
+        console.log(`Adding ${lead.variable_payout ? 'variable' : 'fixed'} payout for lead ${lead.id}:`, leadPayout);
+        return sum + leadPayout;
       }, 0);
     
     acc[key].conversionRate = (acc[key].conversions / acc[key].clicks) * 100;
