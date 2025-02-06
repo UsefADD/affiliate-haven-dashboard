@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,6 +15,7 @@ interface Lead {
   created_at: string;
   conversion_date: string | null;
   payout: number;
+  variable_payout: boolean;
   affiliate: {
     first_name: string | null;
     last_name: string | null;
@@ -81,6 +83,7 @@ export default function Leads() {
           created_at,
           conversion_date,
           payout,
+          variable_payout,
           affiliate:profiles!leads_affiliate_id_fkey (
             first_name,
             last_name
@@ -129,6 +132,7 @@ export default function Leads() {
           status: values.status,
           payout: values.payout,
           offer_id: values.offer_id,
+          variable_payout: values.variable_payout,
         };
 
         if (values.status === 'converted' && editingLead.status !== 'converted') {
@@ -252,6 +256,7 @@ export default function Leads() {
                 status: editingLead.status,
                 payout: editingLead.payout,
                 offer_id: editingLead.offer_id,
+                variable_payout: editingLead.variable_payout,
               } : undefined}
               onSubmit={onSubmit}
               isSubmitting={isSubmitting}
