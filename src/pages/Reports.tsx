@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
@@ -169,18 +170,17 @@ export default function Reports() {
   };
 
   // Calculate campaign stats from clicks and leads
-  const campaignStats = clickData.reduce((acc: Record<string, CampaignStats>, click) => {
-    if (!click.offers) return acc;
+  const campaignStats = Object.values(clicksByOffer).reduce((acc: Record<string, CampaignStats>, clicks) => {
+    if (!clicks.length || !clicks[0].offers) return acc;
     
-    const campaignId = click.offers.id;
-    const campaignName = click.offers.name;
-    const key = `${campaignId}`;
+    const campaignId = clicks[0].offers.id;
+    const campaignName = clicks[0].offers.name;
     
-    if (!acc[key]) {
-      acc[key] = {
+    if (!acc[campaignId]) {
+      acc[campaignId] = {
         id: campaignId,
         name: campaignName,
-        clicks: 0,
+        clicks: clicks.length,
         conversions: 0,
         earnings: 0,
         conversionRate: 0,
@@ -188,35 +188,27 @@ export default function Reports() {
       };
     }
     
-    acc[key].clicks++;
-    
     // Calculate conversions and earnings for this campaign
-    const campaignLeads = leadsData.filter(lead => {
-      console.log("Processing lead for campaign stats:", {
+    const campaignLeads = leadsData.filter(lead => 
+      lead.offers?.id === campaignId && 
+      lead.status === 'converted'
+    );
+    
+    acc[campaignId].conversions = campaignLeads.length;
+    acc[campaignId].earnings = campaignLeads.reduce((sum, lead) => {
+      // For converted leads, use the actual payout value
+      const leadPayout = Number(lead.payout) || 0;
+      console.log(`Processing campaign earnings for ${campaignName}:`, {
         leadId: lead.id,
         offerId: lead.offers?.id,
-        campaignId: campaignId,
-        status: lead.status,
-        payout: lead.payout,
-        isVariable: lead.variable_payout
-      });
-      return lead.offers?.id === campaignId && lead.status === 'converted';
-    });
-    
-    acc[key].conversions = campaignLeads.length;
-    acc[key].earnings = campaignLeads.reduce((sum, lead) => {
-      // For converted leads, use the actual payout value regardless of whether it's variable or fixed
-      const leadPayout = Number(lead.payout) || 0;
-      console.log(`Adding payout for lead ${lead.id}:`, {
-        leadId: lead.id,
         payout: leadPayout,
         isVariable: lead.variable_payout
       });
       return sum + leadPayout;
     }, 0);
     
-    acc[key].conversionRate = (acc[key].conversions / acc[key].clicks) * 100;
-    acc[key].epc = acc[key].earnings / acc[key].clicks;
+    acc[campaignId].conversionRate = (acc[campaignId].conversions / clicks.length) * 100;
+    acc[campaignId].epc = acc[campaignId].earnings / clicks.length;
     
     return acc;
   }, {});
