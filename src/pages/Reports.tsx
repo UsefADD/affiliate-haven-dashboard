@@ -38,6 +38,8 @@ interface ClickData {
 interface LeadData {
   id: string;
   status: string;
+  payout: number;
+  variable_payout: boolean;
   offers: {
     id: string;
     name: string;
@@ -78,35 +80,37 @@ export default function Reports() {
       const { data, error } = await supabase
         .from('leads')
         .select(`
+        id,
+        status,
+        created_at,
+        payout,
+        variable_payout,
+        offers (
           id,
-          status,
-          created_at,
-          offers (
-            id,
-            name,
-            payout
-          )
-        `)
-        .eq('affiliate_id', user.id)
-        .gte('created_at', startOfDay(startDate).toISOString())
-        .lte('created_at', endOfDay(endDate).toISOString());
+          name,
+          payout
+        )
+      `)
+      .eq('affiliate_id', user.id)
+      .gte('created_at', startOfDay(startDate).toISOString())
+      .lte('created_at', endOfDay(endDate).toISOString());
 
-      if (error) {
-        console.error("Error fetching leads:", error);
-        throw error;
-      }
-
-      console.log("Fetched leads:", data);
-      setLeadsData(data || []);
-    } catch (error) {
-      console.error('Error in fetchLeads:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch leads data",
-        variant: "destructive",
-      });
+    if (error) {
+      console.error("Error fetching leads:", error);
+      throw error;
     }
-  };
+
+    console.log("Fetched leads:", data);
+    setLeadsData(data || []);
+  } catch (error) {
+    console.error('Error in fetchLeads:', error);
+    toast({
+      title: "Error",
+      description: "Failed to fetch leads data",
+      variant: "destructive",
+    });
+  }
+};
 
   const [clicksByOffer, setClicksByOffer] = useState<Record<string, ClickData[]>>({});
 
@@ -191,7 +195,10 @@ export default function Reports() {
     acc[key].conversions = campaignLeads.filter(lead => lead.status === 'converted').length;
     acc[key].earnings = campaignLeads
       .filter(lead => lead.status === 'converted')
-      .reduce((sum, lead) => sum + (lead.offers?.payout || 0), 0);
+      .reduce((sum, lead) => {
+        // Use the lead's payout value regardless of whether it's variable or fixed
+        return sum + (lead.payout || 0);
+      }, 0);
     
     acc[key].conversionRate = (acc[key].conversions / acc[key].clicks) * 100;
     acc[key].epc = acc[key].earnings / acc[key].clicks;
