@@ -63,15 +63,24 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
   const handleCustomRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
     if (!range) return;
 
+    // Always update the local state with whatever we have
     const newRange = { 
       from: range.from || dateRange.from,
-      to: range.to || dateRange.to
+      to: range.to || range.from || dateRange.to
     };
-
+    
     setDateRange(newRange);
-    if (range.from && range.to) {
-      onDateChange(newRange);
-      setIsCalendarOpen(false);
+    
+    // Only trigger the parent callback when we have both dates
+    // or when we have a single date selected (treating it as both from and to)
+    if (range.from) {
+      onDateChange({
+        from: range.from,
+        to: range.to || range.from
+      });
+      if (range.to || !isCalendarOpen) {
+        setIsCalendarOpen(false);
+      }
     }
   };
 
@@ -88,7 +97,7 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {dateRange.from ? (
-              dateRange.to ? (
+              dateRange.to && dateRange.to !== dateRange.from ? (
                 <>
                   {format(dateRange.from, "LLL dd, y")} -{" "}
                   {format(dateRange.to, "LLL dd, y")}

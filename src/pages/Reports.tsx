@@ -56,56 +56,21 @@ export default function Reports() {
 
   const handleDateRangeChange = async ({ from, to }: { from: Date; to: Date }) => {
     setIsLoading(true);
-    await Promise.all([
-      fetchClicks(from, to),
-      fetchLeads(from, to)
-    ]);
-    
-    toast({
-      title: "Report Generated",
-      description: `Showing results for selected date range`,
-    });
-  };
-
-  const fetchLeads = async (startDate: Date, endDate: Date) => {
     try {
-      console.log("Fetching leads for date range:", { startDate, endDate });
-      const { data: { user } } = await supabase.auth.getUser();
+      await Promise.all([
+        fetchClicks(from, to),
+        fetchLeads(from, to)
+      ]);
       
-      if (!user) {
-        console.error("No user found");
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('leads')
-        .select(`
-          id,
-          status,
-          payout,
-          variable_payout,
-          offers (
-            id,
-            name,
-            payout
-          )
-        `)
-        .eq('affiliate_id', user.id)
-        .gte('created_at', startOfDay(startDate).toISOString())
-        .lte('created_at', endOfDay(endDate).toISOString());
-
-      if (error) {
-        console.error("Error fetching leads:", error);
-        throw error;
-      }
-
-      console.log("Fetched leads:", data);
-      setLeadsData(data || []);
+      toast({
+        title: "Report Generated",
+        description: `Showing results for selected date range`,
+      });
     } catch (error) {
-      console.error('Error in fetchLeads:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch leads data",
+        description: "Failed to fetch data for selected date range",
         variant: "destructive",
       });
     } finally {
@@ -168,19 +133,65 @@ export default function Reports() {
     }
   };
 
+  const fetchLeads = async (startDate: Date, endDate: Date) => {
+    try {
+      console.log("Fetching leads for date range:", { startDate, endDate });
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          id,
+          status,
+          payout,
+          variable_payout,
+          offers (
+            id,
+            name,
+            payout
+          )
+        `)
+        .eq('affiliate_id', user.id)
+        .gte('created_at', startOfDay(startDate).toISOString())
+        .lte('created_at', endOfDay(endDate).toISOString());
+
+      if (error) {
+        console.error("Error fetching leads:", error);
+        throw error;
+      }
+
+      console.log("Fetched leads:", data);
+      setLeadsData(data || []);
+    } catch (error) {
+      console.error('Error in fetchLeads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch leads data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Calculate campaign stats from clicks and leads
-  const campaignStats = leadsData.reduce((acc: Record<string, CampaignStats>, lead) => {
-    if (!lead.offers) return acc;
+  const campaignStats = Object.values(clicksByOffer).reduce((acc: Record<string, CampaignStats>, campaignClicks) => {
+    if (!campaignClicks.length || !campaignClicks[0].offers) return acc;
     
-    const campaignId = lead.offers.id;
-    const campaignName = lead.offers.name;
+    const campaignId = campaignClicks[0].offers.id;
+    const campaignName = campaignClicks[0].offers.name;
     
-    // Initialize or update campaign stats
+    // Initialize campaign stats
     if (!acc[campaignId]) {
       acc[campaignId] = {
         id: campaignId,
         name: campaignName,
-        clicks: 0,
+        clicks: campaignClicks.length,
         conversions: 0,
         earnings: 0,
         conversionRate: 0,
@@ -188,50 +199,20 @@ export default function Reports() {
       };
     }
 
-    // Add clicks if we have them for this campaign
-    const campaignClicks = clicksByOffer[campaignId] || [];
-    acc[campaignId].clicks = campaignClicks.length;
+    // Add conversions and earnings from leads
+    const campaignLeads = leadsData.filter(lead => lead.offers?.id === campaignId);
+    const convertedLeads = campaignLeads.filter(lead => lead.status === 'converted');
     
-    // If this is a converted lead, update conversions and earnings
-    if (lead.status === 'converted') {
-      acc[campaignId].conversions++;
-      const leadPayout = Number(lead.payout) || 0;
-      console.log(`Processing campaign earnings for ${campaignName}:`, {
-        leadId: lead.id,
-        offerId: lead.offers?.id,
-        payout: leadPayout,
-        isVariable: lead.variable_payout
-      });
-      acc[campaignId].earnings += leadPayout;
-    }
+    acc[campaignId].conversions = convertedLeads.length;
+    acc[campaignId].earnings = convertedLeads.reduce((total, lead) => total + Number(lead.payout), 0);
     
     // Calculate rates
-    acc[campaignId].conversionRate = acc[campaignId].clicks > 0 
-      ? (acc[campaignId].conversions / acc[campaignId].clicks) * 100 
-      : 0;
-    acc[campaignId].epc = acc[campaignId].clicks > 0 
-      ? acc[campaignId].earnings / acc[campaignId].clicks 
-      : 0;
+    acc[campaignId].conversionRate = (acc[campaignId].conversions / acc[campaignId].clicks) * 100;
+    acc[campaignId].epc = acc[campaignId].earnings / acc[campaignId].clicks;
     
     return acc;
-  }, {} as Record<string, CampaignStats>);
+  }, {});
 
-  // Now add any campaigns that have clicks but no leads
-  Object.entries(clicksByOffer).forEach(([offerId, clicks]) => {
-    if (!campaignStats[offerId] && clicks[0]?.offers) {
-      campaignStats[offerId] = {
-        id: offerId,
-        name: clicks[0].offers.name,
-        clicks: clicks.length,
-        conversions: 0,
-        earnings: 0,
-        conversionRate: 0,
-        epc: 0
-      };
-    }
-  });
-
-  // Calculate totals
   const calculateTotals = () => {
     const totals = Object.values(campaignStats).reduce((acc, stats) => {
       return {
