@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -59,14 +60,16 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
   };
 
   const handleCustomRangeSelect = (range: { from?: Date; to?: Date }) => {
+    const newRange = { 
+      from: range.from || dateRange.from,
+      to: range.to || dateRange.to
+    };
+
     if (range.from && range.to) {
-      const newRange = { from: range.from, to: range.to };
       setDateRange(newRange);
       onDateChange(newRange);
-      // Don't close the popover here to allow for date range adjustments
     } else if (range.from) {
-      // When only 'from' is selected, update it but keep the popover open
-      setDateRange(prev => ({ ...prev, from: range.from }));
+      setDateRange(newRange);
     }
   };
 
@@ -115,10 +118,10 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={dateRange?.from}
+            defaultMonth={dateRange.from}
             selected={{
-              from: dateRange?.from,
-              to: dateRange?.to,
+              from: dateRange.from,
+              to: dateRange.to,
             }}
             onSelect={handleCustomRangeSelect}
             numberOfMonths={2}
