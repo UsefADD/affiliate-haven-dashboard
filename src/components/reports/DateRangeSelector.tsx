@@ -19,9 +19,10 @@ interface DateRangeSelectorProps {
 
 export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(),
-    to: new Date()
+    from: today,
+    to: today
   });
 
   const handlePresetSelect = (preset: string) => {
@@ -59,17 +60,18 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
     setIsCalendarOpen(false);
   };
 
-  const handleCustomRangeSelect = (range: { from?: Date; to?: Date }) => {
+  const handleCustomRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
+    if (!range) return;
+
     const newRange = { 
       from: range.from || dateRange.from,
       to: range.to || dateRange.to
     };
 
+    setDateRange(newRange);
     if (range.from && range.to) {
-      setDateRange(newRange);
       onDateChange(newRange);
-    } else if (range.from) {
-      setDateRange(newRange);
+      setIsCalendarOpen(false);
     }
   };
 
@@ -85,7 +87,7 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {dateRange?.from ? (
+            {dateRange.from ? (
               dateRange.to ? (
                 <>
                   {format(dateRange.from, "LLL dd, y")} -{" "}
@@ -119,10 +121,7 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
             initialFocus
             mode="range"
             defaultMonth={dateRange.from}
-            selected={{
-              from: dateRange.from,
-              to: dateRange.to,
-            }}
+            selected={dateRange}
             onSelect={handleCustomRangeSelect}
             numberOfMonths={2}
           />
