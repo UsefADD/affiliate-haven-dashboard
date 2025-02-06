@@ -52,15 +52,21 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
         break;
     }
 
-    setDateRange({ from, to });
-    onDateChange({ from, to });
+    const newRange = { from, to };
+    setDateRange(newRange);
+    onDateChange(newRange);
     setIsCalendarOpen(false);
   };
 
   const handleCustomRangeSelect = (range: { from?: Date; to?: Date }) => {
     if (range.from && range.to) {
-      setDateRange({ from: range.from, to: range.to });
-      onDateChange({ from: range.from, to: range.to });
+      const newRange = { from: range.from, to: range.to };
+      setDateRange(newRange);
+      onDateChange(newRange);
+      // Don't close the popover here to allow for date range adjustments
+    } else if (range.from) {
+      // When only 'from' is selected, update it but keep the popover open
+      setDateRange(prev => ({ ...prev, from: range.from }));
     }
   };
 
