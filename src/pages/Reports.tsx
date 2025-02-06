@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
@@ -170,33 +169,32 @@ export default function Reports() {
   };
 
   // Calculate campaign stats from clicks and leads
-  const campaignStats = Object.values(clicksByOffer).reduce((acc: Record<string, CampaignStats>, clicks) => {
-    if (!clicks.length || !clicks[0].offers) return acc;
+  const campaignStats = leadsData.reduce((acc: Record<string, CampaignStats>, lead) => {
+    if (!lead.offers) return acc;
     
-    const campaignId = clicks[0].offers.id;
-    const campaignName = clicks[0].offers.name;
+    const campaignId = lead.offers.id;
+    const campaignName = lead.offers.name;
     
+    // Initialize or update campaign stats
     if (!acc[campaignId]) {
       acc[campaignId] = {
         id: campaignId,
         name: campaignName,
-        clicks: clicks.length,
+        clicks: 0,
         conversions: 0,
         earnings: 0,
         conversionRate: 0,
         epc: 0
       };
     }
+
+    // Add clicks if we have them for this campaign
+    const campaignClicks = clicksByOffer[campaignId] || [];
+    acc[campaignId].clicks = campaignClicks.length;
     
-    // Calculate conversions and earnings for this campaign
-    const campaignLeads = leadsData.filter(lead => 
-      lead.offers?.id === campaignId && 
-      lead.status === 'converted'
-    );
-    
-    acc[campaignId].conversions = campaignLeads.length;
-    acc[campaignId].earnings = campaignLeads.reduce((sum, lead) => {
-      // For converted leads, use the actual payout value
+    // If this is a converted lead, update conversions and earnings
+    if (lead.status === 'converted') {
+      acc[campaignId].conversions++;
       const leadPayout = Number(lead.payout) || 0;
       console.log(`Processing campaign earnings for ${campaignName}:`, {
         leadId: lead.id,
@@ -204,14 +202,34 @@ export default function Reports() {
         payout: leadPayout,
         isVariable: lead.variable_payout
       });
-      return sum + leadPayout;
-    }, 0);
+      acc[campaignId].earnings += leadPayout;
+    }
     
-    acc[campaignId].conversionRate = (acc[campaignId].conversions / clicks.length) * 100;
-    acc[campaignId].epc = acc[campaignId].earnings / clicks.length;
+    // Calculate rates
+    acc[campaignId].conversionRate = acc[campaignId].clicks > 0 
+      ? (acc[campaignId].conversions / acc[campaignId].clicks) * 100 
+      : 0;
+    acc[campaignId].epc = acc[campaignId].clicks > 0 
+      ? acc[campaignId].earnings / acc[campaignId].clicks 
+      : 0;
     
     return acc;
-  }, {});
+  }, {} as Record<string, CampaignStats>);
+
+  // Now add any campaigns that have clicks but no leads
+  Object.entries(clicksByOffer).forEach(([offerId, clicks]) => {
+    if (!campaignStats[offerId] && clicks[0]?.offers) {
+      campaignStats[offerId] = {
+        id: offerId,
+        name: clicks[0].offers.name,
+        clicks: clicks.length,
+        conversions: 0,
+        earnings: 0,
+        conversionRate: 0,
+        epc: 0
+      };
+    }
+  });
 
   // Calculate totals
   const calculateTotals = () => {
