@@ -31,7 +31,7 @@ serve(async (req) => {
     const { data, error } = await resend.emails.send({
       from: 'ClixAgent <payments@clixagent.com>',
       to: email,
-      subject: 'Payment Confirmation from ClixAgent',
+      subject: 'ClixAgent Submitted a payment to you',
       html,
     })
 
