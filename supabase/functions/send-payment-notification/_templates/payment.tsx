@@ -19,7 +19,7 @@ interface PaymentEmailProps {
 export const PaymentEmail = ({ name, amount }: PaymentEmailProps) => (
   <Html>
     <Head />
-    <Preview>Payment Confirmation from ClixAgent</Preview>
+    <Preview>Payment Confirmation from ClixAgent - ${amount.toFixed(2)} has been processed! 🎉</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
@@ -29,27 +29,39 @@ export const PaymentEmail = ({ name, amount }: PaymentEmailProps) => (
         <Section style={content}>
           <Heading style={h1}>Payment Confirmation</Heading>
           <Text style={text}>Dear {name},</Text>
-          <Text style={text}>
-            Great news! We have successfully processed a payment of ${amount.toFixed(2)} to your account.
-          </Text>
           
           <Section style={paymentBox}>
-            <Text style={amountText}>Payment Amount: ${amount.toFixed(2)}</Text>
+            <Text style={amountLabel}>Payment Amount</Text>
+            <Text style={amountText}>${amount.toFixed(2)}</Text>
+            <Text style={statusText}>Successfully Processed</Text>
           </Section>
 
           <Text style={text}>
-            Thank you for being a valued affiliate partner with ClixAgent! Your dedication and performance continue to impress us, and we're excited to see your success grow. Keep up the excellent work - there's no limit to what we can achieve together!
+            🌟 Congratulations on another successful milestone! Your dedication and performance continue to impress us, and we're thrilled to have you as a valued member of the ClixAgent family.
           </Text>
 
           <Text style={text}>
-            The payment has been initiated and should be reflected in your account according to your selected payment method's processing time.
+            Your payment has been processed and should be reflected in your account according to your selected payment method's processing time. Keep up the fantastic work - your success is our success!
           </Text>
+
+          <Section style={statsBox}>
+            <Text style={statsTitle}>Did You Know? 💡</Text>
+            <Text style={statsText}>
+              Top-performing affiliates like you are key to our growth. With consistent performance, you could unlock even higher commission rates and exclusive bonuses!
+            </Text>
+          </Section>
 
           <Hr style={hr} />
           
           <Text style={text}>
-            Want to earn even more? Check out our latest high-converting offers and boost your earnings today!
+            Ready to take it to the next level? Check out our latest high-converting offers in your dashboard and discover new opportunities to maximize your earnings!
           </Text>
+
+          <Section style={ctaBox}>
+            <Text style={ctaText}>
+              "Success is not final; failure is not fatal: it is the courage to continue that counts." - Winston Churchill
+            </Text>
+          </Section>
 
           <Text style={footer}>
             Best regards,<br />
@@ -63,22 +75,22 @@ export const PaymentEmail = ({ name, amount }: PaymentEmailProps) => (
 
 const main = {
   backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 }
 
 const container = {
   backgroundColor: "#ffffff",
   margin: "0 auto",
   marginBottom: "64px",
-  borderRadius: "5px",
+  borderRadius: "12px",
   overflow: "hidden",
+  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
 }
 
 const header = {
   backgroundColor: "#10B981",
   padding: "40px 0",
-  textAlign: "center",
+  textAlign: "center" as const,
 }
 
 const brandText = {
@@ -94,44 +106,99 @@ const content = {
 }
 
 const h1 = {
-  color: "#333",
-  fontSize: "24px",
+  color: "#1a1a1a",
+  fontSize: "28px",
   fontWeight: "bold",
   margin: "0 0 20px",
-  padding: "0",
+  padding: 0,
+  textAlign: "center" as const,
 }
 
 const text = {
-  color: "#333",
+  color: "#4a4a4a",
   fontSize: "16px",
   lineHeight: "24px",
   margin: "16px 0",
 }
 
 const paymentBox = {
-  backgroundColor: "#f8fafc",
-  padding: "24px",
-  borderRadius: "8px",
-  margin: "24px 0",
-  border: "1px solid #e2e8f0",
-  textAlign: "center",
+  backgroundColor: "#f0fdf4",
+  padding: "32px",
+  borderRadius: "12px",
+  margin: "32px 0",
+  border: "1px solid #86efac",
+  textAlign: "center" as const,
+}
+
+const amountLabel = {
+  fontSize: "16px",
+  color: "#059669",
+  margin: "0 0 8px",
+  fontWeight: "500",
 }
 
 const amountText = {
-  fontSize: "24px",
+  fontSize: "36px",
   fontWeight: "bold",
-  color: "#10B981",
-  margin: "0",
+  color: "#059669",
+  margin: "0 0 8px",
+}
+
+const statusText = {
+  fontSize: "14px",
+  color: "#059669",
+  margin: 0,
+  fontStyle: "italic",
+}
+
+const statsBox = {
+  backgroundColor: "#eff6ff",
+  padding: "24px",
+  borderRadius: "12px",
+  margin: "24px 0",
+  border: "1px solid #bfdbfe",
+}
+
+const statsTitle = {
+  fontSize: "18px",
+  fontWeight: "bold",
+  color: "#1e40af",
+  margin: "0 0 12px",
+}
+
+const statsText = {
+  fontSize: "15px",
+  color: "#1e40af",
+  margin: 0,
+  lineHeight: "22px",
 }
 
 const hr = {
-  borderColor: "#e6ebf1",
-  margin: "20px 0",
+  borderColor: "#e5e7eb",
+  margin: "32px 0",
+}
+
+const ctaBox = {
+  backgroundColor: "#fef2f2",
+  padding: "24px",
+  borderRadius: "12px",
+  margin: "24px 0",
+  border: "1px solid #fecaca",
+}
+
+const ctaText = {
+  fontSize: "16px",
+  color: "#991b1b",
+  margin: 0,
+  lineHeight: "24px",
+  fontStyle: "italic",
+  textAlign: "center" as const,
 }
 
 const footer = {
-  color: "#666",
+  color: "#666666",
   fontSize: "16px",
   lineHeight: "24px",
   margin: "32px 0 0",
+  textAlign: "center" as const,
 }
