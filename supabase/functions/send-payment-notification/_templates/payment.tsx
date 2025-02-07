@@ -81,8 +81,7 @@ const brandText = {
   color: "#ffffff",
   fontSize: "42px",
   fontWeight: "bold",
-  margin: "0",
-  textAlign: "center" as const,
+  margin: "0", as const,
   letterSpacing: "1px",
 }
 
