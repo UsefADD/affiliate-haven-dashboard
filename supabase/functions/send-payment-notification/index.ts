@@ -22,7 +22,8 @@ serve(async (req) => {
     console.log(`Sending payment notification to ${email} for amount $${amount}`)
 
     // For testing, if no domain is verified, send only to the admin email
-    const isTestMode = true; // Set this to false after verifying domain
+    // IMPORTANT: Change this to false and update the from email after verifying your domain
+    const isTestMode = true;
     const toEmail = isTestMode ? "usefadd@gmail.com" : email;
 
     const html = await renderAsync(
@@ -33,7 +34,7 @@ serve(async (req) => {
     )
 
     const { data, error } = await resend.emails.send({
-      from: 'ClixAgent <payments@resend.dev>', // Update this with your verified domain
+      from: 'ClixAgent <payments@resend.dev>', // TODO: Update this with your verified domain (e.g., payments@clixagent.com)
       to: toEmail,
       subject: 'Payment Confirmation from ClixAgent',
       html,

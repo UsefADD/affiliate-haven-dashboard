@@ -30,12 +30,16 @@ export const PaymentEmail = ({ name, amount }: PaymentEmailProps) => (
           <Heading style={h1}>Payment Confirmation</Heading>
           <Text style={text}>Dear {name},</Text>
           <Text style={text}>
-            We are pleased to inform you that ClixAgent has successfully processed a payment to your account.
+            Great news! We have successfully processed a payment of ${amount.toFixed(2)} to your account.
           </Text>
           
           <Section style={paymentBox}>
             <Text style={amountText}>Payment Amount: ${amount.toFixed(2)}</Text>
           </Section>
+
+          <Text style={text}>
+            Thank you for being a valued affiliate partner with ClixAgent! Your dedication and performance continue to impress us, and we're excited to see your success grow. Keep up the excellent work - there's no limit to what we can achieve together!
+          </Text>
 
           <Text style={text}>
             The payment has been initiated and should be reflected in your account according to your selected payment method's processing time.
@@ -44,7 +48,7 @@ export const PaymentEmail = ({ name, amount }: PaymentEmailProps) => (
           <Hr style={hr} />
           
           <Text style={text}>
-            If you have any questions about this payment, please don't hesitate to contact your account manager or our support team.
+            Want to earn even more? Check out our latest high-converting offers and boost your earnings today!
           </Text>
 
           <Text style={footer}>
@@ -74,7 +78,7 @@ const container = {
 const header = {
   backgroundColor: "#10B981",
   padding: "40px 0",
-  textAlign: "center" as const,
+  textAlign: "center",
 }
 
 const brandText = {
@@ -110,7 +114,7 @@ const paymentBox = {
   borderRadius: "8px",
   margin: "24px 0",
   border: "1px solid #e2e8f0",
-  textAlign: "center" as const,
+  textAlign: "center",
 }
 
 const amountText = {
