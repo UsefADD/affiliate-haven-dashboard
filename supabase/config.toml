@@ -24,3 +24,6 @@ verify_jwt = true
 
 [functions.unblock-user]
 verify_jwt = true
+
+[functions.send-payment-notification]
+verify_jwt = true

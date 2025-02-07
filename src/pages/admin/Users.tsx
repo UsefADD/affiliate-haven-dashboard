@@ -1,15 +1,16 @@
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Pencil, UserX, Ban, Unlock } from "lucide-react";
+import { UserPlus, Pencil, UserX, Ban, Unlock, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UserForm, UserFormData } from "@/components/users/UserForm";
 import { AffiliateLeadsManager } from "@/components/leads/AffiliateLeadsManager";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Profile {
   id: string;
@@ -35,6 +36,11 @@ export default function Users() {
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [userToBlock, setUserToBlock] = useState<Profile | null>(null);
   const { toast } = useToast();
+
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [selectedUserForPayment, setSelectedUserForPayment] = useState<Profile | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -329,6 +335,50 @@ export default function Users() {
     }
   };
 
+  const handlePayment = async () => {
+    if (!selectedUserForPayment || !paymentAmount) return;
+
+    try {
+      setIsProcessingPayment(true);
+      
+      const amount = parseFloat(paymentAmount);
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error("Please enter a valid payment amount");
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session found');
+
+      const response = await supabase.functions.invoke('send-payment-notification', {
+        body: {
+          name: `${selectedUserForPayment.first_name} ${selectedUserForPayment.last_name}`,
+          email: selectedUserForPayment.email,
+          amount: amount
+        }
+      });
+
+      if (response.error) throw response.error;
+
+      toast({
+        title: "Success",
+        description: "Payment notification sent successfully",
+      });
+
+      setIsPaymentDialogOpen(false);
+      setPaymentAmount("");
+      setSelectedUserForPayment(null);
+    } catch (error: any) {
+      console.error('Error processing payment:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to process payment",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -367,6 +417,42 @@ export default function Users() {
               onSubmit={handleEditUser}
               isSubmitting={isSubmitting}
             />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Process Payment</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="amount">Payment Amount ($)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="Enter amount"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsPaymentDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handlePayment}
+                disabled={isProcessingPayment || !paymentAmount}
+              >
+                {isProcessingPayment ? "Processing..." : "Send Payment"}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -451,6 +537,19 @@ export default function Users() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {user.role === 'affiliate' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-green-600"
+                            onClick={() => {
+                              setSelectedUserForPayment(user);
+                              setIsPaymentDialogOpen(true);
+                            }}
+                          >
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
+                        )}
                         {user.is_blocked ? (
                           <Button 
                             variant="ghost" 
