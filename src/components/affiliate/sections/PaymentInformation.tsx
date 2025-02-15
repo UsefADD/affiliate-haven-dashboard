@@ -72,18 +72,20 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Select Cryptocurrency</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
-                      <SelectValue placeholder="Choose cryptocurrency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
-                      <SelectItem value="USDT">Tether (USDT)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
+                        <SelectValue placeholder="Choose cryptocurrency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
+                        <SelectItem value="USDT">Tether (USDT)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
