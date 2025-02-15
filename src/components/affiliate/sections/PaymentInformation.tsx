@@ -11,13 +11,15 @@ interface PaymentInformationProps {
 }
 
 export function PaymentInformation({ form }: PaymentInformationProps) {
+  const paymentMethod = form.watch('payment_method');
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
         <CreditCard className="h-5 w-5 text-green-500" />
         Payment Information
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-4">
         <FormField
           control={form.control}
           name="payment_method"
@@ -40,6 +42,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="pay_to"
@@ -53,6 +56,121 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             </FormItem>
           )}
         />
+
+        {paymentMethod === 'crypto' && (
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="crypto_currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cryptocurrency</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Select cryptocurrency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
+                      <SelectItem value="USDT">Tether (USDT)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="crypto_wallet"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Wallet Address</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Enter your wallet address" className="bg-white" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
+
+        {paymentMethod === 'paypal' && (
+          <FormField
+            control={form.control}
+            name="paypal_email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>PayPal Email</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="email" 
+                    placeholder="your-paypal@example.com" 
+                    className="bg-white" 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {paymentMethod === 'wire' && (
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="bank_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bank Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Enter bank name" className="bg-white" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bank_account_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Account Number / IBAN</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Enter account number or IBAN" className="bg-white" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bank_swift"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>SWIFT/BIC Code</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Enter SWIFT/BIC code" className="bg-white" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bank_address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bank Address</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Enter bank address" className="bg-white" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
