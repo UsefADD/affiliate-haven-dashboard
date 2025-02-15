@@ -19,7 +19,7 @@ interface PaymentEmailProps {
 export const PaymentEmail = ({ name, amount }: PaymentEmailProps) => (
   <Html>
     <Head />
-    <Preview>ClixAgent Submitted a payment to you - ${amount.toFixed(2)} has been processed! 🎉</Preview>
+    <Preview>Payment Confirmation from ClixAgent - ${amount.toFixed(2)} has been processed! 🎉</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
@@ -27,7 +27,7 @@ export const PaymentEmail = ({ name, amount }: PaymentEmailProps) => (
         </Section>
         
         <Section style={content}>
-          <Heading style={h1}>Your funds are on the way</Heading>
+          <Heading style={h1}>Payment Confirmation</Heading>
           <Text style={greeting}>Dear {name},</Text>
           
           <Section style={paymentBox}>
