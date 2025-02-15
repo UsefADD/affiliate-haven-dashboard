@@ -11,7 +11,7 @@ interface PaymentInformationProps {
 }
 
 export function PaymentInformation({ form }: PaymentInformationProps) {
-  const paymentMethod = form.watch('payment_method');
+  const paymentMethod = form.watch("payment_method");
 
   return (
     <div className="space-y-4">
@@ -27,8 +27,11 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             <FormItem>
               <FormLabel>Payment Method</FormLabel>
               <FormControl>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="bg-white">
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>
@@ -48,26 +51,33 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
           name="pay_to"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Pay To</FormLabel>
+              <FormLabel>Pay To (Full Name/Company Name)</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Name/Company for payments" className="bg-white" />
+                <Input 
+                  {...field} 
+                  placeholder="Enter recipient name" 
+                  className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {paymentMethod === 'crypto' && (
-          <div className="space-y-4">
+        {paymentMethod === "crypto" && (
+          <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
             <FormField
               control={form.control}
               name="crypto_currency"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cryptocurrency</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Select cryptocurrency" />
+                  <FormLabel>Select Cryptocurrency</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
+                      <SelectValue placeholder="Choose cryptocurrency" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
@@ -85,7 +95,11 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
                 <FormItem>
                   <FormLabel>Wallet Address</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter your wallet address" className="bg-white" />
+                    <Input 
+                      {...field} 
+                      placeholder="Enter your wallet address" 
+                      className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -94,29 +108,31 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
           </div>
         )}
 
-        {paymentMethod === 'paypal' && (
-          <FormField
-            control={form.control}
-            name="paypal_email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>PayPal Email</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    type="email" 
-                    placeholder="your-paypal@example.com" 
-                    className="bg-white" 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {paymentMethod === "paypal" && (
+          <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
+            <FormField
+              control={form.control}
+              name="paypal_email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PayPal Email Address</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      type="email" 
+                      placeholder="your.paypal@email.com" 
+                      className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         )}
 
-        {paymentMethod === 'wire' && (
-          <div className="space-y-4">
+        {paymentMethod === "wire" && (
+          <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
             <FormField
               control={form.control}
               name="bank_name"
@@ -124,7 +140,11 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
                 <FormItem>
                   <FormLabel>Bank Name</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter bank name" className="bg-white" />
+                    <Input 
+                      {...field} 
+                      placeholder="Enter bank name" 
+                      className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -137,7 +157,11 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
                 <FormItem>
                   <FormLabel>Account Number / IBAN</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter account number or IBAN" className="bg-white" />
+                    <Input 
+                      {...field} 
+                      placeholder="Enter account number or IBAN" 
+                      className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -150,7 +174,11 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
                 <FormItem>
                   <FormLabel>SWIFT/BIC Code</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter SWIFT/BIC code" className="bg-white" />
+                    <Input 
+                      {...field} 
+                      placeholder="Enter SWIFT/BIC code" 
+                      className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -163,7 +191,11 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
                 <FormItem>
                   <FormLabel>Bank Address</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter bank address" className="bg-white" />
+                    <Input 
+                      {...field} 
+                      placeholder="Enter bank address" 
+                      className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
