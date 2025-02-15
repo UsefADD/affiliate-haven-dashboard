@@ -38,7 +38,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
   const handleCloseDialog = () => {
     setShowThankYou(false);
-    onSuccess?.(); // Call onSuccess directly when closing dialog
+    onSuccess?.();
   };
 
   const form = useForm<ApplicationFormData>({
@@ -62,6 +62,13 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       website_url: "",
       payment_method: "",
       pay_to: "",
+      crypto_currency: "",
+      crypto_wallet: "",
+      paypal_email: "",
+      bank_account_number: "",
+      bank_swift: "",
+      bank_name: "",
+      bank_address: "",
       marketing_comments: "",
       site_marketing: "",
       known_contacts: "",
@@ -74,7 +81,6 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
     try {
       console.log("Starting application submission...");
       
-      // First submit the application data
       const { error: submissionError } = await supabase
         .from("affiliate_applications")
         .insert({
@@ -96,6 +102,13 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
           website_url: data.website_url || null,
           payment_method: data.payment_method,
           pay_to: data.pay_to,
+          crypto_currency: data.crypto_currency || null,
+          crypto_wallet: data.crypto_wallet || null,
+          paypal_email: data.paypal_email || null,
+          bank_account_number: data.bank_account_number || null,
+          bank_swift: data.bank_swift || null,
+          bank_name: data.bank_name || null,
+          bank_address: data.bank_address || null,
           marketing_comments: data.marketing_comments || null,
           site_marketing: data.site_marketing || null,
           known_contacts: data.known_contacts,
@@ -107,7 +120,6 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
       console.log("Application submitted, sending confirmation email...");
       
-      // Then send the confirmation email
       const { error: emailError } = await supabase.functions.invoke(
         "send-affiliate-confirmation",
         {

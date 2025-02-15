@@ -13,10 +13,16 @@ export type Database = {
         Row: {
           address: string
           apt_suite: string | null
+          bank_account_number: string | null
+          bank_address: string | null
+          bank_name: string | null
+          bank_swift: string | null
           city: string
           company: string | null
           country: string
           created_at: string
+          crypto_currency: string | null
+          crypto_wallet: string | null
           current_advertisers: string
           email: string
           first_name: string
@@ -28,6 +34,7 @@ export type Database = {
           marketing_comments: string | null
           pay_to: string
           payment_method: string
+          paypal_email: string | null
           phone: string
           site_marketing: string | null
           state: string
@@ -40,10 +47,16 @@ export type Database = {
         Insert: {
           address: string
           apt_suite?: string | null
+          bank_account_number?: string | null
+          bank_address?: string | null
+          bank_name?: string | null
+          bank_swift?: string | null
           city: string
           company?: string | null
           country: string
           created_at?: string
+          crypto_currency?: string | null
+          crypto_wallet?: string | null
           current_advertisers: string
           email: string
           first_name: string
@@ -55,6 +68,7 @@ export type Database = {
           marketing_comments?: string | null
           pay_to: string
           payment_method: string
+          paypal_email?: string | null
           phone: string
           site_marketing?: string | null
           state: string
@@ -67,10 +81,16 @@ export type Database = {
         Update: {
           address?: string
           apt_suite?: string | null
+          bank_account_number?: string | null
+          bank_address?: string | null
+          bank_name?: string | null
+          bank_swift?: string | null
           city?: string
           company?: string | null
           country?: string
           created_at?: string
+          crypto_currency?: string | null
+          crypto_wallet?: string | null
           current_advertisers?: string
           email?: string
           first_name?: string
@@ -82,6 +102,7 @@ export type Database = {
           marketing_comments?: string | null
           pay_to?: string
           payment_method?: string
+          paypal_email?: string | null
           phone?: string
           site_marketing?: string | null
           state?: string
