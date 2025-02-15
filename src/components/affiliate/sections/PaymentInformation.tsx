@@ -12,6 +12,7 @@ interface PaymentInformationProps {
 
 export function PaymentInformation({ form }: PaymentInformationProps) {
   const paymentMethod = form.watch("payment_method");
+  console.log("Current payment method:", paymentMethod); // Debug log
 
   return (
     <div className="space-y-4">
@@ -26,43 +27,46 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Payment Method</FormLabel>
-              <FormControl>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="wire">Wire Transfer</SelectItem>
-                    <SelectItem value="paypal">PayPal</SelectItem>
-                    <SelectItem value="crypto">Cryptocurrency</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
+              <Select 
+                onValueChange={(value) => {
+                  console.log("Selected payment method:", value); // Debug log
+                  field.onChange(value);
+                }}
+                value={field.value}
+              >
+                <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="wire">Wire Transfer</SelectItem>
+                  <SelectItem value="paypal">PayPal</SelectItem>
+                  <SelectItem value="crypto">Cryptocurrency</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="pay_to"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Pay To (Full Name/Company Name)</FormLabel>
-              <FormControl>
-                <Input 
-                  {...field} 
-                  placeholder="Enter recipient name" 
-                  className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {paymentMethod && (
+          <FormField
+            control={form.control}
+            name="pay_to"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Pay To (Full Name/Company Name)</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    placeholder="Enter recipient name" 
+                    className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {paymentMethod === "crypto" && (
           <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
@@ -72,20 +76,18 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Select Cryptocurrency</FormLabel>
-                  <FormControl>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
-                        <SelectValue placeholder="Choose cryptocurrency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
-                        <SelectItem value="USDT">Tether (USDT)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
+                  <Select 
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
+                      <SelectValue placeholder="Choose cryptocurrency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
+                      <SelectItem value="USDT">Tether (USDT)</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
