@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { RedirectDomain } from "@/lib/types/supabase";
+import { isRedirectDomain } from "@/lib/types/supabase";
 
 export function RedirectPage() {
   const { affiliateId, offerId } = useParams();
@@ -22,14 +23,18 @@ export function RedirectPage() {
           .select('*')
           .eq('is_active', true)
           .order('last_used_at', { ascending: true })
-          .limit(1);
+          .limit(1) as { data: RedirectDomain[] | null, error: Error | null };
 
         if (domainError || !domains || domains.length === 0) {
           console.error("Error fetching redirect domain:", domainError);
           return;
         }
 
-        const redirectDomain = domains[0] as RedirectDomain;
+        const redirectDomain = domains[0];
+        if (!isRedirectDomain(redirectDomain)) {
+          console.error("Invalid redirect domain data:", redirectDomain);
+          return;
+        }
 
         // Call the Edge Function to record the click
         const { data, error } = await supabase.functions.invoke('track-click', {
@@ -102,7 +107,7 @@ export function RedirectPage() {
         if (redirectDomain) {
           await supabase
             .from('redirect_domains')
-            .update({ last_used_at: new Date().toISOString() })
+            .update({ last_used_at: new Date().toISOString() } as any)
             .eq('id', redirectDomain.id);
         }
 

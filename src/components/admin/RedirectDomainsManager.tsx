@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Globe, Trash2, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { RedirectDomain, InsertRedirectDomain } from "@/lib/types/supabase";
+import { isRedirectDomain } from "@/lib/types/supabase";
 
 export function RedirectDomainsManager() {
   const [domains, setDomains] = useState<RedirectDomain[]>([]);
@@ -27,10 +29,10 @@ export function RedirectDomainsManager() {
       const { data, error } = await supabase
         .from('redirect_domains')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as { data: RedirectDomain[] | null, error: Error | null };
 
       if (error) throw error;
-      setDomains((data || []) as RedirectDomain[]);
+      setDomains((data || []).filter(isRedirectDomain));
     } catch (error) {
       console.error('Error fetching domains:', error);
       toast({
@@ -86,7 +88,7 @@ export function RedirectDomainsManager() {
 
       const { error } = await supabase
         .from('redirect_domains')
-        .insert(newDomainData);
+        .insert(newDomainData as any);
 
       if (error) throw error;
 

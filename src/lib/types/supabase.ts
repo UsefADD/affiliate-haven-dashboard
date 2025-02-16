@@ -31,3 +31,11 @@ export interface RedirectDomainTable {
 export type RedirectDomain = RedirectDomainTable['Row'];
 export type InsertRedirectDomain = RedirectDomainTable['Insert'];
 export type UpdateRedirectDomain = RedirectDomainTable['Update'];
+
+// Type guard to ensure we have a valid RedirectDomain object
+export function isRedirectDomain(obj: unknown): obj is RedirectDomain {
+  return typeof obj === 'object' && 
+         obj !== null && 
+         'domain' in obj && 
+         'is_active' in obj;
+}
