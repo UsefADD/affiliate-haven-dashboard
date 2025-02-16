@@ -29,8 +29,24 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
               <FormLabel>Payment Method</FormLabel>
               <FormControl>
                 <Select 
-                  onValueChange={field.onChange}
+                  onValueChange={(value: "wire" | "paypal" | "crypto") => {
+                    console.log("Selected value:", value);
+                    field.onChange(value);
+                    // Reset related fields when payment method changes
+                    if (value === "crypto") {
+                      form.setValue("crypto_currency", "");
+                      form.setValue("crypto_wallet", "");
+                    } else if (value === "paypal") {
+                      form.setValue("paypal_email", "");
+                    } else if (value === "wire") {
+                      form.setValue("bank_name", "");
+                      form.setValue("bank_account_number", "");
+                      form.setValue("bank_swift", "");
+                      form.setValue("bank_address", "");
+                    }
+                  }}
                   value={field.value}
+                  defaultValue={field.value}
                 >
                   <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
                     <SelectValue placeholder="Select payment method" />
@@ -78,7 +94,8 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
                   <FormControl>
                     <Select 
                       onValueChange={field.onChange}
-                      value={field.value}
+                      value={field.value || ""}
+                      defaultValue={field.value}
                     >
                       <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
                         <SelectValue placeholder="Choose cryptocurrency" />
