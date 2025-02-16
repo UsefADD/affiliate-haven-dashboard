@@ -18,9 +18,7 @@ export const applicationSchema = z.object({
   im_type: z.string().optional(),
   title: z.string().optional(),
   website_url: z.string().url("Invalid URL").optional().or(z.literal("")),
-  payment_method: z.enum(["wire", "paypal", "crypto"], {
-    required_error: "Please select a payment method",
-  }),
+  payment_method: z.enum(["wire", "paypal", "crypto"]).optional(),
   pay_to: z.string().min(1, "Pay to name is required"),
   crypto_currency: z.string().optional(),
   crypto_wallet: z.string().optional(),

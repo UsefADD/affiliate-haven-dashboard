@@ -11,6 +11,8 @@ interface PaymentInformationProps {
 }
 
 export function PaymentInformation({ form }: PaymentInformationProps) {
+  const paymentMethod = form.watch("payment_method");
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
@@ -25,19 +27,8 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
           <FormItem>
             <FormLabel>Payment Method</FormLabel>
             <Select 
-              onValueChange={(value) => {
-                field.onChange(value);
-                // Reset other payment fields when method changes
-                form.resetField("pay_to");
-                form.resetField("crypto_currency");
-                form.resetField("crypto_wallet");
-                form.resetField("paypal_email");
-                form.resetField("bank_name");
-                form.resetField("bank_account_number");
-                form.resetField("bank_swift");
-                form.resetField("bank_address");
-              }}
-              value={field.value || undefined}
+              onValueChange={field.onChange}
+              value={field.value}
             >
               <FormControl>
                 <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
@@ -55,7 +46,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         )}
       />
 
-      {form.watch("payment_method") === "wire" && (
+      {paymentMethod === "wire" && (
         <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
           <FormField
             control={form.control}
@@ -125,7 +116,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         </div>
       )}
 
-      {form.watch("payment_method") === "paypal" && (
+      {paymentMethod === "paypal" && (
         <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
           <FormField
             control={form.control}
@@ -156,7 +147,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         </div>
       )}
 
-      {form.watch("payment_method") === "crypto" && (
+      {paymentMethod === "crypto" && (
         <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
           <FormField
             control={form.control}
