@@ -2,6 +2,9 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type RedirectDomain = Database["public"]["Tables"]["redirect_domains"]["Row"];
 
 export function RedirectPage() {
   const { affiliateId, offerId } = useParams();
@@ -15,7 +18,7 @@ export function RedirectPage() {
         }
 
         // Get an active redirect domain
-        const { data: domains } = await supabase
+        const { data: domains, error: domainError } = await supabase
           .from('redirect_domains')
           .select('*')
           .eq('is_active', true)
@@ -23,7 +26,7 @@ export function RedirectPage() {
           .limit(1)
           .single();
 
-        if (!domains) {
+        if (domainError || !domains) {
           console.error('No active redirect domains available');
           return;
         }

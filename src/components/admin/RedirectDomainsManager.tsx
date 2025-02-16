@@ -17,16 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { Database } from "@/integrations/supabase/types";
 
-interface RedirectDomain {
-  id: string;
-  domain: string;
-  is_active: boolean;
-  created_at: string;
-  last_used_at: string | null;
-  status: string;
-  notes: string | null;
-}
+type RedirectDomain = Database["public"]["Tables"]["redirect_domains"]["Row"];
 
 export function RedirectDomainsManager() {
   const [domains, setDomains] = useState<RedirectDomain[]>([]);
@@ -68,6 +61,7 @@ export function RedirectDomainsManager() {
           {
             domain: newDomain.toLowerCase(),
             notes,
+            is_active: true,
           }
         ]);
 
