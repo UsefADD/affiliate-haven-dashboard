@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import { Link } from "react-router-dom";
 import { AffiliateApplicationsManager } from "@/components/admin/AffiliateApplicationsManager";
 import { ClicksOverview } from "@/components/admin/ClicksOverview";
 import { AffiliatePerformanceDashboard } from "@/components/admin/AffiliatePerformanceDashboard";
+import { RedirectDomainsManager } from "@/components/admin/RedirectDomainsManager";
 
 interface DashboardStats {
   totalOffers: number;
@@ -129,6 +131,11 @@ export default function AdminDashboard() {
               </Card>
             </Link>
           ))}
+        </div>
+
+        {/* Redirect Domains Manager */}
+        <div className="mt-8">
+          <RedirectDomainsManager />
         </div>
 
         {/* Affiliate Performance Dashboard */}

@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,13 +16,23 @@ export function RedirectPage() {
 
         console.log("Recording click for:", { affiliateId, offerId });
 
+        // Get an active redirect domain
+        const { data: redirectDomain } = await supabase
+          .from('redirect_domains')
+          .select('*')
+          .eq('is_active', true)
+          .order('last_used_at', { ascending: true })
+          .limit(1)
+          .single();
+
         // Call the Edge Function to record the click
         const { data, error } = await supabase.functions.invoke('track-click', {
           body: {
             affiliateId,
             offerId,
             referrer: document.referrer,
-            userAgent: navigator.userAgent
+            userAgent: navigator.userAgent,
+            redirectDomainId: redirectDomain?.id
           }
         });
 
@@ -53,7 +64,7 @@ export function RedirectPage() {
         const baseUrl = offer.links[0];
         let destinationUrl = baseUrl;
 
-        if (profile?.subdomain) {
+        if (profile?.subdomain && redirectDomain?.append_subdomain) {
           try {
             const url = new URL(baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`);
             const domainParts = url.hostname.split('.');
@@ -61,13 +72,32 @@ export function RedirectPage() {
               ? domainParts.slice(-2).join('.') 
               : url.hostname;
             
-            destinationUrl = `${url.protocol}//${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+            // If we have a redirect domain and it's set to append subdomains, use it
+            if (redirectDomain) {
+              destinationUrl = `${url.protocol}//${profile.subdomain}.${redirectDomain.domain}${url.pathname}${url.search}`;
+            } else {
+              destinationUrl = `${url.protocol}//${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
+            }
           } catch (error) {
             console.error('Error constructing subdomain URL:', error);
             destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
           }
         } else {
-          destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
+          // If no subdomain or append_subdomain is false, use the redirect domain as is
+          if (redirectDomain) {
+            const url = new URL(baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`);
+            destinationUrl = `${url.protocol}//${redirectDomain.domain}${url.pathname}${url.search}`;
+          } else {
+            destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
+          }
+        }
+
+        // Update the last_used_at timestamp for the redirect domain
+        if (redirectDomain) {
+          await supabase
+            .from('redirect_domains')
+            .update({ last_used_at: new Date().toISOString() })
+            .eq('id', redirectDomain.id);
         }
 
         // Perform the redirect
