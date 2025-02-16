@@ -1,4 +1,3 @@
-
 import { useState, useEffect, memo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +18,6 @@ import { AdditionalInformation } from "./sections/AdditionalInformation";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-// Memoize form sections for better performance
 const MemoizedPersonalInformation = memo(PersonalInformation);
 const MemoizedAddressInformation = memo(AddressInformation);
 const MemoizedCommunicationDetails = memo(CommunicationDetails);
@@ -61,7 +59,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       im_type: "",
       title: "",
       website_url: "",
-      payment_method: undefined as any, // We'll let the user select from the dropdown
+      payment_method: undefined,
       pay_to: "",
       crypto_currency: "",
       crypto_wallet: "",
