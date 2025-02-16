@@ -2,6 +2,9 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type RedirectDomain = Database['public']['Tables']['redirect_domains']['Row'];
 
 export function RedirectPage() {
   const { affiliateId, offerId } = useParams();
@@ -19,11 +22,11 @@ export function RedirectPage() {
         // Get an active redirect domain
         const { data: redirectDomain } = await supabase
           .from('redirect_domains')
-          .select('*')
+          .select()
           .eq('is_active', true)
           .order('last_used_at', { ascending: true })
           .limit(1)
-          .single();
+          .single<RedirectDomain>();
 
         // Call the Edge Function to record the click
         const { data, error } = await supabase.functions.invoke('track-click', {

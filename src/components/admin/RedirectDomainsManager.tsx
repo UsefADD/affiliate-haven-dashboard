@@ -9,16 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Globe, Trash2 } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
 
-interface RedirectDomain {
-  id: string;
-  domain: string;
-  is_active: boolean;
-  created_at: string;
-  append_subdomain: boolean;
-  status: string;
-  notes?: string;
-}
+type RedirectDomain = Database['public']['Tables']['redirect_domains']['Row'];
 
 export function RedirectDomainsManager() {
   const [domains, setDomains] = useState<RedirectDomain[]>([]);
@@ -69,6 +62,8 @@ export function RedirectDomainsManager() {
         .insert({
           domain: newDomain,
           append_subdomain: appendSubdomain,
+          is_active: true,
+          status: 'active'
         });
 
       if (error) throw error;
