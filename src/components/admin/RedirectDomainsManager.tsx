@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Globe, Trash2, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { RedirectDomain, InsertRedirectDomain } from "@/lib/types/database";
+import type { RedirectDomain, InsertRedirectDomain } from "@/lib/types/supabase";
 
 export function RedirectDomainsManager() {
   const [domains, setDomains] = useState<RedirectDomain[]>([]);
@@ -81,16 +81,14 @@ export function RedirectDomainsManager() {
         return;
       }
 
-      const newDomainData: InsertRedirectDomain = {
-        domain: newDomain,
-        append_subdomain: appendSubdomain,
-        is_active: true,
-        status: 'active'
-      };
-
       const { error } = await supabase
         .from('redirect_domains')
-        .insert(newDomainData);
+        .insert({
+          domain: newDomain,
+          append_subdomain: appendSubdomain,
+          is_active: true,
+          status: 'active'
+        } as InsertRedirectDomain);
 
       if (error) throw error;
 

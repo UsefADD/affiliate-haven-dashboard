@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import type { RedirectDomain } from "@/lib/types/database";
+import type { RedirectDomain } from "@/lib/types/supabase";
 
 export function RedirectPage() {
   const { affiliateId, offerId } = useParams();
@@ -17,13 +17,18 @@ export function RedirectPage() {
         console.log("Recording click for:", { affiliateId, offerId });
 
         // Get an active redirect domain
-        const { data: redirectDomain } = await supabase
+        const { data: redirectDomain, error: domainError } = await supabase
           .from('redirect_domains')
-          .select()
+          .select('*')
           .eq('is_active', true)
           .order('last_used_at', { ascending: true })
           .limit(1)
-          .single<RedirectDomain>();
+          .single();
+
+        if (domainError) {
+          console.error("Error fetching redirect domain:", domainError);
+          return;
+        }
 
         // Call the Edge Function to record the click
         const { data, error } = await supabase.functions.invoke('track-click', {
