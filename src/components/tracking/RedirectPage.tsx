@@ -17,18 +17,19 @@ export function RedirectPage() {
         console.log("Recording click for:", { affiliateId, offerId });
 
         // Get an active redirect domain
-        const { data: redirectDomain, error: domainError } = await supabase
+        const { data: domains, error: domainError } = await supabase
           .from('redirect_domains')
           .select('*')
           .eq('is_active', true)
           .order('last_used_at', { ascending: true })
-          .limit(1)
-          .single();
+          .limit(1);
 
-        if (domainError) {
+        if (domainError || !domains || domains.length === 0) {
           console.error("Error fetching redirect domain:", domainError);
           return;
         }
+
+        const redirectDomain = domains[0] as RedirectDomain;
 
         // Call the Edge Function to record the click
         const { data, error } = await supabase.functions.invoke('track-click', {
@@ -116,6 +117,5 @@ export function RedirectPage() {
     trackAndRedirect();
   }, [affiliateId, offerId]);
 
-  // Return null instead of loading screen for instant redirect
   return null;
 }

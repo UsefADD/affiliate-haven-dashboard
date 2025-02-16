@@ -30,7 +30,7 @@ export function RedirectDomainsManager() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDomains(data || []);
+      setDomains((data || []) as RedirectDomain[]);
     } catch (error) {
       console.error('Error fetching domains:', error);
       toast({
@@ -70,25 +70,23 @@ export function RedirectDomainsManager() {
     if (!newDomain) return;
 
     try {
-      // Basic domain validation
-      const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/;
-      if (!domainRegex.test(newDomain)) {
-        toast({
-          title: "Invalid Domain",
-          description: "Please enter a valid domain name",
-          variant: "destructive",
-        });
-        return;
-      }
+      const newDomainData: InsertRedirectDomain = {
+        domain: newDomain,
+        append_subdomain: appendSubdomain,
+        is_active: true,
+        status: 'active',
+        created_by: null,
+        notes: null,
+        cf_zone_id: null,
+        cf_status: null,
+        cf_health_score: null,
+        cf_last_check: null,
+        last_used_at: null
+      };
 
       const { error } = await supabase
         .from('redirect_domains')
-        .insert({
-          domain: newDomain,
-          append_subdomain: appendSubdomain,
-          is_active: true,
-          status: 'active'
-        } as InsertRedirectDomain);
+        .insert(newDomainData);
 
       if (error) throw error;
 
