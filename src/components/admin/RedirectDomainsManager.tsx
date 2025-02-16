@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,22 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Globe, Trash2, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-interface RedirectDomain {
-  id: string;
-  domain: string;
-  is_active: boolean;
-  created_at: string;
-  append_subdomain: boolean;
-  status: string;
-  notes?: string | null;
-  last_used_at?: string | null;
-  created_by?: string | null;
-  cf_zone_id?: string | null;
-  cf_status?: string | null;
-  cf_health_score?: number | null;
-  cf_last_check?: string | null;
-}
+import type { RedirectDomain, InsertRedirectDomain } from "@/lib/types/database";
 
 export function RedirectDomainsManager() {
   const [domains, setDomains] = useState<RedirectDomain[]>([]);
@@ -97,14 +81,16 @@ export function RedirectDomainsManager() {
         return;
       }
 
+      const newDomainData: InsertRedirectDomain = {
+        domain: newDomain,
+        append_subdomain: appendSubdomain,
+        is_active: true,
+        status: 'active'
+      };
+
       const { error } = await supabase
         .from('redirect_domains')
-        .insert({
-          domain: newDomain,
-          append_subdomain: appendSubdomain,
-          is_active: true,
-          status: 'active'
-        });
+        .insert(newDomainData);
 
       if (error) throw error;
 
@@ -178,7 +164,7 @@ export function RedirectDomainsManager() {
   const getHealthBadgeVariant = (score?: number | null) => {
     if (score === null || score === undefined) return "secondary";
     if (score > 80) return "success";
-    if (score > 50) return "warning";
+    if (score > 50) return "default";
     return "destructive";
   };
 
