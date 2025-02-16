@@ -1,3 +1,4 @@
+
 import { useState, useEffect, memo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -60,7 +61,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       im_type: "",
       title: "",
       website_url: "",
-      payment_method: "",
+      payment_method: undefined as any, // We'll let the user select from the dropdown
       pay_to: "",
       crypto_currency: "",
       crypto_wallet: "",
