@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,22 +14,18 @@ export function RedirectPage() {
           return;
         }
 
-        console.log("Recording click for:", { affiliateId, offerId });
+        // Get an active redirect domain
+        const { data: domains } = await supabase
+          .from('redirect_domains')
+          .select('*')
+          .eq('is_active', true)
+          .order('last_used_at', { ascending: true })
+          .limit(1)
+          .single();
 
-        // Call the Edge Function to record the click
-        const { data, error } = await supabase.functions.invoke('track-click', {
-          body: {
-            affiliateId,
-            offerId,
-            referrer: document.referrer,
-            userAgent: navigator.userAgent
-          }
-        });
-
-        if (error) {
-          console.error("Error recording click:", error);
-        } else {
-          console.log("Click recorded successfully:", data);
+        if (!domains) {
+          console.error('No active redirect domains available');
+          return;
         }
 
         // Get the destination URL and affiliate's subdomain
@@ -49,29 +46,23 @@ export function RedirectPage() {
           return;
         }
 
-        // Construct URL with subdomain if available
-        const baseUrl = offer.links[0];
-        let destinationUrl = baseUrl;
+        // Record the click through Cloudflare Worker
+        const redirectUrl = constructRedirectUrl(
+          domains.domain,
+          affiliateId,
+          offerId,
+          offer.links[0],
+          profile?.subdomain
+        );
 
-        if (profile?.subdomain) {
-          try {
-            const url = new URL(baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`);
-            const domainParts = url.hostname.split('.');
-            const baseDomain = domainParts.length > 2 
-              ? domainParts.slice(-2).join('.') 
-              : url.hostname;
-            
-            destinationUrl = `${url.protocol}//${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
-          } catch (error) {
-            console.error('Error constructing subdomain URL:', error);
-            destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
-          }
-        } else {
-          destinationUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
-        }
+        // Update last used timestamp for the domain
+        await supabase
+          .from('redirect_domains')
+          .update({ last_used_at: new Date().toISOString() })
+          .eq('id', domains.id);
 
         // Perform the redirect
-        window.location.href = destinationUrl;
+        window.location.href = redirectUrl;
 
       } catch (error) {
         console.error('Error in trackAndRedirect:', error);
@@ -80,6 +71,23 @@ export function RedirectPage() {
 
     trackAndRedirect();
   }, [affiliateId, offerId]);
+
+  const constructRedirectUrl = (
+    domain: string,
+    affId: string,
+    offId: string,
+    finalUrl: string,
+    subdomain?: string | null
+  ) => {
+    const url = new URL(`https://${domain}/r`);
+    url.searchParams.set('a', affId);
+    url.searchParams.set('o', offId);
+    url.searchParams.set('d', btoa(finalUrl));
+    if (subdomain) {
+      url.searchParams.set('s', subdomain);
+    }
+    return url.toString();
+  };
 
   // Return null instead of loading screen for instant redirect
   return null;
