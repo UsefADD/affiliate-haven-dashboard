@@ -17,9 +17,17 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Database } from "@/integrations/supabase/types";
 
-type RedirectDomain = Database["public"]["Tables"]["redirect_domains"]["Row"];
+// Temporary interface until Supabase types are generated
+interface RedirectDomain {
+  id: string;
+  domain: string;
+  is_active: boolean;
+  created_at: string;
+  last_used_at: string | null;
+  status: string | null;
+  notes: string | null;
+}
 
 export function RedirectDomainsManager() {
   const [domains, setDomains] = useState<RedirectDomain[]>([]);
@@ -63,7 +71,7 @@ export function RedirectDomainsManager() {
             notes,
             is_active: true,
           }
-        ]);
+        ] as any); // Temporary type assertion
 
       if (error) throw error;
 
@@ -90,7 +98,7 @@ export function RedirectDomainsManager() {
     try {
       const { error } = await supabase
         .from('redirect_domains')
-        .update({ is_active: !currentStatus })
+        .update({ is_active: !currentStatus } as any)
         .eq('id', domainId);
 
       if (error) throw error;

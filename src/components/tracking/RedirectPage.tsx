@@ -2,9 +2,17 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 
-type RedirectDomain = Database["public"]["Tables"]["redirect_domains"]["Row"];
+// Temporary interface until Supabase types are generated
+interface RedirectDomain {
+  id: string;
+  domain: string;
+  is_active: boolean;
+  created_at: string;
+  last_used_at: string | null;
+  status: string | null;
+  notes: string | null;
+}
 
 export function RedirectPage() {
   const { affiliateId, offerId } = useParams();
@@ -61,7 +69,7 @@ export function RedirectPage() {
         // Update last used timestamp for the domain
         await supabase
           .from('redirect_domains')
-          .update({ last_used_at: new Date().toISOString() })
+          .update({ last_used_at: new Date().toISOString() } as any)
           .eq('id', domains.id);
 
         // Perform the redirect
