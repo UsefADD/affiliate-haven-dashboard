@@ -18,10 +18,6 @@ export interface RedirectDomainTable {
     append_subdomain: boolean;
     status: string;
     notes: string | null;
-    cf_zone_id: string | null;
-    cf_status: string | null;
-    cf_health_score: number | null;
-    cf_last_check: string | null;
   };
   Insert: Omit<RedirectDomainTable['Row'], 'id' | 'created_at'>;
   Update: Partial<RedirectDomainTable['Insert']>;

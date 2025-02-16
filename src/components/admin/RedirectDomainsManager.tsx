@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Globe, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Globe, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { RedirectDomain, InsertRedirectDomain } from "@/lib/types/supabase";
 import { isRedirectDomain } from "@/lib/types/supabase";
@@ -17,7 +17,6 @@ export function RedirectDomainsManager() {
   const [domains, setDomains] = useState<RedirectDomain[]>([]);
   const [newDomain, setNewDomain] = useState("");
   const [appendSubdomain, setAppendSubdomain] = useState(true);
-  const [isChecking, setIsChecking] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,31 +42,6 @@ export function RedirectDomainsManager() {
     }
   };
 
-  const checkDomainHealth = async () => {
-    try {
-      setIsChecking(true);
-      const { data, error } = await supabase.functions.invoke('check-domains');
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: `Checked ${data.checked} domains, updated ${data.updated} records`,
-      });
-      
-      fetchDomains();
-    } catch (error) {
-      console.error('Error checking domains:', error);
-      toast({
-        title: "Error",
-        description: "Failed to check domain health",
-        variant: "destructive",
-      });
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
   const addDomain = async () => {
     if (!newDomain) return;
 
@@ -79,10 +53,6 @@ export function RedirectDomainsManager() {
         status: 'active',
         created_by: null,
         notes: null,
-        cf_zone_id: null,
-        cf_status: null,
-        cf_health_score: null,
-        cf_last_check: null,
         last_used_at: null
       };
 
@@ -113,7 +83,7 @@ export function RedirectDomainsManager() {
     try {
       const { error } = await supabase
         .from('redirect_domains')
-        .update({ is_active: !domain.is_active })
+        .update({ is_active: !domain.is_active } as any)
         .eq('id', domain.id);
 
       if (error) throw error;
@@ -159,31 +129,13 @@ export function RedirectDomainsManager() {
     }
   };
 
-  const getHealthBadgeVariant = (score?: number | null) => {
-    if (score === null || score === undefined) return "secondary";
-    if (score > 80) return "success";
-    if (score > 50) return "default";
-    return "destructive";
-  };
-
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Redirect Domains
-          </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={checkDomainHealth}
-            disabled={isChecking}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
-            Check Health
-          </Button>
-        </div>
+        <CardTitle className="flex items-center gap-2">
+          <Globe className="h-5 w-5" />
+          Redirect Domains
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -221,8 +173,6 @@ export function RedirectDomainsManager() {
             <TableHeader>
               <TableRow>
                 <TableHead>Domain</TableHead>
-                <TableHead>Health</TableHead>
-                <TableHead>Last Check</TableHead>
                 <TableHead>Append Subdomain</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Added</TableHead>
@@ -233,16 +183,6 @@ export function RedirectDomainsManager() {
               {domains.map((domain) => (
                 <TableRow key={domain.id}>
                   <TableCell className="font-medium">{domain.domain}</TableCell>
-                  <TableCell>
-                    <Badge variant={getHealthBadgeVariant(domain.cf_health_score)}>
-                      {domain.cf_health_score ?? 'N/A'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {domain.cf_last_check 
-                      ? new Date(domain.cf_last_check).toLocaleString()
-                      : 'Never'}
-                  </TableCell>
                   <TableCell>
                     <Switch
                       checked={domain.append_subdomain}
