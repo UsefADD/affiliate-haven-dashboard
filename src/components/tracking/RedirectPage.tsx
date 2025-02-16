@@ -2,9 +2,19 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 
-type RedirectDomain = Database['public']['Tables']['redirect_domains']['Row'];
+// Define the interface here as well since we need it
+interface RedirectDomain {
+  id: string;
+  domain: string;
+  is_active: boolean;
+  created_at: string;
+  append_subdomain: boolean;
+  status: string;
+  notes?: string | null;
+  last_used_at?: string | null;
+  created_by?: string | null;
+}
 
 export function RedirectPage() {
   const { affiliateId, offerId } = useParams();

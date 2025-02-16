@@ -9,9 +9,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Globe, Trash2 } from "lucide-react";
-import type { Database } from "@/integrations/supabase/types";
 
-type RedirectDomain = Database['public']['Tables']['redirect_domains']['Row'];
+// Define the interface manually since we can't modify types.ts
+interface RedirectDomain {
+  id: string;
+  domain: string;
+  is_active: boolean;
+  created_at: string;
+  append_subdomain: boolean;
+  status: string;
+  notes?: string | null;
+  last_used_at?: string | null;
+  created_by?: string | null;
+}
 
 export function RedirectDomainsManager() {
   const [domains, setDomains] = useState<RedirectDomain[]>([]);
