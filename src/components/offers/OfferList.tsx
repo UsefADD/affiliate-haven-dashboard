@@ -5,6 +5,8 @@ import { Check, X, Pencil, Star, Trash2, Copy } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AffiliateVisibilityDialog } from "./AffiliateVisibilityDialog";
+import { Users } from "lucide-react";
 
 interface AffiliateLink {
   id: string;
@@ -45,6 +47,8 @@ interface OfferListProps {
 export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTopOffer, isAdmin = false }: OfferListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<{ subdomain?: string } | null>(null);
+  const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -158,6 +162,18 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => {
+                          setSelectedOffer(offer);
+                          setVisibilityDialogOpen(true);
+                        }}
+                        className="hover:bg-primary/10 text-primary"
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Manage Visibility
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleCopyLink(offer)}
                         className="hover:bg-primary/10 text-primary"
                       >
@@ -220,6 +236,16 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
           </TableBody>
         </Table>
       </div>
+      {selectedOffer && (
+        <AffiliateVisibilityDialog
+          offer={selectedOffer}
+          isOpen={visibilityDialogOpen}
+          onClose={() => {
+            setVisibilityDialogOpen(false);
+            setSelectedOffer(null);
+          }}
+        />
+      )}
     </div>
   );
 }

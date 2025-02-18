@@ -6,6 +6,7 @@ import { CampaignList } from "@/components/campaigns/CampaignList";
 import { CampaignDetails } from "@/components/campaigns/CampaignDetails";
 import { SearchBar } from "@/components/campaigns/SearchBar";
 import { Offer } from "@/types/offer";
+import { toast } from "@/components/ui/toast";
 
 export default function Campaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -13,6 +14,7 @@ export default function Campaigns() {
   const [searchQuery, setSearchQuery] = useState("");
   const [trackingUrl, setTrackingUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
   useEffect(() => {
     fetchOffers();
@@ -133,6 +135,39 @@ export default function Campaigns() {
       console.error('Error in fetchOffers:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchCampaigns = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('offers')
+        .select(`
+          *,
+          offer_visibility!inner(
+            is_visible
+          )
+        `)
+        .or(`
+          offer_visibility.affiliate_id.eq.${user.id},
+          offer_visibility.id.is.null
+        `)
+        .eq('offer_visibility.is_visible', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setCampaigns(data || []);
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch campaigns",
+        variant: "destructive",
+      });
     }
   };
 
