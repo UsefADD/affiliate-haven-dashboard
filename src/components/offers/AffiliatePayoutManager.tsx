@@ -58,7 +58,7 @@ export function AffiliatePayoutManager({
       if (affiliatesError) throw affiliatesError;
 
       const { data: payoutData, error: payoutError } = await supabase
-        .rpc<PayoutData>('get_affiliate_payouts', { 
+        .rpc('get_affiliate_payouts', { 
           p_offer_id: offer.id 
         });
 
@@ -66,14 +66,14 @@ export function AffiliatePayoutManager({
 
       // Create a map of affiliate IDs to their custom payouts
       const payoutMap = new Map(
-        (payoutData || []).map(p => [p.affiliate_id, p.custom_payout])
+        (payoutData as PayoutData[] || []).map(p => [p.affiliate_id, p.custom_payout])
       );
 
       // Combine affiliate data with their custom payouts
-      const combinedData = affiliatesData?.map(affiliate => ({
+      const combinedData: Affiliate[] = (affiliatesData || []).map(affiliate => ({
         ...affiliate,
         custom_payout: payoutMap.get(affiliate.id) || null
-      })) || [];
+      }));
 
       setAffiliates(combinedData);
       setLoading(false);
