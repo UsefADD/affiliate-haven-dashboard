@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Check, Copy, Eye, Pencil, Star, Trash2, Users, X } from "lucide-react";
+import { Check, Eye, Pencil, Star, Trash2, DollarSign, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer } from "@/types/offer";
 import { AffiliateVisibilityManager } from "./AffiliateVisibilityManager";
+import { AffiliatePayoutManager } from "./AffiliatePayoutManager";
+import { format } from "date-fns";
 
 interface OfferListProps {
   offers: Offer[];
@@ -26,12 +28,18 @@ export function OfferList({
   isAdmin = false 
 }: OfferListProps) {
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
+  const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const { toast } = useToast();
 
   const handleVisibilityDialog = (offer: Offer) => {
     setSelectedOffer(offer);
     setVisibilityDialogOpen(true);
+  };
+
+  const handlePayoutDialog = (offer: Offer) => {
+    setSelectedOffer(offer);
+    setPayoutDialogOpen(true);
   };
 
   return (
@@ -42,6 +50,7 @@ export function OfferList({
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Payout</TableHead>
+            <TableHead>Created At</TableHead>
             <TableHead>Status</TableHead>
             {isAdmin && <TableHead>Top Offer</TableHead>}
             <TableHead className="text-right">Actions</TableHead>
@@ -53,6 +62,7 @@ export function OfferList({
               <TableCell className="font-medium">{offer.name}</TableCell>
               <TableCell>{offer.description}</TableCell>
               <TableCell>${offer.payout}</TableCell>
+              <TableCell>{format(new Date(offer.created_at), 'MMM d, yyyy')}</TableCell>
               <TableCell>
                 {isAdmin ? (
                   <Button
@@ -84,6 +94,14 @@ export function OfferList({
               <TableCell className="text-right">
                 {isAdmin ? (
                   <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handlePayoutDialog(offer)}
+                      title="Manage affiliate payouts"
+                    >
+                      <DollarSign className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -120,14 +138,24 @@ export function OfferList({
       </Table>
 
       {selectedOffer && (
-        <AffiliateVisibilityManager
-          offer={selectedOffer}
-          isOpen={visibilityDialogOpen}
-          onClose={() => {
-            setVisibilityDialogOpen(false);
-            setSelectedOffer(null);
-          }}
-        />
+        <>
+          <AffiliateVisibilityManager
+            offer={selectedOffer}
+            isOpen={visibilityDialogOpen}
+            onClose={() => {
+              setVisibilityDialogOpen(false);
+              setSelectedOffer(null);
+            }}
+          />
+          <AffiliatePayoutManager
+            offer={selectedOffer}
+            isOpen={payoutDialogOpen}
+            onClose={() => {
+              setPayoutDialogOpen(false);
+              setSelectedOffer(null);
+            }}
+          />
+        </>
       )}
     </div>
   );
