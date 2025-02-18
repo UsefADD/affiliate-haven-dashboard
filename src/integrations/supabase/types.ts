@@ -431,12 +431,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_affiliate_payouts: {
+        Args: {
+          p_offer_id: string
+        }
+        Returns: {
+          affiliate_id: string
+          custom_payout: number
+        }[]
+      }
       is_offer_visible_to_affiliate: {
         Args: {
           offer_id: string
           affiliate_id: string
         }
         Returns: boolean
+      }
+      manage_affiliate_payout: {
+        Args: {
+          p_offer_id: string
+          p_affiliate_id: string
+          p_custom_payout: number
+          p_created_by: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

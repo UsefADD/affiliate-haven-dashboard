@@ -28,6 +28,11 @@ interface AffiliatePayoutManagerProps {
   onClose: () => void;
 }
 
+interface PayoutData {
+  affiliate_id: string;
+  custom_payout: number;
+}
+
 export function AffiliatePayoutManager({
   offer,
   isOpen,
@@ -52,9 +57,8 @@ export function AffiliatePayoutManager({
 
       if (affiliatesError) throw affiliatesError;
 
-      // Use a raw query for offer_payouts since the types aren't updated yet
       const { data: payoutData, error: payoutError } = await supabase
-        .rpc('get_affiliate_payouts', { 
+        .rpc<PayoutData>('get_affiliate_payouts', { 
           p_offer_id: offer.id 
         });
 
@@ -62,8 +66,7 @@ export function AffiliatePayoutManager({
 
       // Create a map of affiliate IDs to their custom payouts
       const payoutMap = new Map(
-        (payoutData as Array<{ affiliate_id: string; custom_payout: number }> || [])
-          .map(p => [p.affiliate_id, p.custom_payout])
+        (payoutData || []).map(p => [p.affiliate_id, p.custom_payout])
       );
 
       // Combine affiliate data with their custom payouts
@@ -90,15 +93,13 @@ export function AffiliatePayoutManager({
       if (!user) throw new Error("Not authenticated");
 
       // Use RPC call for managing payouts
-      const { error } = await supabase.rpc(
-        'manage_affiliate_payout',
-        { 
+      const { error } = await supabase
+        .rpc('manage_affiliate_payout', { 
           p_offer_id: offer.id,
           p_affiliate_id: affiliateId,
           p_custom_payout: payout,
           p_created_by: user.id
-        }
-      );
+        });
 
       if (error) throw error;
 
