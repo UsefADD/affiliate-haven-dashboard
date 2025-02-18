@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +53,13 @@ export function AffiliatePayoutManager({
 
       if (affiliatesError) throw affiliatesError;
 
+      // First delete any stale payout records with null values
+      await supabase
+        .from('offer_payouts')
+        .delete()
+        .eq('offer_id', offer.id)
+        .is('custom_payout', null);
+
       const { data: payoutData, error: payoutError } = await supabase
         .rpc('get_affiliate_payouts', { 
           p_offer_id: offer.id 
@@ -94,16 +102,28 @@ export function AffiliatePayoutManager({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
-        .rpc('manage_affiliate_payout', { 
-          p_offer_id: offer.id,
-          p_affiliate_id: affiliateId,
-          p_custom_payout: payout,
-          p_created_by: user.id
-        });
+      // First delete any existing payout records
+      await supabase
+        .from('offer_payouts')
+        .delete()
+        .eq('offer_id', offer.id)
+        .eq('affiliate_id', affiliateId);
 
-      if (error) throw error;
+      if (payout !== null) {
+        // Insert new payout record
+        const { error: insertError } = await supabase
+          .from('offer_payouts')
+          .insert({
+            offer_id: offer.id,
+            affiliate_id: affiliateId,
+            custom_payout: payout,
+            created_by: user.id
+          });
 
+        if (insertError) throw insertError;
+      }
+
+      // Update local state
       setAffiliates(prev =>
         prev.map(a =>
           a.id === affiliateId
@@ -122,6 +142,7 @@ export function AffiliatePayoutManager({
         description: "Updated payout successfully",
       });
 
+      // Refresh data
       await fetchAffiliates();
     } catch (error) {
       console.error('Error updating payout:', error);

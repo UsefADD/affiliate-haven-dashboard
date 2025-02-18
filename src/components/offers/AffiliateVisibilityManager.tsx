@@ -68,9 +68,7 @@ export function AffiliateVisibilityManager({
 
       const combinedData = affiliatesData?.map(affiliate => ({
         ...affiliate,
-        is_visible: visibilityMap.has(affiliate.id) 
-          ? visibilityMap.get(affiliate.id) 
-          : true
+        is_visible: !visibilityMap.has(affiliate.id) || visibilityMap.get(affiliate.id) === true
       })) || [];
 
       console.log('Combined affiliate data:', combinedData);
@@ -93,35 +91,27 @@ export function AffiliateVisibilityManager({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      if (!currentVisibility) {
-        // Currently hidden, we want to show it (delete the record)
-        console.log('Deleting visibility record to show offer');
-        const { error } = await supabase
-          .from('offer_visibility')
-          .delete()
-          .eq('offer_id', offer.id)
-          .eq('affiliate_id', affiliateId);
+      // First, delete any existing records
+      const { error: deleteError } = await supabase
+        .from('offer_visibility')
+        .delete()
+        .eq('offer_id', offer.id)
+        .eq('affiliate_id', affiliateId);
 
-        if (error) throw error;
-      } else {
-        // Currently visible, we want to hide it
-        console.log('Upserting visibility record to hide offer');
-        const { error } = await supabase
-          .from('offer_visibility')
-          .upsert(
-            {
-              offer_id: offer.id,
-              affiliate_id: affiliateId,
-              is_visible: false,
-              created_by: user.id
-            },
-            {
-              onConflict: 'offer_id,affiliate_id',
-              ignoreDuplicates: false
-            }
-          );
+      if (deleteError) throw deleteError;
 
-        if (error) throw error;
+      // If we want to hide the offer, create a new record
+      if (currentVisibility) {
+        const { error: insertError } = await supabase
+          .from('offer_visibility')
+          .insert({
+            offer_id: offer.id,
+            affiliate_id: affiliateId,
+            is_visible: false,
+            created_by: user.id
+          });
+
+        if (insertError) throw insertError;
       }
 
       // Update local state
@@ -133,7 +123,7 @@ export function AffiliateVisibilityManager({
         )
       );
 
-      console.log('Visibility toggled successfully');
+      console.log('Visibility toggled successfully to:', !currentVisibility);
       
       toast({
         title: "Success",
@@ -195,7 +185,7 @@ export function AffiliateVisibilityManager({
                   </div>
                   <Switch
                     checked={affiliate.is_visible}
-                    onCheckedChange={() => toggleVisibility(affiliate.id, affiliate.is_visible || true)}
+                    onCheckedChange={() => toggleVisibility(affiliate.id, affiliate.is_visible || false)}
                   />
                 </div>
               ))}
