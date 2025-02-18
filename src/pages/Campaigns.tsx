@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Campaign } from "@/types/campaign";
@@ -116,16 +117,16 @@ export default function Campaigns() {
           if (!visibilityData || visibilityData.is_visible) {
             // Transform the creatives data to match our expected type
             const transformedCreatives = Array.isArray(offer.creatives) 
-              ? offer.creatives.map(creative => {
+              ? offer.creatives.map((creative: any) => {
                   if (typeof creative === 'object' && creative !== null) {
                     return {
-                      type: creative.type as "image" | "email",
-                      content: creative.content as string,
-                      details: creative.details as {
-                        fromNames?: string[];
-                        subjects?: string[];
+                      type: creative.type === "email" ? "email" : "image",
+                      content: String(creative.content || ""),
+                      details: {
+                        fromNames: Array.isArray(creative.details?.fromNames) ? creative.details.fromNames : [],
+                        subjects: Array.isArray(creative.details?.subjects) ? creative.details.subjects : [],
                       },
-                      images: creative.images as string[]
+                      images: Array.isArray(creative.images) ? creative.images : []
                     };
                   }
                   return null;

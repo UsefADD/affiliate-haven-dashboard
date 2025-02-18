@@ -1,39 +1,12 @@
-import { useEffect, useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, X, Pencil, Star, Trash2, Copy } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { supabase } from "@/integrations/supabase/client";
+import { Check, Copy, Pencil, Star, Trash2, Users, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Offer } from "@/types/offer";
 import { AffiliateVisibilityDialog } from "./AffiliateVisibilityDialog";
-import { Users } from "lucide-react";
-
-interface AffiliateLink {
-  id: string;
-  tracking_url: string;
-  affiliate_id: string;
-}
-
-interface Offer {
-  id: string;
-  name: string;
-  description: string | null;
-  payout: number;
-  status: boolean;
-  created_at: string;
-  is_top_offer?: boolean;
-  links?: string[];
-  creatives?: {
-    type: "image" | "email";
-    content: string;
-    details?: {
-      fromNames?: string[];
-      subjects?: string[];
-    };
-    images?: string[];
-  }[];
-  affiliate_links?: AffiliateLink[];
-}
 
 interface OfferListProps {
   offers: Offer[];
@@ -54,34 +27,18 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-      if (user?.id) {
-        fetchUserProfile(user.id);
+      if (user) {
+        setCurrentUserId(user.id);
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subdomain')
+          .eq('id', user.id)
+          .single();
+        setUserProfile(profile);
       }
     };
     getCurrentUser();
   }, []);
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      console.log("Fetching user profile for:", userId);
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('subdomain')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return;
-      }
-
-      console.log("Fetched user profile:", profile);
-      setUserProfile(profile);
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-    }
-  };
 
   const getTrackingUrl = (offer: Offer) => {
     if (!currentUserId) {
