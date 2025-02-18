@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,11 +27,6 @@ interface AffiliatePayoutManagerProps {
   onClose: () => void;
 }
 
-interface PayoutData {
-  affiliate_id: string;
-  custom_payout: number;
-}
-
 export function AffiliatePayoutManager({
   offer,
   isOpen,
@@ -50,15 +44,13 @@ export function AffiliatePayoutManager({
 
   const fetchAffiliates = async () => {
     try {
-      console.log('Fetching affiliates...');
+      console.log('Fetching affiliates for offer:', offer.id);
       const { data: affiliatesData, error: affiliatesError } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
         .eq('role', 'affiliate');
 
       if (affiliatesError) throw affiliatesError;
-
-      console.log('Fetched affiliates:', affiliatesData);
 
       const { data: payoutData, error: payoutError } = await supabase
         .rpc('get_affiliate_payouts', { 
@@ -67,25 +59,18 @@ export function AffiliatePayoutManager({
 
       if (payoutError) throw payoutError;
 
-      console.log('Fetched payout data:', payoutData);
+      console.log('Payout data:', payoutData);
 
-      // Ensure payoutData is treated as an array of PayoutData
-      const typedPayoutData = (payoutData || []) as PayoutData[];
-      
-      // Create a map of affiliate IDs to their custom payouts
       const payoutMap = new Map(
-        typedPayoutData.map(p => [p.affiliate_id, p.custom_payout])
+        (payoutData || []).map((p: any) => [p.affiliate_id, p.custom_payout])
       );
 
-      console.log('Created payout map:', Object.fromEntries(payoutMap));
-
-      // Combine affiliate data with their custom payouts
-      const combinedData: Affiliate[] = (affiliatesData || []).map(affiliate => ({
+      const combinedData = affiliatesData?.map(affiliate => ({
         ...affiliate,
         custom_payout: payoutMap.get(affiliate.id) || null
-      }));
+      })) || [];
 
-      console.log('Combined affiliate data:', combinedData);
+      console.log('Combined affiliate data with payouts:', combinedData);
       setAffiliates(combinedData);
       setLoading(false);
     } catch (error) {
@@ -100,7 +85,11 @@ export function AffiliatePayoutManager({
 
   const updatePayout = async (affiliateId: string, payout: number | null) => {
     try {
-      console.log('Updating payout for affiliate:', { affiliateId, payout });
+      console.log('Updating payout:', { 
+        affiliateId, 
+        payout,
+        offerId: offer.id 
+      });
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -113,12 +102,8 @@ export function AffiliatePayoutManager({
           p_created_by: user.id
         });
 
-      if (error) {
-        console.error('Error from RPC:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // Update local state
       setAffiliates(prev =>
         prev.map(a =>
           a.id === affiliateId
@@ -127,22 +112,17 @@ export function AffiliatePayoutManager({
         )
       );
 
-      // Verify the update
-      const { data: verifyData, error: verifyError } = await supabase
-        .rpc('get_affiliate_payouts', { 
-          p_offer_id: offer.id 
-        });
-
-      if (verifyError) throw verifyError;
-      console.log('Verified payout data after update:', verifyData);
+      console.log('Payout updated successfully:', {
+        affiliateId,
+        newPayout: payout
+      });
 
       toast({
         title: "Success",
         description: "Updated payout successfully",
       });
 
-      // Refresh the data to ensure we have the latest state
-      fetchAffiliates();
+      await fetchAffiliates();
     } catch (error) {
       console.error('Error updating payout:', error);
       toast({

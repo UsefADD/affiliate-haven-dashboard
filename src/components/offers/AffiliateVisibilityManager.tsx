@@ -45,6 +45,7 @@ export function AffiliateVisibilityManager({
 
   const fetchAffiliates = async () => {
     try {
+      console.log('Fetching affiliates for offer:', offer.id);
       const { data: affiliatesData, error: affiliatesError } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
@@ -59,6 +60,9 @@ export function AffiliateVisibilityManager({
 
       if (visibilityError) throw visibilityError;
 
+      console.log('Visibility data:', visibilityData);
+
+      // Create a map of visibility settings
       const visibilityMap = new Map(
         visibilityData?.map(v => [v.affiliate_id, v.is_visible])
       );
@@ -67,7 +71,7 @@ export function AffiliateVisibilityManager({
         ...affiliate,
         is_visible: visibilityMap.has(affiliate.id) 
           ? visibilityMap.get(affiliate.id) 
-          : true
+          : true // Default to true if no explicit visibility setting
       })) || [];
 
       console.log('Combined affiliate data:', combinedData);
@@ -85,51 +89,57 @@ export function AffiliateVisibilityManager({
 
   const toggleVisibility = async (affiliateId: string, currentVisibility: boolean) => {
     try {
-      console.log('Toggling visibility:', { affiliateId, currentVisibility, newVisibility: !currentVisibility });
+      console.log('Starting visibility toggle:', { 
+        affiliateId, 
+        currentVisibility, 
+        offerId: offer.id 
+      });
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      if (!currentVisibility) {
-        // If the current visibility is false (hidden) and we want to show it,
-        // we need to delete the record to revert to the default visibility (true)
-        const { error: deleteError } = await supabase
-          .from('offer_visibility')
-          .delete()
-          .match({
-            offer_id: offer.id,
-            affiliate_id: affiliateId
-          });
+      // First, check if there's an existing record
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('offer_visibility')
+        .select('*')
+        .match({
+          offer_id: offer.id,
+          affiliate_id: affiliateId
+        })
+        .single();
 
-        if (deleteError) {
-          console.error('Error deleting visibility record:', deleteError);
-          throw deleteError;
-        }
-      } else {
-        // If the current visibility is true and we want to hide it,
-        // we need to upsert a record with is_visible = false
-        const { error: upsertError } = await supabase
-          .from('offer_visibility')
-          .upsert(
-            {
-              offer_id: offer.id,
-              affiliate_id: affiliateId,
-              is_visible: false,
-              created_by: user.id
-            },
-            {
-              onConflict: 'offer_id,affiliate_id',
-              ignoreDuplicates: false
-            }
-          );
-
-        if (upsertError) {
-          console.error('Error upserting visibility record:', upsertError);
-          throw upsertError;
-        }
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
       }
 
-      // Update local state after successful database operation
+      if (currentVisibility === false) {
+        // We want to enable visibility (delete the record to revert to default true)
+        if (existingRecord) {
+          const { error: deleteError } = await supabase
+            .from('offer_visibility')
+            .delete()
+            .match({
+              offer_id: offer.id,
+              affiliate_id: affiliateId
+            });
+
+          if (deleteError) throw deleteError;
+        }
+      } else {
+        // We want to disable visibility (create/update record with is_visible = false)
+        const { error: upsertError } = await supabase
+          .from('offer_visibility')
+          .upsert({
+            offer_id: offer.id,
+            affiliate_id: affiliateId,
+            is_visible: false,
+            created_by: user.id
+          });
+
+        if (upsertError) throw upsertError;
+      }
+
+      // Immediately update local state
       setAffiliates(prev =>
         prev.map(a =>
           a.id === affiliateId
@@ -138,12 +148,17 @@ export function AffiliateVisibilityManager({
         )
       );
 
+      console.log('Visibility updated successfully:', {
+        affiliateId,
+        newVisibility: !currentVisibility
+      });
+
       toast({
         title: "Success",
         description: `Updated visibility for ${getAffiliateDisplayName(affiliateId)}`,
       });
 
-      // Refresh the data to ensure we have the latest state
+      // Refresh data to ensure we have the latest state
       await fetchAffiliates();
     } catch (error) {
       console.error('Error updating visibility:', error);
