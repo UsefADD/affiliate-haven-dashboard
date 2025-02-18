@@ -64,6 +64,8 @@ export function AffiliatePayoutManager({
 
       if (payoutError) throw payoutError;
 
+      console.log('Payout data:', payoutData);
+
       // Create a map of affiliate IDs to their custom payouts
       const payoutMap = new Map(
         (payoutData as PayoutData[] || []).map(p => [p.affiliate_id, p.custom_payout])
@@ -75,6 +77,7 @@ export function AffiliatePayoutManager({
         custom_payout: payoutMap.get(affiliate.id) || null
       }));
 
+      console.log('Combined affiliate data:', combinedData);
       setAffiliates(combinedData);
       setLoading(false);
     } catch (error) {
@@ -92,6 +95,8 @@ export function AffiliatePayoutManager({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      console.log('Updating payout:', { affiliateId, payout });
+
       // Use RPC call for managing payouts
       const { error } = await supabase
         .rpc('manage_affiliate_payout', { 
@@ -102,6 +107,15 @@ export function AffiliatePayoutManager({
         });
 
       if (error) throw error;
+
+      // Verify the update by fetching the latest data
+      const { data: verifyData, error: verifyError } = await supabase
+        .rpc('get_affiliate_payouts', { 
+          p_offer_id: offer.id 
+        });
+
+      if (verifyError) throw verifyError;
+      console.log('Verified payout data:', verifyData);
 
       setAffiliates(prev =>
         prev.map(a =>

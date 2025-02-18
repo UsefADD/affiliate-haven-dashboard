@@ -45,7 +45,6 @@ export function AffiliateVisibilityManager({
 
   const fetchAffiliates = async () => {
     try {
-      // Fetch all affiliates
       const { data: affiliatesData, error: affiliatesError } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
@@ -53,7 +52,6 @@ export function AffiliateVisibilityManager({
 
       if (affiliatesError) throw affiliatesError;
 
-      // Fetch visibility settings for this offer
       const { data: visibilityData, error: visibilityError } = await supabase
         .from('offer_visibility')
         .select('affiliate_id, is_visible')
@@ -61,19 +59,18 @@ export function AffiliateVisibilityManager({
 
       if (visibilityError) throw visibilityError;
 
-      // Create a map of visibility settings
       const visibilityMap = new Map(
         visibilityData?.map(v => [v.affiliate_id, v.is_visible])
       );
 
-      // Combine affiliate data with visibility settings
       const combinedData = affiliatesData?.map(affiliate => ({
         ...affiliate,
         is_visible: visibilityMap.has(affiliate.id) 
           ? visibilityMap.get(affiliate.id) 
-          : true // Default to visible if no setting exists
+          : true
       })) || [];
 
+      console.log('Combined affiliate data:', combinedData);
       setAffiliates(combinedData);
       setLoading(false);
     } catch (error) {
@@ -88,17 +85,33 @@ export function AffiliateVisibilityManager({
 
   const toggleVisibility = async (affiliateId: string, currentVisibility: boolean) => {
     try {
-      const { error } = await supabase
-        .from('offer_visibility')
-        .upsert({
-          offer_id: offer.id,
-          affiliate_id: affiliateId,
-          is_visible: !currentVisibility,
-        }, {
-          onConflict: 'offer_id,affiliate_id'
-        });
+      console.log('Toggling visibility:', { affiliateId, currentVisibility, newVisibility: !currentVisibility });
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-      if (error) throw error;
+      // Delete the record if we're setting visibility to true (default state)
+      if (!currentVisibility) {
+        const { error: deleteError } = await supabase
+          .from('offer_visibility')
+          .delete()
+          .eq('offer_id', offer.id)
+          .eq('affiliate_id', affiliateId);
+
+        if (deleteError) throw deleteError;
+      } else {
+        // Insert or update the visibility record
+        const { error: upsertError } = await supabase
+          .from('offer_visibility')
+          .upsert({
+            offer_id: offer.id,
+            affiliate_id: affiliateId,
+            is_visible: false,
+            created_by: user.id
+          });
+
+        if (upsertError) throw upsertError;
+      }
 
       setAffiliates(prev =>
         prev.map(a =>
