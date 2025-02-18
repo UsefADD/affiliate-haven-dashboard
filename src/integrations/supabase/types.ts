@@ -249,6 +249,55 @@ export type Database = {
           },
         ]
       }
+      offer_payouts: {
+        Row: {
+          affiliate_id: string
+          created_at: string
+          created_by: string | null
+          custom_payout: number
+          id: string
+          offer_id: string
+        }
+        Insert: {
+          affiliate_id: string
+          created_at?: string
+          created_by?: string | null
+          custom_payout: number
+          id?: string
+          offer_id: string
+        }
+        Update: {
+          affiliate_id?: string
+          created_at?: string
+          created_by?: string | null
+          custom_payout?: number
+          id?: string
+          offer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_payouts_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_payouts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_payouts_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offer_visibility: {
         Row: {
           affiliate_id: string

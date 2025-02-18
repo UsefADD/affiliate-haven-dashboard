@@ -52,6 +52,7 @@ export function AffiliatePayoutManager({
 
       if (affiliatesError) throw affiliatesError;
 
+      // Fetch custom payouts for this offer
       const { data: payoutData, error: payoutError } = await supabase
         .from('offer_payouts')
         .select('affiliate_id, custom_payout')
@@ -59,10 +60,12 @@ export function AffiliatePayoutManager({
 
       if (payoutError) throw payoutError;
 
+      // Create a map of affiliate IDs to their custom payouts
       const payoutMap = new Map(
         payoutData?.map(p => [p.affiliate_id, p.custom_payout])
       );
 
+      // Combine affiliate data with their custom payouts
       const combinedData = affiliatesData?.map(affiliate => ({
         ...affiliate,
         custom_payout: payoutMap.get(affiliate.id) || null
@@ -82,13 +85,15 @@ export function AffiliatePayoutManager({
 
   const updatePayout = async (affiliateId: string, payout: number | null) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       if (payout === null || isNaN(payout)) {
         // Delete custom payout
         const { error } = await supabase
           .from('offer_payouts')
           .delete()
-          .eq('offer_id', offer.id)
-          .eq('affiliate_id', affiliateId);
+          .match({ offer_id: offer.id, affiliate_id: affiliateId });
 
         if (error) throw error;
       } else {
@@ -99,8 +104,7 @@ export function AffiliatePayoutManager({
             offer_id: offer.id,
             affiliate_id: affiliateId,
             custom_payout: payout,
-          }, {
-            onConflict: 'offer_id,affiliate_id'
+            created_by: user.id
           });
 
         if (error) throw error;
