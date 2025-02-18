@@ -90,29 +90,46 @@ export function AffiliateVisibilityManager({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Delete the record if we're setting visibility to true (default state)
       if (!currentVisibility) {
+        // If the current visibility is false (hidden) and we want to show it,
+        // we need to delete the record to revert to the default visibility (true)
         const { error: deleteError } = await supabase
           .from('offer_visibility')
           .delete()
-          .eq('offer_id', offer.id)
-          .eq('affiliate_id', affiliateId);
-
-        if (deleteError) throw deleteError;
-      } else {
-        // Insert or update the visibility record
-        const { error: upsertError } = await supabase
-          .from('offer_visibility')
-          .upsert({
+          .match({
             offer_id: offer.id,
-            affiliate_id: affiliateId,
-            is_visible: false,
-            created_by: user.id
+            affiliate_id: affiliateId
           });
 
-        if (upsertError) throw upsertError;
+        if (deleteError) {
+          console.error('Error deleting visibility record:', deleteError);
+          throw deleteError;
+        }
+      } else {
+        // If the current visibility is true and we want to hide it,
+        // we need to upsert a record with is_visible = false
+        const { error: upsertError } = await supabase
+          .from('offer_visibility')
+          .upsert(
+            {
+              offer_id: offer.id,
+              affiliate_id: affiliateId,
+              is_visible: false,
+              created_by: user.id
+            },
+            {
+              onConflict: 'offer_id,affiliate_id',
+              ignoreDuplicates: false
+            }
+          );
+
+        if (upsertError) {
+          console.error('Error upserting visibility record:', upsertError);
+          throw upsertError;
+        }
       }
 
+      // Update local state after successful database operation
       setAffiliates(prev =>
         prev.map(a =>
           a.id === affiliateId
@@ -125,6 +142,9 @@ export function AffiliateVisibilityManager({
         title: "Success",
         description: `Updated visibility for ${getAffiliateDisplayName(affiliateId)}`,
       });
+
+      // Refresh the data to ensure we have the latest state
+      await fetchAffiliates();
     } catch (error) {
       console.error('Error updating visibility:', error);
       toast({
