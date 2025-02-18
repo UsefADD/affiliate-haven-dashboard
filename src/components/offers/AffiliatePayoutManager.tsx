@@ -102,25 +102,33 @@ export function AffiliatePayoutManager({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // First delete any existing payout records
-      await supabase
-        .from('offer_payouts')
-        .delete()
-        .eq('offer_id', offer.id)
-        .eq('affiliate_id', affiliateId);
-
-      if (payout !== null) {
-        // Insert new payout record
-        const { error: insertError } = await supabase
+      if (payout === null) {
+        // If payout is null, just delete any existing record
+        const { error: deleteError } = await supabase
           .from('offer_payouts')
-          .insert({
-            offer_id: offer.id,
-            affiliate_id: affiliateId,
-            custom_payout: payout,
-            created_by: user.id
-          });
+          .delete()
+          .eq('offer_id', offer.id)
+          .eq('affiliate_id', affiliateId);
 
-        if (insertError) throw insertError;
+        if (deleteError) throw deleteError;
+      } else {
+        // Use upsert for non-null payouts
+        const { error: upsertError } = await supabase
+          .from('offer_payouts')
+          .upsert(
+            {
+              offer_id: offer.id,
+              affiliate_id: affiliateId,
+              custom_payout: payout,
+              created_by: user.id
+            },
+            {
+              onConflict: 'offer_id,affiliate_id',
+              ignoreDuplicates: false
+            }
+          );
+
+        if (upsertError) throw upsertError;
       }
 
       // Update local state
