@@ -440,6 +440,13 @@ export type Database = {
           custom_payout: number
         }[]
       }
+      get_lead_payout: {
+        Args: {
+          p_offer_id: string
+          p_affiliate_id: string
+        }
+        Returns: number
+      }
       is_offer_visible_to_affiliate: {
         Args: {
           offer_id: string

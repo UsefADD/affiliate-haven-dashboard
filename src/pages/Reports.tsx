@@ -1,9 +1,10 @@
+
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
 import { Loader2, PlayCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +44,6 @@ interface LeadData {
   offers: {
     id: string;
     name: string;
-    payout: number;
   } | null;
 }
 
@@ -160,8 +160,7 @@ export default function Reports() {
           variable_payout,
           offers (
             id,
-            name,
-            payout
+            name
           )
         `)
         .eq('affiliate_id', user.id)
@@ -173,7 +172,7 @@ export default function Reports() {
         throw error;
       }
 
-      console.log("Fetched leads:", data);
+      console.log("Fetched leads with stored payouts:", data);
       setLeadsData(data || []);
     } catch (error) {
       console.error('Error in fetchLeads:', error);
@@ -207,11 +206,12 @@ export default function Reports() {
       };
     }
 
-    // Add conversions and earnings from leads
+    // Add conversions and earnings using stored payout values
     const campaignLeads = leadsData.filter(lead => lead.offers?.id === campaignId);
     const convertedLeads = campaignLeads.filter(lead => lead.status === 'converted');
     
     acc[campaignId].conversions = convertedLeads.length;
+    // Use the stored payout value for each lead
     acc[campaignId].earnings = convertedLeads.reduce((total, lead) => total + Number(lead.payout), 0);
     
     // Calculate rates
