@@ -119,12 +119,13 @@ export default function Campaigns() {
             const transformedCreatives = Array.isArray(offer.creatives) 
               ? offer.creatives.map((creative: any) => {
                   if (typeof creative === 'object' && creative !== null) {
+                    const type = creative.type === "email" ? "email" as const : "image" as const;
                     return {
-                      type: creative.type === "email" ? "email" : "image",
+                      type,
                       content: String(creative.content || ""),
                       details: {
                         fromNames: Array.isArray(creative.details?.fromNames) ? creative.details.fromNames : [],
-                        subjects: Array.isArray(creative.details?.subjects) ? creative.details.subjects : [],
+                        subjects: Array.isArray(creative.details?.subjects) ? creative.details.subjects : []
                       },
                       images: Array.isArray(creative.images) ? creative.images : []
                     };

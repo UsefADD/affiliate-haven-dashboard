@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +17,7 @@ interface Offer {
   payout: number;
   status: boolean;
   created_at: string;
+  created_by: string;
   links?: string[];
   creatives?: {
     type: "image" | "email";
@@ -28,6 +28,7 @@ interface Offer {
     };
     images?: string[];
   }[];
+  is_top_offer: boolean;
 }
 
 interface DashboardStats {
@@ -146,6 +147,12 @@ export default function Index() {
   const fetchOffers = async () => {
     try {
       console.log("Fetching top offers for affiliate dashboard...");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
+
       const { data, error } = await supabase
         .from('offers')
         .select('*')
@@ -161,9 +168,32 @@ export default function Index() {
       console.log("Fetched top offers:", data);
       
       const typedOffers: Offer[] = data.map(offer => ({
-        ...offer,
-        creatives: offer.creatives as Offer['creatives'] || [],
-        links: offer.links || []
+        id: offer.id,
+        name: offer.name,
+        description: offer.description,
+        payout: offer.payout,
+        status: offer.status || false,
+        created_at: offer.created_at,
+        created_by: offer.created_by || user.id,
+        creatives: Array.isArray(offer.creatives) 
+          ? offer.creatives.map((creative: any) => {
+              if (typeof creative === 'object' && creative !== null) {
+                const type = creative.type === "email" ? "email" as const : "image" as const;
+                return {
+                  type,
+                  content: String(creative.content || ""),
+                  details: {
+                    fromNames: Array.isArray(creative.details?.fromNames) ? creative.details.fromNames : [],
+                    subjects: Array.isArray(creative.details?.subjects) ? creative.details.subjects : []
+                  },
+                  images: Array.isArray(creative.images) ? creative.images : []
+                };
+              }
+              return null;
+            }).filter((c): c is NonNullable<typeof c> => c !== null)
+          : [],
+        links: Array.isArray(offer.links) ? offer.links : [],
+        is_top_offer: offer.is_top_offer || false,
       }));
       
       setOffers(typedOffers);
@@ -182,7 +212,6 @@ export default function Index() {
         return;
       }
 
-      // Fetch leads with payout information
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
         .select(`
@@ -200,7 +229,6 @@ export default function Index() {
         throw leadsError;
       }
 
-      // Fetch clicks
       const { data: clicksData, error: clicksError } = await supabase
         .from('affiliate_clicks')
         .select('*')
@@ -217,7 +245,6 @@ export default function Index() {
       const totalLeads = leadsData?.length || 0;
       const totalClicks = clicksData?.length || 0;
       
-      // Calculate total earnings including both fixed and variable payouts
       const totalEarnings = leadsData
         ?.filter(lead => lead.status === 'converted')
         .reduce((sum, lead) => {
