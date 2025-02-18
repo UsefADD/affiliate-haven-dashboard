@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,13 +52,6 @@ export function AffiliatePayoutManager({
 
       if (affiliatesError) throw affiliatesError;
 
-      // First delete any stale payout records with null values
-      await supabase
-        .from('offer_payouts')
-        .delete()
-        .eq('offer_id', offer.id)
-        .is('custom_payout', null);
-
       const { data: payoutData, error: payoutError } = await supabase
         .rpc('get_affiliate_payouts', { 
           p_offer_id: offer.id 
@@ -102,34 +94,15 @@ export function AffiliatePayoutManager({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      if (payout === null) {
-        // If payout is null, just delete any existing record
-        const { error: deleteError } = await supabase
-          .from('offer_payouts')
-          .delete()
-          .eq('offer_id', offer.id)
-          .eq('affiliate_id', affiliateId);
+      const { error: rpcError } = await supabase
+        .rpc('manage_affiliate_payout', {
+          p_offer_id: offer.id,
+          p_affiliate_id: affiliateId,
+          p_custom_payout: payout,
+          p_created_by: user.id
+        });
 
-        if (deleteError) throw deleteError;
-      } else {
-        // Use upsert for non-null payouts
-        const { error: upsertError } = await supabase
-          .from('offer_payouts')
-          .upsert(
-            {
-              offer_id: offer.id,
-              affiliate_id: affiliateId,
-              custom_payout: payout,
-              created_by: user.id
-            },
-            {
-              onConflict: 'offer_id,affiliate_id',
-              ignoreDuplicates: false
-            }
-          );
-
-        if (upsertError) throw upsertError;
-      }
+      if (rpcError) throw rpcError;
 
       // Update local state
       setAffiliates(prev =>
