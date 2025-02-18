@@ -95,17 +95,33 @@ export default function Campaigns() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      // First, get all active offers
+      const { data: offersData, error: offersError } = await supabase
         .from('offers')
         .select('*')
         .eq('status', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (offersError) throw offersError;
 
-      // Check visibility for each offer
+      // Then, get custom payouts for the current affiliate
+      const { data: payoutData, error: payoutError } = await supabase
+        .rpc('get_affiliate_payouts', { 
+          p_offer_id: null // passing null to get all payouts for the affiliate
+        });
+
+      if (payoutError) throw payoutError;
+
+      console.log("Fetched payouts:", payoutData);
+
+      // Create a map of offer_id to custom_payout
+      const payoutMap = new Map(
+        payoutData?.map((p: any) => [p.offer_id, p.custom_payout]) || []
+      );
+
+      // Check visibility for each offer and apply custom payouts
       const visibleOffers = await Promise.all(
-        (data || []).map(async (offer) => {
+        (offersData || []).map(async (offer) => {
           const { data: visibilityData } = await supabase
             .from('offer_visibility')
             .select('is_visible')
@@ -115,35 +131,29 @@ export default function Campaigns() {
 
           // If no visibility rule exists or is_visible is true, show the offer
           if (!visibilityData || visibilityData.is_visible) {
-            // Transform the creatives data to match our expected type
-            const transformedCreatives = Array.isArray(offer.creatives) 
-              ? offer.creatives.map((creative: any) => {
-                  if (typeof creative === 'object' && creative !== null) {
-                    const type = creative.type === "email" ? "email" as const : "image" as const;
-                    return {
-                      type,
-                      content: String(creative.content || ""),
-                      details: {
-                        fromNames: Array.isArray(creative.details?.fromNames) ? creative.details.fromNames : [],
-                        subjects: Array.isArray(creative.details?.subjects) ? creative.details.subjects : []
-                      },
-                      images: Array.isArray(creative.images) ? creative.images : []
-                    };
-                  }
-                  return null;
-                }).filter((c): c is NonNullable<typeof c> => c !== null)
-              : [];
-
-            // Transform the offer data to match our Offer interface
+            // Apply custom payout if it exists
+            const customPayout = payoutMap.get(offer.id);
+            
+            // Transform the offer data
             const transformedOffer: Offer = {
               id: offer.id,
               name: offer.name,
-              description: offer.description,
-              payout: offer.payout,
+              description: offer.description || '',
+              payout: customPayout || offer.payout, // Use custom payout if available
               status: offer.status || false,
               created_at: offer.created_at,
               created_by: offer.created_by || user.id,
-              creatives: transformedCreatives,
+              creatives: Array.isArray(offer.creatives) 
+                ? offer.creatives.map((creative: any) => ({
+                    type: creative.type === "email" ? "email" : "image",
+                    content: String(creative.content || ""),
+                    details: {
+                      fromNames: Array.isArray(creative.details?.fromNames) ? creative.details.fromNames : [],
+                      subjects: Array.isArray(creative.details?.subjects) ? creative.details.subjects : []
+                    },
+                    images: Array.isArray(creative.images) ? creative.images : []
+                  }))
+                : [],
               links: Array.isArray(offer.links) ? offer.links : [],
               is_top_offer: offer.is_top_offer || false,
             };
@@ -157,6 +167,7 @@ export default function Campaigns() {
         offer !== null
       );
 
+      console.log("Processed offers with custom payouts:", filteredOffers);
       setOffers(filteredOffers);
       setIsLoading(false);
     } catch (error) {
