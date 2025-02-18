@@ -114,14 +114,36 @@ export default function Campaigns() {
 
           // If no visibility rule exists or is_visible is true, show the offer
           if (!visibilityData || visibilityData.is_visible) {
+            // Transform the creatives data to match our expected type
+            const transformedCreatives = Array.isArray(offer.creatives) 
+              ? offer.creatives.map(creative => {
+                  if (typeof creative === 'object' && creative !== null) {
+                    return {
+                      type: creative.type as "image" | "email",
+                      content: creative.content as string,
+                      details: creative.details as {
+                        fromNames?: string[];
+                        subjects?: string[];
+                      },
+                      images: creative.images as string[]
+                    };
+                  }
+                  return null;
+                }).filter((c): c is NonNullable<typeof c> => c !== null)
+              : [];
+
             // Transform the offer data to match our Offer interface
             const transformedOffer: Offer = {
-              ...offer,
-              creatives: Array.isArray(offer.creatives) ? offer.creatives : [],
+              id: offer.id,
+              name: offer.name,
+              description: offer.description,
+              payout: offer.payout,
+              status: offer.status || false,
+              created_at: offer.created_at,
+              created_by: offer.created_by || user.id,
+              creatives: transformedCreatives,
               links: Array.isArray(offer.links) ? offer.links : [],
               is_top_offer: offer.is_top_offer || false,
-              status: offer.status || false,
-              created_by: offer.created_by || user.id,
             };
             return transformedOffer;
           }
