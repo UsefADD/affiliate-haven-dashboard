@@ -62,7 +62,6 @@ export function AffiliateVisibilityManager({
 
       console.log('Visibility data:', visibilityData);
 
-      // Create a map of visibility settings
       const visibilityMap = new Map(
         visibilityData?.map(v => [v.affiliate_id, v.is_visible])
       );
@@ -71,7 +70,7 @@ export function AffiliateVisibilityManager({
         ...affiliate,
         is_visible: visibilityMap.has(affiliate.id) 
           ? visibilityMap.get(affiliate.id) 
-          : true // Default to true if no explicit visibility setting
+          : true
       })) || [];
 
       console.log('Combined affiliate data:', combinedData);
@@ -98,48 +97,55 @@ export function AffiliateVisibilityManager({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // First, check if there's an existing record
-      const { data: existingRecord, error: checkError } = await supabase
-        .from('offer_visibility')
-        .select('*')
-        .match({
-          offer_id: offer.id,
-          affiliate_id: affiliateId
-        })
-        .single();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
-
-      if (currentVisibility === false) {
-        // We want to enable visibility (delete the record to revert to default true)
-        if (existingRecord) {
-          const { error: deleteError } = await supabase
-            .from('offer_visibility')
-            .delete()
-            .match({
-              offer_id: offer.id,
-              affiliate_id: affiliateId
-            });
-
-          if (deleteError) throw deleteError;
-        }
-      } else {
-        // We want to disable visibility (create/update record with is_visible = false)
-        const { error: upsertError } = await supabase
+      if (currentVisibility) {
+        // If currently visible, insert a record to hide it
+        console.log('Inserting record to hide offer');
+        const { error } = await supabase
           .from('offer_visibility')
-          .upsert({
+          .insert({
             offer_id: offer.id,
             affiliate_id: affiliateId,
             is_visible: false,
             created_by: user.id
+          })
+          .select()
+          .single();
+
+        if (error) {
+          // If record already exists, update it instead
+          if (error.code === '23505') {
+            console.log('Record exists, updating instead');
+            const { error: updateError } = await supabase
+              .from('offer_visibility')
+              .update({
+                is_visible: false,
+                created_by: user.id
+              })
+              .match({
+                offer_id: offer.id,
+                affiliate_id: affiliateId
+              });
+
+            if (updateError) throw updateError;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        // If currently hidden, delete the record to show it
+        console.log('Deleting record to show offer');
+        const { error } = await supabase
+          .from('offer_visibility')
+          .delete()
+          .match({
+            offer_id: offer.id,
+            affiliate_id: affiliateId
           });
 
-        if (upsertError) throw upsertError;
+        if (error) throw error;
       }
 
-      // Immediately update local state
+      // Update local state
       setAffiliates(prev =>
         prev.map(a =>
           a.id === affiliateId
