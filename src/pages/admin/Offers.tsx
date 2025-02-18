@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -161,20 +161,6 @@ export default function Offers() {
 
       if (clicks && clicks.length > 0) {
         setDeleteError("Cannot delete this offer because it has associated clicks.");
-        return;
-      }
-
-      // Check for affiliate links
-      const { data: links, error: linksError } = await supabase
-        .from('affiliate_links')
-        .select('id')
-        .eq('offer_id', offerToDelete.id)
-        .limit(1);
-
-      if (linksError) throw linksError;
-
-      if (links && links.length > 0) {
-        setDeleteError("Cannot delete this offer because it has associated affiliate links.");
         return;
       }
 
