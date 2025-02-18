@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Campaign } from "@/types/campaign";
@@ -6,7 +7,7 @@ import { CampaignList } from "@/components/campaigns/CampaignList";
 import { CampaignDetails } from "@/components/campaigns/CampaignDetails";
 import { SearchBar } from "@/components/campaigns/SearchBar";
 import { Offer } from "@/types/offer";
-import { toast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Campaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -14,7 +15,7 @@ export default function Campaigns() {
   const [searchQuery, setSearchQuery] = useState("");
   const [trackingUrl, setTrackingUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchOffers();
@@ -28,7 +29,6 @@ export default function Campaigns() {
 
   const fetchTrackingUrl = async (campaignId: string) => {
     try {
-      console.log("Fetching tracking URL for campaign:", campaignId);
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -66,14 +66,9 @@ export default function Campaigns() {
       if (profile?.subdomain && offer?.links?.[0]) {
         try {
           const defaultLink = offer.links[0];
-          // Parse the URL, handling cases with or without protocol
           const url = new URL(defaultLink.startsWith('http') ? defaultLink : `https://${defaultLink}`);
-          
-          // Extract the base domain (remove any existing subdomains)
           const domainParts = url.hostname.split('.');
           const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : url.hostname;
-          
-          // Construct new URL with single subdomain
           const newUrl = `https://${profile.subdomain}.${baseDomain}${url.pathname}${url.search}`;
           console.log("Generated subdomain URL:", newUrl);
           setTrackingUrl(newUrl);
@@ -83,7 +78,6 @@ export default function Campaigns() {
         }
       }
 
-      // Fallback to first offer link
       if (offer?.links?.[0]) {
         setTrackingUrl(offer.links[0]);
         return;
@@ -98,76 +92,45 @@ export default function Campaigns() {
 
   const fetchOffers = async () => {
     try {
-      console.log("Fetching offers for campaigns page...");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('offers')
         .select('*')
         .eq('status', true)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching offers:", error);
-        throw error;
-      }
-
-      console.log("Fetched offers for campaigns:", data);
-      
-      const typedOffers: Offer[] = data.map(offer => ({
-        id: offer.id,
-        name: offer.name,
-        description: offer.description,
-        payout: offer.payout,
-        status: offer.status ?? true,
-        created_at: offer.created_at,
-        created_by: offer.created_by,
-        creatives: Array.isArray(offer.creatives) ? offer.creatives.map((creative: any) => ({
-          type: creative.type || "image",
-          content: creative.content || "",
-          details: creative.details || {},
-          images: creative.images || []
-        })) : [],
-        links: offer.links || [],
-        is_top_offer: offer.is_top_offer ?? false
-      }));
-      
-      setOffers(typedOffers);
-    } catch (error) {
-      console.error('Error in fetchOffers:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchCampaigns = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('offers')
-        .select(`
-          *,
-          offer_visibility!inner(
-            is_visible
-          )
-        `)
-        .or(`
-          offer_visibility.affiliate_id.eq.${user.id},
-          offer_visibility.id.is.null
-        `)
-        .eq('offer_visibility.is_visible', true)
-        .order('created_at', { ascending: false });
-
       if (error) throw error;
 
-      setCampaigns(data || []);
+      // Check visibility for each offer
+      const visibleOffers = await Promise.all(
+        (data || []).map(async (offer) => {
+          const { data: visibilityData } = await supabase
+            .from('offer_visibility')
+            .select('is_visible')
+            .eq('offer_id', offer.id)
+            .eq('affiliate_id', user.id)
+            .maybeSingle();
+
+          // If no visibility rule exists or is_visible is true, show the offer
+          return (!visibilityData || visibilityData.is_visible) ? offer : null;
+        })
+      );
+
+      const filteredOffers = visibleOffers.filter((offer): offer is Offer => 
+        offer !== null
+      );
+
+      setOffers(filteredOffers);
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
+      console.error('Error fetching offers:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch campaigns",
-        variant: "destructive",
+        description: "Failed to fetch offers",
       });
+      setIsLoading(false);
     }
   };
 

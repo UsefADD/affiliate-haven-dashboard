@@ -249,6 +249,48 @@ export type Database = {
           },
         ]
       }
+      offer_visibility: {
+        Row: {
+          affiliate_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_visible: boolean
+          offer_id: string
+        }
+        Insert: {
+          affiliate_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_visible?: boolean
+          offer_id: string
+        }
+        Update: {
+          affiliate_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_visible?: boolean
+          offer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_visibility_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_visibility_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offers: {
         Row: {
           created_at: string
@@ -340,7 +382,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_offer_visible_to_affiliate: {
+        Args: {
+          offer_id: string
+          affiliate_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "admin" | "affiliate"

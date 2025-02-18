@@ -27,6 +27,11 @@ interface Affiliate {
   is_visible?: boolean;
 }
 
+interface VisibilityRecord {
+  affiliate_id: string;
+  is_visible: boolean;
+}
+
 export function AffiliateVisibilityDialog({
   offer,
   isOpen,
@@ -44,7 +49,6 @@ export function AffiliateVisibilityDialog({
 
   const fetchAffiliates = async () => {
     try {
-      // Fetch all affiliates
       const { data: affiliatesData, error: affiliatesError } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
@@ -52,7 +56,7 @@ export function AffiliateVisibilityDialog({
 
       if (affiliatesError) throw affiliatesError;
 
-      // Fetch visibility settings for this offer
+      // Fetch visibility settings from the new offer_visibility table
       const { data: visibilityData, error: visibilityError } = await supabase
         .from('offer_visibility')
         .select('affiliate_id, is_visible')
@@ -60,19 +64,20 @@ export function AffiliateVisibilityDialog({
 
       if (visibilityError) throw visibilityError;
 
-      // Combine the data
+      // Create a map of visibility settings
       const visibilityMap = new Map(
-        visibilityData?.map(v => [v.affiliate_id, v.is_visible])
+        (visibilityData || []).map((v: VisibilityRecord) => [v.affiliate_id, v.is_visible])
       );
 
-      const combinedData = affiliatesData?.map(affiliate => ({
+      // Combine affiliate data with visibility settings
+      const combinedData = (affiliatesData || []).map(affiliate => ({
         ...affiliate,
         is_visible: visibilityMap.has(affiliate.id) 
           ? visibilityMap.get(affiliate.id) 
           : true
       }));
 
-      setAffiliates(combinedData || []);
+      setAffiliates(combinedData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching affiliates:', error);
