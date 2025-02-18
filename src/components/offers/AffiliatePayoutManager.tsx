@@ -52,17 +52,18 @@ export function AffiliatePayoutManager({
 
       if (affiliatesError) throw affiliatesError;
 
-      // Fetch custom payouts for this offer
+      // Use a raw query for offer_payouts since the types aren't updated yet
       const { data: payoutData, error: payoutError } = await supabase
-        .from('offer_payouts')
-        .select('affiliate_id, custom_payout')
-        .eq('offer_id', offer.id);
+        .rpc('get_affiliate_payouts', { 
+          p_offer_id: offer.id 
+        });
 
       if (payoutError) throw payoutError;
 
       // Create a map of affiliate IDs to their custom payouts
       const payoutMap = new Map(
-        payoutData?.map(p => [p.affiliate_id, p.custom_payout])
+        (payoutData as Array<{ affiliate_id: string; custom_payout: number }> || [])
+          .map(p => [p.affiliate_id, p.custom_payout])
       );
 
       // Combine affiliate data with their custom payouts
@@ -88,27 +89,18 @@ export function AffiliatePayoutManager({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      if (payout === null || isNaN(payout)) {
-        // Delete custom payout
-        const { error } = await supabase
-          .from('offer_payouts')
-          .delete()
-          .match({ offer_id: offer.id, affiliate_id: affiliateId });
+      // Use RPC call for managing payouts
+      const { error } = await supabase.rpc(
+        'manage_affiliate_payout',
+        { 
+          p_offer_id: offer.id,
+          p_affiliate_id: affiliateId,
+          p_custom_payout: payout,
+          p_created_by: user.id
+        }
+      );
 
-        if (error) throw error;
-      } else {
-        // Upsert custom payout
-        const { error } = await supabase
-          .from('offer_payouts')
-          .upsert({
-            offer_id: offer.id,
-            affiliate_id: affiliateId,
-            custom_payout: payout,
-            created_by: user.id
-          });
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       setAffiliates(prev =>
         prev.map(a =>
