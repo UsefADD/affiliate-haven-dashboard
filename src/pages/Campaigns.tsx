@@ -95,31 +95,39 @@ export default function Campaigns() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // First, get all active offers
+      // First, get custom payouts directly from offer_payouts table
+      const { data: customPayouts, error: payoutsError } = await supabase
+        .from('offer_payouts')
+        .select('offer_id, custom_payout')
+        .eq('affiliate_id', user.id);
+
+      if (payoutsError) {
+        console.error("Error fetching custom payouts:", payoutsError);
+        throw payoutsError;
+      }
+
+      console.log("Fetched custom payouts:", customPayouts);
+
+      // Create a map of offer_id to custom_payout
+      const payoutMap = new Map(
+        customPayouts?.map((p) => [p.offer_id, p.custom_payout]) || []
+      );
+
+      // Then get all active offers
       const { data: offersData, error: offersError } = await supabase
         .from('offers')
         .select('*')
         .eq('status', true)
         .order('created_at', { ascending: false });
 
-      if (offersError) throw offersError;
+      if (offersError) {
+        console.error("Error fetching offers:", offersError);
+        throw offersError;
+      }
 
-      // Then, get custom payouts for the current affiliate
-      const { data: payoutData, error: payoutError } = await supabase
-        .rpc('get_affiliate_payouts', { 
-          p_offer_id: null // passing null to get all payouts for the affiliate
-        });
+      console.log("Fetched offers:", offersData);
 
-      if (payoutError) throw payoutError;
-
-      console.log("Fetched payouts:", payoutData);
-
-      // Create a map of offer_id to custom_payout
-      const payoutMap = new Map(
-        payoutData?.map((p: any) => [p.offer_id, p.custom_payout]) || []
-      );
-
-      // Check visibility for each offer and apply custom payouts
+      // Check visibility and apply custom payouts
       const visibleOffers = await Promise.all(
         (offersData || []).map(async (offer) => {
           const { data: visibilityData } = await supabase
@@ -131,15 +139,16 @@ export default function Campaigns() {
 
           // If no visibility rule exists or is_visible is true, show the offer
           if (!visibilityData || visibilityData.is_visible) {
-            // Apply custom payout if it exists
+            // Get custom payout if it exists
             const customPayout = payoutMap.get(offer.id);
+            console.log(`Offer ${offer.id} custom payout:`, customPayout);
             
             // Transform the offer data
             const transformedOffer: Offer = {
               id: offer.id,
               name: offer.name,
               description: offer.description || '',
-              payout: customPayout || offer.payout, // Use custom payout if available
+              payout: customPayout !== undefined ? customPayout : offer.payout,
               status: offer.status || false,
               created_at: offer.created_at,
               created_by: offer.created_by || user.id,
@@ -157,6 +166,8 @@ export default function Campaigns() {
               links: Array.isArray(offer.links) ? offer.links : [],
               is_top_offer: offer.is_top_offer || false,
             };
+
+            console.log(`Transformed offer ${offer.id}:`, transformedOffer);
             return transformedOffer;
           }
           return null;
@@ -167,7 +178,7 @@ export default function Campaigns() {
         offer !== null
       );
 
-      console.log("Processed offers with custom payouts:", filteredOffers);
+      console.log("Final processed offers with custom payouts:", filteredOffers);
       setOffers(filteredOffers);
       setIsLoading(false);
     } catch (error) {
