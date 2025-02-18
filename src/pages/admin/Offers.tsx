@@ -28,6 +28,9 @@ export default function Offers() {
   const fetchOffers = async () => {
     try {
       console.log("Fetching offers...");
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Not authenticated");
+
       const { data, error } = await supabase
         .from('offers')
         .select('*')
@@ -39,12 +42,25 @@ export default function Offers() {
       }
       
       console.log("Fetched offers:", data);
+      if (!data) {
+        setOffers([]);
+        return;
+      }
+
       const typedOffers: Offer[] = data.map(offer => ({
-        ...offer,
-        creatives: offer.creatives as Offer['creatives'] || [],
-        links: offer.links || []
+        id: offer.id,
+        name: offer.name,
+        description: offer.description || '',
+        payout: offer.payout,
+        status: offer.status ?? true,
+        created_at: offer.created_at,
+        created_by: offer.created_by,
+        creatives: (offer.creatives as Offer['creatives']) || [],
+        links: offer.links || [],
+        is_top_offer: offer.is_top_offer || false
       }));
       
+      console.log("Processed offers:", typedOffers);
       setOffers(typedOffers);
     } catch (error) {
       console.error('Error fetching offers:', error);
@@ -274,14 +290,20 @@ export default function Offers() {
           </Dialog>
         </div>
 
-        <OfferList
-          offers={offers}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onToggleStatus={handleToggleStatus}
-          onToggleTopOffer={handleToggleTopOffer}
-          isAdmin={true}
-        />
+        {offers && offers.length > 0 ? (
+          <OfferList
+            offers={offers}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onToggleStatus={handleToggleStatus}
+            onToggleTopOffer={handleToggleTopOffer}
+            isAdmin={true}
+          />
+        ) : (
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">No offers found. Create your first offer!</p>
+          </div>
+        )}
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
