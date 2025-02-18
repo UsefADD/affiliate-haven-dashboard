@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Campaign } from "@/types/campaign";
@@ -114,7 +113,19 @@ export default function Campaigns() {
             .maybeSingle();
 
           // If no visibility rule exists or is_visible is true, show the offer
-          return (!visibilityData || visibilityData.is_visible) ? offer : null;
+          if (!visibilityData || visibilityData.is_visible) {
+            // Transform the offer data to match our Offer interface
+            const transformedOffer: Offer = {
+              ...offer,
+              creatives: Array.isArray(offer.creatives) ? offer.creatives : [],
+              links: Array.isArray(offer.links) ? offer.links : [],
+              is_top_offer: offer.is_top_offer || false,
+              status: offer.status || false,
+              created_by: offer.created_by || user.id,
+            };
+            return transformedOffer;
+          }
+          return null;
         })
       );
 

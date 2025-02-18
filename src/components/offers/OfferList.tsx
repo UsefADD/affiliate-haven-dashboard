@@ -113,6 +113,11 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
     }
   };
 
+  const handleVisibilityDialog = (offer: Offer) => {
+    setSelectedOffer(offer);
+    setVisibilityDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="rounded-md border">
@@ -162,10 +167,7 @@ export function OfferList({ offers, onEdit, onDelete, onToggleStatus, onToggleTo
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          setSelectedOffer(offer);
-                          setVisibilityDialogOpen(true);
-                        }}
+                        onClick={() => handleVisibilityDialog(offer)}
                         className="hover:bg-primary/10 text-primary"
                       >
                         <Users className="h-4 w-4 mr-2" />
