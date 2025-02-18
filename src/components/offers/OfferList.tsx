@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Check, Eye, Pencil, Star, Trash2, DollarSign, X } from "lucide-react";
@@ -20,7 +20,7 @@ interface OfferListProps {
 }
 
 export function OfferList({ 
-  offers, 
+  offers: initialOffers, 
   onEdit, 
   onDelete, 
   onToggleStatus, 
@@ -30,7 +30,49 @@ export function OfferList({
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
   const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [offers, setOffers] = useState<(Offer & { custom_payout?: number | null })[]>(initialOffers);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isAdmin) {
+      fetchCustomPayouts();
+    }
+  }, [isAdmin]);
+
+  const fetchCustomPayouts = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const offersWithPayouts = await Promise.all(
+        initialOffers.map(async (offer) => {
+          const { data: payoutData, error: payoutError } = await supabase
+            .rpc('get_affiliate_payouts', { 
+              p_offer_id: offer.id 
+            });
+
+          if (payoutError) throw payoutError;
+
+          const affiliatePayout = payoutData?.find((p: any) => p.affiliate_id === user.id);
+          
+          return {
+            ...offer,
+            custom_payout: affiliatePayout?.custom_payout || null
+          };
+        })
+      );
+
+      console.log('Offers with custom payouts:', offersWithPayouts);
+      setOffers(offersWithPayouts);
+    } catch (error) {
+      console.error('Error fetching custom payouts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch custom payouts",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleVisibilityDialog = (offer: Offer) => {
     setSelectedOffer(offer);
@@ -61,7 +103,12 @@ export function OfferList({
             <TableRow key={offer.id}>
               <TableCell className="font-medium">{offer.name}</TableCell>
               <TableCell>{offer.description}</TableCell>
-              <TableCell>${offer.payout}</TableCell>
+              <TableCell>
+                ${offer.custom_payout || offer.payout}
+                {offer.custom_payout && !isAdmin && (
+                  <span className="ml-2 text-xs text-muted-foreground">(Custom)</span>
+                )}
+              </TableCell>
               <TableCell>{format(new Date(offer.created_at), 'MMM d, yyyy')}</TableCell>
               <TableCell>
                 {isAdmin ? (
