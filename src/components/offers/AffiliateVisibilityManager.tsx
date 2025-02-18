@@ -88,59 +88,38 @@ export function AffiliateVisibilityManager({
 
   const toggleVisibility = async (affiliateId: string, currentVisibility: boolean) => {
     try {
-      console.log('Starting visibility toggle:', { 
-        affiliateId, 
-        currentVisibility, 
-        offerId: offer.id 
-      });
+      console.log('Toggling visibility for:', { affiliateId, currentVisibility });
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      if (currentVisibility) {
-        // If currently visible, insert a record to hide it
-        console.log('Inserting record to hide offer');
-        const { error } = await supabase
-          .from('offer_visibility')
-          .insert({
-            offer_id: offer.id,
-            affiliate_id: affiliateId,
-            is_visible: false,
-            created_by: user.id
-          })
-          .select()
-          .single();
-
-        if (error) {
-          // If record already exists, update it instead
-          if (error.code === '23505') {
-            console.log('Record exists, updating instead');
-            const { error: updateError } = await supabase
-              .from('offer_visibility')
-              .update({
-                is_visible: false,
-                created_by: user.id
-              })
-              .match({
-                offer_id: offer.id,
-                affiliate_id: affiliateId
-              });
-
-            if (updateError) throw updateError;
-          } else {
-            throw error;
-          }
-        }
-      } else {
-        // If currently hidden, delete the record to show it
-        console.log('Deleting record to show offer');
+      if (!currentVisibility) {
+        // Currently hidden, we want to show it (delete the record)
+        console.log('Deleting visibility record to show offer');
         const { error } = await supabase
           .from('offer_visibility')
           .delete()
-          .match({
-            offer_id: offer.id,
-            affiliate_id: affiliateId
-          });
+          .eq('offer_id', offer.id)
+          .eq('affiliate_id', affiliateId);
+
+        if (error) throw error;
+      } else {
+        // Currently visible, we want to hide it
+        console.log('Upserting visibility record to hide offer');
+        const { error } = await supabase
+          .from('offer_visibility')
+          .upsert(
+            {
+              offer_id: offer.id,
+              affiliate_id: affiliateId,
+              is_visible: false,
+              created_by: user.id
+            },
+            {
+              onConflict: 'offer_id,affiliate_id',
+              ignoreDuplicates: false
+            }
+          );
 
         if (error) throw error;
       }
@@ -154,20 +133,17 @@ export function AffiliateVisibilityManager({
         )
       );
 
-      console.log('Visibility updated successfully:', {
-        affiliateId,
-        newVisibility: !currentVisibility
-      });
-
+      console.log('Visibility toggled successfully');
+      
       toast({
         title: "Success",
         description: `Updated visibility for ${getAffiliateDisplayName(affiliateId)}`,
       });
 
-      // Refresh data to ensure we have the latest state
+      // Refresh data
       await fetchAffiliates();
     } catch (error) {
-      console.error('Error updating visibility:', error);
+      console.error('Error toggling visibility:', error);
       toast({
         title: "Error",
         description: "Failed to update visibility",
