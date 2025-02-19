@@ -1,3 +1,4 @@
+
 import { useState, useEffect, memo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,6 +43,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
+    mode: "onSubmit",
     defaultValues: {
       first_name: "",
       last_name: "",
@@ -77,14 +79,20 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
   const onSubmit = async (data: ApplicationFormData) => {
     console.log("Form submission started with data:", data);
+    
+    if (isSubmitting) {
+      console.log("Already submitting, preventing double submission");
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      console.log("Starting application submission...");
+      console.log("Starting application submission to Supabase...");
       
-      const { error: submissionError } = await supabase
+      const { data: insertedData, error: submissionError } = await supabase
         .from("affiliate_applications")
-        .insert({
+        .insert([{
           first_name: data.first_name,
           last_name: data.last_name,
           email: data.email,
@@ -115,14 +123,16 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
           known_contacts: data.known_contacts,
           current_advertisers: data.current_advertisers,
           status: 'pending'
-        });
+        }])
+        .select();
 
       if (submissionError) {
-        console.error("Submission error:", submissionError);
+        console.error("Supabase submission error:", submissionError);
         throw submissionError;
       }
 
-      console.log("Application submitted successfully, sending confirmation email...");
+      console.log("Application submitted successfully:", insertedData);
+      console.log("Sending confirmation email...");
       
       const { error: emailError } = await supabase.functions.invoke(
         "send-affiliate-confirmation",
@@ -151,6 +161,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
         });
       }
 
+      form.reset();
       setShowThankYou(true);
     } catch (error: any) {
       console.error("Error in application submission:", error);
