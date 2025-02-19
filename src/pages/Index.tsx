@@ -9,6 +9,7 @@ import { DollarSign, TrendingUp, Users, Star, MousePointer, MessageSquare } from
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 interface Offer {
   id: string;
@@ -204,13 +205,17 @@ export default function Index() {
 
   const fetchDashboardStats = async () => {
     try {
-      console.log("Fetching dashboard stats...");
+      console.log("Fetching dashboard stats for current month...");
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         console.error("No user found");
         return;
       }
+
+      const now = new Date();
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
 
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
@@ -222,7 +227,9 @@ export default function Index() {
             payout
           )
         `)
-        .eq('affiliate_id', user.id);
+        .eq('affiliate_id', user.id)
+        .gte('created_at', monthStart.toISOString())
+        .lte('created_at', monthEnd.toISOString());
 
       if (leadsError) {
         console.error("Error fetching leads:", leadsError);
@@ -232,15 +239,17 @@ export default function Index() {
       const { data: clicksData, error: clicksError } = await supabase
         .from('affiliate_clicks')
         .select('*')
-        .eq('affiliate_id', user.id);
+        .eq('affiliate_id', user.id)
+        .gte('clicked_at', monthStart.toISOString())
+        .lte('clicked_at', monthEnd.toISOString());
 
       if (clicksError) {
         console.error("Error fetching clicks:", clicksError);
         throw clicksError;
       }
 
-      console.log("Fetched leads:", leadsData);
-      console.log("Fetched clicks:", clicksData);
+      console.log("Fetched current month leads:", leadsData);
+      console.log("Fetched current month clicks:", clicksData);
 
       const totalLeads = leadsData?.length || 0;
       const totalClicks = clicksData?.length || 0;
@@ -260,28 +269,34 @@ export default function Index() {
       const convertedLeads = leadsData?.filter(lead => lead.status === 'converted').length || 0;
       const conversionRate = totalClicks > 0 ? (convertedLeads / totalClicks) * 100 : 0;
 
+      const recentLeads = leadsData
+        ?.reduce((acc: any[], lead) => {
+          const date = new Date(lead.created_at).toLocaleDateString();
+          const existingDate = acc.find(item => item.date === date);
+          if (existingDate) {
+            existingDate.count++;
+          } else {
+            acc.push({ date, count: 1 });
+          }
+          return acc;
+        }, [])
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) || [];
+
       setStats({
         totalLeads,
         totalEarnings,
         conversionRate,
         totalClicks,
-        recentLeads: leadsData
-          ?.reduce((acc: any[], lead) => {
-            const date = new Date(lead.created_at).toLocaleDateString();
-            const existingDate = acc.find(item => item.date === date);
-            if (existingDate) {
-              existingDate.count++;
-            } else {
-              acc.push({ date, count: 1 });
-            }
-            return acc;
-          }, [])
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          .slice(-7) || []
+        recentLeads
       });
 
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch dashboard statistics",
+        variant: "destructive",
+      });
     }
   };
 
