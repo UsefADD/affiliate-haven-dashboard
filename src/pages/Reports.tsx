@@ -41,6 +41,7 @@ interface LeadData {
   status: string;
   payout: number;
   variable_payout: boolean;
+  created_at: string;
   offers: {
     id: string;
     name: string;
@@ -133,11 +134,7 @@ export default function Reports() {
       setClicksByOffer(groupedClicks);
     } catch (error) {
       console.error('Error in fetchClicks:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch clicks data",
-        variant: "destructive",
-      });
+      throw error;
     }
   };
 
@@ -158,12 +155,14 @@ export default function Reports() {
           status,
           payout,
           variable_payout,
+          created_at,
           offers (
             id,
             name
           )
         `)
         .eq('affiliate_id', user.id)
+        .eq('status', 'converted')
         .gte('created_at', startOfDay(startDate).toISOString())
         .lte('created_at', endOfDay(endDate).toISOString());
 
@@ -176,13 +175,7 @@ export default function Reports() {
       setLeadsData(data || []);
     } catch (error) {
       console.error('Error in fetchLeads:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch leads data",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      throw error;
     }
   };
 
@@ -222,26 +215,13 @@ export default function Reports() {
   }, {});
 
   const calculateTotals = () => {
-    const totals = Object.values(campaignStats).reduce((acc, stats) => {
-      return {
-        clicks: acc.clicks + stats.clicks,
-        conversions: acc.conversions + stats.conversions,
-        earnings: acc.earnings + stats.earnings,
-      };
-    }, { clicks: 0, conversions: 0, earnings: 0 });
-
-    const conversionRate = totals.clicks > 0 
-      ? (totals.conversions / totals.clicks) * 100 
-      : 0;
-    const epc = totals.clicks > 0 
-      ? totals.earnings / totals.clicks 
-      : 0;
-
-    return {
-      ...totals,
-      conversionRate,
-      epc,
-    };
+    return Object.values(campaignStats).reduce((acc, stats) => ({
+      clicks: acc.clicks + stats.clicks,
+      conversions: acc.conversions + stats.conversions,
+      earnings: acc.earnings + stats.earnings,
+      conversionRate: acc.clicks > 0 ? (acc.conversions / acc.clicks) * 100 : 0,
+      epc: acc.clicks > 0 ? acc.earnings / acc.clicks : 0
+    }), { clicks: 0, conversions: 0, earnings: 0, conversionRate: 0, epc: 0 });
   };
 
   useEffect(() => {
