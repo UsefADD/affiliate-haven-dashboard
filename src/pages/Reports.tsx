@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -53,26 +52,31 @@ export default function Reports() {
   const [clickData, setClickData] = useState<ClickData[]>([]);
   const [leadsData, setLeadsData] = useState<LeadData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [clicksByOffer, setClicksByOffer] = useState<Record<string, ClickData[]>>({});
   const { toast } = useToast();
 
   const handleDateRangeChange = async ({ from, to }: { from: Date; to: Date }) => {
-    console.log("Handling date range change:", { from, to });
+    console.log("Handling date range change with dates:", { 
+      from: from.toISOString(), 
+      to: to.toISOString() 
+    });
+    
     setIsLoading(true);
     try {
-      await Promise.all([
-        fetchClicks(from, to),
-        fetchLeads(from, to)
-      ]);
+      const clicksPromise = fetchClicks(from, to);
+      const leadsPromise = fetchLeads(from, to);
       
-      if (clickData.length === 0 && leadsData.length === 0) {
+      const [clicksResult, leadsResult] = await Promise.all([clicksPromise, leadsPromise]);
+      
+      console.log("Fetched data:", {
+        clicks: clicksResult,
+        leads: leadsResult
+      });
+
+      if (!clicksResult.length && !leadsResult.length) {
         toast({
           title: "No Data Available",
           description: `No reports found for the selected date range`,
-        });
-      } else {
-        toast({
-          title: "Report Generated",
-          description: `Showing results for selected date range`,
         });
       }
     } catch (error) {
@@ -87,16 +91,13 @@ export default function Reports() {
     }
   };
 
-  const [clicksByOffer, setClicksByOffer] = useState<Record<string, ClickData[]>>({});
-
-  const fetchClicks = async (startDate: Date, endDate: Date) => {
+  const fetchClicks = async (startDate: Date, endDate: Date): Promise<ClickData[]> => {
     try {
-      console.log("Fetching clicks for date range:", { startDate, endDate });
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         console.error("No user found");
-        return;
+        return [];
       }
 
       const { data, error } = await supabase
@@ -118,10 +119,8 @@ export default function Reports() {
         throw error;
       }
 
-      console.log("Fetched clicks:", data);
       setClickData(data || []);
 
-      // Group clicks by offer
       const groupedClicks = (data || []).reduce((acc: Record<string, ClickData[]>, click) => {
         if (!click.offers?.id) return acc;
         if (!acc[click.offers.id]) {
@@ -132,20 +131,20 @@ export default function Reports() {
       }, {});
 
       setClicksByOffer(groupedClicks);
+      return data || [];
     } catch (error) {
       console.error('Error in fetchClicks:', error);
       throw error;
     }
   };
 
-  const fetchLeads = async (startDate: Date, endDate: Date) => {
+  const fetchLeads = async (startDate: Date, endDate: Date): Promise<LeadData[]> => {
     try {
-      console.log("Fetching leads for date range:", { startDate, endDate });
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         console.error("No user found");
-        return;
+        return [];
       }
 
       const { data, error } = await supabase
@@ -164,52 +163,44 @@ export default function Reports() {
         .eq('affiliate_id', user.id)
         .eq('status', 'converted')
         .gte('created_at', startOfDay(startDate).toISOString())
-        .lte('created_at', endOfDay(endDate).toISOString());
+        .lte('created_at', endOfDay(endDate).toISOString())
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching leads:", error);
         throw error;
       }
 
-      console.log("Fetched leads with stored payouts:", data);
+      console.log("Fetched leads for date range:", {
+        startDate: startOfDay(startDate).toISOString(),
+        endDate: endOfDay(endDate).toISOString(),
+        leadsCount: data?.length,
+        leads: data
+      });
+
       setLeadsData(data || []);
+      return data || [];
     } catch (error) {
       console.error('Error in fetchLeads:', error);
       throw error;
     }
   };
 
-  // Calculate campaign stats from clicks and leads
-  const campaignStats = Object.values(clicksByOffer).reduce((acc: Record<string, CampaignStats>, campaignClicks) => {
-    if (!campaignClicks.length || !campaignClicks[0].offers) return acc;
+  const campaignStats = Object.entries(clicksByOffer).reduce((acc: Record<string, CampaignStats>, [offerId, clicks]) => {
+    if (!clicks.length || !clicks[0].offers) return acc;
     
-    const campaignId = campaignClicks[0].offers.id;
-    const campaignName = campaignClicks[0].offers.name;
+    const campaign = clicks[0].offers;
+    const campaignLeads = leadsData.filter(lead => lead.offers?.id === offerId);
     
-    // Initialize campaign stats
-    if (!acc[campaignId]) {
-      acc[campaignId] = {
-        id: campaignId,
-        name: campaignName,
-        clicks: campaignClicks.length,
-        conversions: 0,
-        earnings: 0,
-        conversionRate: 0,
-        epc: 0
-      };
-    }
-
-    // Add conversions and earnings using stored payout values
-    const campaignLeads = leadsData.filter(lead => lead.offers?.id === campaignId);
-    const convertedLeads = campaignLeads.filter(lead => lead.status === 'converted');
-    
-    acc[campaignId].conversions = convertedLeads.length;
-    // Use the stored payout value for each lead
-    acc[campaignId].earnings = convertedLeads.reduce((total, lead) => total + Number(lead.payout), 0);
-    
-    // Calculate rates
-    acc[campaignId].conversionRate = (acc[campaignId].conversions / acc[campaignId].clicks) * 100;
-    acc[campaignId].epc = acc[campaignId].earnings / acc[campaignId].clicks;
+    acc[offerId] = {
+      id: campaign.id,
+      name: campaign.name,
+      clicks: clicks.length,
+      conversions: campaignLeads.length,
+      earnings: campaignLeads.reduce((sum, lead) => sum + Number(lead.payout), 0),
+      conversionRate: clicks.length > 0 ? (campaignLeads.length / clicks.length) * 100 : 0,
+      epc: clicks.length > 0 ? (campaignLeads.reduce((sum, lead) => sum + Number(lead.payout), 0) / clicks.length) : 0
+    };
     
     return acc;
   }, {});

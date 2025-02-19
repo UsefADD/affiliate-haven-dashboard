@@ -19,10 +19,9 @@ interface DateRangeSelectorProps {
 
 export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: today,
-    to: today
+    from: new Date(),
+    to: new Date()
   });
 
   const handlePresetSelect = (preset: string) => {
@@ -60,10 +59,9 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
     setIsCalendarOpen(false);
   };
 
-  const handleCustomRangeSelect = (range: DateRange | undefined) => {
-    if (!range) return;
+  const handleCustomRangeSelect = (range: { from: Date; to: Date } | undefined) => {
+    if (!range?.from) return;
     
-    // Set the new range with both from and to dates
     const newRange = {
       from: range.from,
       to: range.to || range.from
@@ -72,8 +70,7 @@ export function DateRangeSelector({ onDateChange }: DateRangeSelectorProps) {
     setDateRange(newRange);
     onDateChange(newRange);
     
-    // Only close the popover when both dates are selected or a single date is selected
-    if (range.to || !isCalendarOpen) {
+    if (range.to) {
       setIsCalendarOpen(false);
     }
   };
