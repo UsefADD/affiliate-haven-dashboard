@@ -76,7 +76,9 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
   });
 
   const onSubmit = async (data: ApplicationFormData) => {
+    console.log("Form submission started with data:", data);
     setIsSubmitting(true);
+    
     try {
       console.log("Starting application submission...");
       
@@ -115,9 +117,12 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
           status: 'pending'
         });
 
-      if (submissionError) throw submissionError;
+      if (submissionError) {
+        console.error("Submission error:", submissionError);
+        throw submissionError;
+      }
 
-      console.log("Application submitted, sending confirmation email...");
+      console.log("Application submitted successfully, sending confirmation email...");
       
       const { error: emailError } = await supabase.functions.invoke(
         "send-affiliate-confirmation",
@@ -151,7 +156,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       console.error("Error in application submission:", error);
       toast({
         title: "Error Submitting Application",
-        description: "We encountered an error. Please try again or contact support.",
+        description: error.message || "We encountered an error. Please try again or contact support.",
         variant: "destructive",
       });
     } finally {
