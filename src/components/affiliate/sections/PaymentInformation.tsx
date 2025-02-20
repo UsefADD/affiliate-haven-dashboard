@@ -11,13 +11,6 @@ interface PaymentInformationProps {
 }
 
 export function PaymentInformation({ form }: PaymentInformationProps) {
-  const paymentMethod = form.watch("payment_method");
-
-  const handlePaymentMethodChange = (value: "wire" | "paypal" | "crypto") => {
-    console.log("Setting payment method to:", value);
-    form.setValue("payment_method", value);
-  };
-
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
@@ -33,7 +26,10 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             <FormLabel>Payment Method *</FormLabel>
             <Select 
               value={field.value}
-              onValueChange={handlePaymentMethodChange}
+              onValueChange={(value: "wire" | "paypal" | "crypto") => {
+                console.log("Payment method selected:", value);
+                form.setValue("payment_method", value);
+              }}
             >
               <FormControl>
                 <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
@@ -65,7 +61,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         )}
       />
 
-      {paymentMethod === "wire" && (
+      {form.getValues("payment_method") === "wire" && (
         <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
           <FormField
             control={form.control}
@@ -122,7 +118,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         </div>
       )}
 
-      {paymentMethod === "paypal" && (
+      {form.getValues("payment_method") === "paypal" && (
         <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
           <FormField
             control={form.control}
@@ -140,7 +136,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         </div>
       )}
 
-      {paymentMethod === "crypto" && (
+      {form.getValues("payment_method") === "crypto" && (
         <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
           <FormField
             control={form.control}
