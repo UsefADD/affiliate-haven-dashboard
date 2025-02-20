@@ -11,20 +11,12 @@ interface PaymentInformationProps {
 }
 
 export function PaymentInformation({ form }: PaymentInformationProps) {
+  const paymentMethod = form.watch("payment_method");
+
   const handlePaymentMethodChange = (value: "wire" | "paypal" | "crypto") => {
     console.log("Setting payment method to:", value);
-    
-    // First set the payment method
-    form.setValue("payment_method", value, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true,
-    });
+    form.setValue("payment_method", value);
   };
-
-  // Force re-render when payment method changes
-  const paymentMethod = form.watch("payment_method");
-  console.log("Current payment method:", paymentMethod);
 
   return (
     <div className="space-y-4">
@@ -40,8 +32,8 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
           <FormItem>
             <FormLabel>Payment Method *</FormLabel>
             <Select 
-              defaultValue={field.value}
-              onValueChange={(value) => handlePaymentMethodChange(value as "wire" | "paypal" | "crypto")}
+              value={field.value}
+              onValueChange={handlePaymentMethodChange}
             >
               <FormControl>
                 <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
@@ -157,7 +149,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
               <FormItem>
                 <FormLabel>Cryptocurrency Type *</FormLabel>
                 <Select 
-                  defaultValue={field.value}
+                  value={field.value}
                   onValueChange={field.onChange}
                 >
                   <FormControl>
