@@ -88,7 +88,29 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       setIsSubmitting(true);
 
       const submissionData = {
-        ...formData,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company || null,
+        address: formData.address,
+        apt_suite: formData.apt_suite || null,
+        city: formData.city,
+        state: formData.state,
+        zip_postal: formData.zip_postal,
+        country: formData.country,
+        telegram: formData.telegram,
+        im: formData.im || null,
+        im_type: formData.im_type || null,
+        title: formData.title || null,
+        website_url: formData.website_url || null,
+        payment_method: formData.payment_method,
+        pay_to: formData.pay_to,
+        marketing_comments: formData.marketing_comments || null,
+        site_marketing: formData.site_marketing || null,
+        known_contacts: formData.known_contacts,
+        current_advertisers: formData.current_advertisers,
+        status: 'pending',
         paypal_email: formData.payment_method === "paypal" ? formData.paypal_email : null,
         crypto_currency: formData.payment_method === "crypto" ? formData.crypto_currency : null,
         crypto_wallet: formData.payment_method === "crypto" ? formData.crypto_wallet : null,
@@ -100,10 +122,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
       const { error: submissionError } = await supabase
         .from('affiliate_applications')
-        .insert([{
-          ...submissionData,
-          status: 'pending'
-        }]);
+        .insert(submissionData);
 
       if (submissionError) {
         throw submissionError;
