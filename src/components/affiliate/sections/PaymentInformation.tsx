@@ -29,9 +29,9 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
     let isValid = true;
     
     if (method === "wire") {
-      const fields = ["bank_name", "bank_account_number", "bank_swift", "bank_address"];
-      fields.forEach(field => {
-        if (!form.getValues(field)) {
+      const fields = ["bank_name", "bank_account_number", "bank_swift", "bank_address"] as const;
+      fields.forEach((field) => {
+        if (!form.getValues(field as keyof ApplicationFormData)) {
           isValid = false;
         }
       });
