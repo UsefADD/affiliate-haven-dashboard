@@ -18,7 +18,9 @@ export const applicationSchema = z.object({
   im_type: z.string().optional(),
   title: z.string().optional(),
   website_url: z.string().url("Invalid URL").optional().or(z.literal("")),
-  payment_method: z.enum(["wire", "paypal", "crypto"]),
+  payment_method: z.enum(["wire", "paypal", "crypto"], {
+    required_error: "Please select a payment method",
+  }),
   pay_to: z.string().min(1, "Pay to name is required"),
   crypto_currency: z.string().optional(),
   crypto_wallet: z.string().optional(),
@@ -32,15 +34,14 @@ export const applicationSchema = z.object({
   known_contacts: z.string().min(1, "Known contacts information is required"),
   current_advertisers: z.string().min(1, "Current advertisers information is required"),
 }).refine((data) => {
-  // Additional validation for payment method specific fields
-  if (data.payment_method === "paypal") {
-    return !!data.paypal_email;
+  if (data.payment_method === "paypal" && !data.paypal_email) {
+    return false;
   }
-  if (data.payment_method === "crypto") {
-    return !!data.crypto_currency && !!data.crypto_wallet;
+  if (data.payment_method === "crypto" && (!data.crypto_currency || !data.crypto_wallet)) {
+    return false;
   }
-  if (data.payment_method === "wire") {
-    return !!data.bank_name && !!data.bank_account_number && !!data.bank_swift;
+  if (data.payment_method === "wire" && (!data.bank_name || !data.bank_account_number || !data.bank_swift || !data.bank_address)) {
+    return false;
   }
   return true;
 }, {

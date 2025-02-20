@@ -42,6 +42,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
+    mode: "onBlur",
     defaultValues: {
       first_name: "",
       last_name: "",
@@ -72,8 +73,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       site_marketing: "",
       known_contacts: "",
       current_advertisers: "",
-    },
-    mode: "onBlur"
+    }
   });
 
   const onSubmit = async (formData: ApplicationFormData) => {

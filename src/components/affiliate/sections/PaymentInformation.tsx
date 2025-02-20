@@ -14,7 +14,12 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
   const paymentMethod = form.watch("payment_method");
   
   const handlePaymentMethodChange = (value: string) => {
-    form.setValue("payment_method", value as "wire" | "paypal" | "crypto");
+    console.log("Payment method changed to:", value);
+    form.setValue("payment_method", value as "wire" | "paypal" | "crypto", {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    });
     // Reset payment-specific fields when method changes
     form.setValue("paypal_email", "");
     form.setValue("crypto_currency", "");
@@ -24,6 +29,8 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
     form.setValue("bank_swift", "");
     form.setValue("bank_address", "");
   };
+
+  console.log("Current payment method:", paymentMethod);
 
   return (
     <div className="space-y-4">
