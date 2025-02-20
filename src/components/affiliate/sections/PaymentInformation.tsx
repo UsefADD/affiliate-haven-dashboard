@@ -12,6 +12,18 @@ interface PaymentInformationProps {
 
 export function PaymentInformation({ form }: PaymentInformationProps) {
   const paymentMethod = form.watch("payment_method");
+  
+  const handlePaymentMethodChange = (value: string) => {
+    form.setValue("payment_method", value as "wire" | "paypal" | "crypto");
+    // Reset payment-specific fields when method changes
+    form.setValue("paypal_email", "");
+    form.setValue("crypto_currency", "");
+    form.setValue("crypto_wallet", "");
+    form.setValue("bank_name", "");
+    form.setValue("bank_account_number", "");
+    form.setValue("bank_swift", "");
+    form.setValue("bank_address", "");
+  };
 
   return (
     <div className="space-y-4">
@@ -27,7 +39,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
           <FormItem>
             <FormLabel>Payment Method</FormLabel>
             <Select 
-              onValueChange={field.onChange}
+              onValueChange={handlePaymentMethodChange}
               value={field.value}
             >
               <FormControl>
