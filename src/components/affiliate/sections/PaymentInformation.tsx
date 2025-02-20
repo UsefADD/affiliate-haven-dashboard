@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CreditCard } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { ApplicationFormData } from "../schema";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -15,13 +15,13 @@ interface PaymentInformationProps {
 }
 
 export function PaymentInformation({ form }: PaymentInformationProps) {
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
   const handlePaymentMethodChange = (value: "wire" | "paypal" | "crypto") => {
     console.log("Payment method selected:", value);
     form.setValue("payment_method", value);
-    setDialogOpen(true);
+    setOpen(true);
   };
 
   const handleSavePaymentInfo = () => {
@@ -53,7 +53,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
       return;
     }
 
-    setDialogOpen(false);
+    setOpen(false);
     toast({
       title: "Payment information saved",
       description: "You can continue with the application",
@@ -234,8 +234,8 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         )}
       />
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-white">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               Enter Payment Details
@@ -247,7 +247,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
           <div className="flex justify-end space-x-2">
             <Button 
               variant="outline" 
-              onClick={() => setDialogOpen(false)}
+              onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
