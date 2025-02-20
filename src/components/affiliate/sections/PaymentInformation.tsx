@@ -46,21 +46,22 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         )}
       />
 
+      <FormField
+        control={form.control}
+        name="pay_to"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Pay To (Full Name/Company Name)</FormLabel>
+            <FormControl>
+              <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
       {paymentMethod === "wire" && (
         <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
-          <FormField
-            control={form.control}
-            name="pay_to"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Pay To (Full Name/Company Name)</FormLabel>
-                <FormControl>
-                  <Input {...field} className="bg-white" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <FormField
             control={form.control}
             name="bank_name"
@@ -68,7 +69,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
               <FormItem>
                 <FormLabel>Bank Name</FormLabel>
                 <FormControl>
-                  <Input {...field} className="bg-white" />
+                  <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -81,7 +82,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
               <FormItem>
                 <FormLabel>Account Number / IBAN</FormLabel>
                 <FormControl>
-                  <Input {...field} className="bg-white" />
+                  <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -94,7 +95,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
               <FormItem>
                 <FormLabel>SWIFT/BIC Code</FormLabel>
                 <FormControl>
-                  <Input {...field} className="bg-white" />
+                  <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -107,7 +108,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
               <FormItem>
                 <FormLabel>Bank Address</FormLabel>
                 <FormControl>
-                  <Input {...field} className="bg-white" />
+                  <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -120,25 +121,12 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
           <FormField
             control={form.control}
-            name="pay_to"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Pay To (Full Name/Company Name)</FormLabel>
-                <FormControl>
-                  <Input {...field} className="bg-white" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name="paypal_email"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>PayPal Email Address</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" className="bg-white" />
+                  <Input {...field} type="email" className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -151,26 +139,13 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         <div className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
           <FormField
             control={form.control}
-            name="pay_to"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Pay To (Full Name/Company Name)</FormLabel>
-                <FormControl>
-                  <Input {...field} className="bg-white" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name="crypto_currency"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Cryptocurrency Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger className="bg-white">
+                    <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
                       <SelectValue placeholder="Select cryptocurrency" />
                     </SelectTrigger>
                   </FormControl>
@@ -190,7 +165,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
               <FormItem>
                 <FormLabel>Wallet Address</FormLabel>
                 <FormControl>
-                  <Input {...field} className="bg-white" />
+                  <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
