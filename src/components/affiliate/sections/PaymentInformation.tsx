@@ -11,25 +11,19 @@ interface PaymentInformationProps {
 }
 
 export function PaymentInformation({ form }: PaymentInformationProps) {
-  const paymentMethod = form.watch("payment_method");
-  
-  const handlePaymentMethodChange = (value: string) => {
-    console.log("Payment method changed to:", value);
-    form.setValue("payment_method", value as "wire" | "paypal" | "crypto", {
+  const handlePaymentMethodChange = (value: "wire" | "paypal" | "crypto") => {
+    console.log("Setting payment method to:", value);
+    
+    // First set the payment method
+    form.setValue("payment_method", value, {
       shouldValidate: true,
       shouldDirty: true,
       shouldTouch: true,
     });
-    // Reset payment-specific fields when method changes
-    form.setValue("paypal_email", "");
-    form.setValue("crypto_currency", "");
-    form.setValue("crypto_wallet", "");
-    form.setValue("bank_name", "");
-    form.setValue("bank_account_number", "");
-    form.setValue("bank_swift", "");
-    form.setValue("bank_address", "");
   };
 
+  // Force re-render when payment method changes
+  const paymentMethod = form.watch("payment_method");
   console.log("Current payment method:", paymentMethod);
 
   return (
@@ -44,10 +38,10 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         name="payment_method"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Payment Method</FormLabel>
+            <FormLabel>Payment Method *</FormLabel>
             <Select 
-              onValueChange={handlePaymentMethodChange}
-              value={field.value}
+              defaultValue={field.value}
+              onValueChange={(value) => handlePaymentMethodChange(value as "wire" | "paypal" | "crypto")}
             >
               <FormControl>
                 <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
@@ -70,7 +64,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
         name="pay_to"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Pay To (Full Name/Company Name)</FormLabel>
+            <FormLabel>Pay To (Full Name/Company Name) *</FormLabel>
             <FormControl>
               <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
             </FormControl>
@@ -86,7 +80,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             name="bank_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Bank Name</FormLabel>
+                <FormLabel>Bank Name *</FormLabel>
                 <FormControl>
                   <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
@@ -99,7 +93,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             name="bank_account_number"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Account Number / IBAN</FormLabel>
+                <FormLabel>Account Number / IBAN *</FormLabel>
                 <FormControl>
                   <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
@@ -112,7 +106,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             name="bank_swift"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>SWIFT/BIC Code</FormLabel>
+                <FormLabel>SWIFT/BIC Code *</FormLabel>
                 <FormControl>
                   <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
@@ -125,7 +119,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             name="bank_address"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Bank Address</FormLabel>
+                <FormLabel>Bank Address *</FormLabel>
                 <FormControl>
                   <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
@@ -143,7 +137,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             name="paypal_email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>PayPal Email Address</FormLabel>
+                <FormLabel>PayPal Email Address *</FormLabel>
                 <FormControl>
                   <Input {...field} type="email" className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
@@ -161,8 +155,11 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             name="crypto_currency"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Cryptocurrency Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <FormLabel>Cryptocurrency Type *</FormLabel>
+                <Select 
+                  defaultValue={field.value}
+                  onValueChange={field.onChange}
+                >
                   <FormControl>
                     <SelectTrigger className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500">
                       <SelectValue placeholder="Select cryptocurrency" />
@@ -182,7 +179,7 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
             name="crypto_wallet"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Wallet Address</FormLabel>
+                <FormLabel>Wallet Address *</FormLabel>
                 <FormControl>
                   <Input {...field} className="bg-white border-green-200 focus:border-green-500 focus:ring-green-500" />
                 </FormControl>
