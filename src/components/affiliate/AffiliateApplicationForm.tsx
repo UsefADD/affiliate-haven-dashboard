@@ -1,5 +1,5 @@
 
-import { useState, useEffect, memo } from "react";
+import { useState, memo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,6 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
-    mode: "onSubmit",
     defaultValues: {
       first_name: "",
       last_name: "",
@@ -78,93 +77,76 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
   });
 
   const onSubmit = async (data: ApplicationFormData) => {
-    console.log("Form submission started with data:", data);
-    
-    if (isSubmitting) {
-      console.log("Already submitting, preventing double submission");
-      return;
-    }
-    
+    if (isSubmitting) return;
+
     setIsSubmitting(true);
-    
+    console.log("Submitting application form:", data);
+
     try {
-      console.log("Starting application submission to Supabase...");
-      
-      const { data: insertedData, error: submissionError } = await supabase
-        .from("affiliate_applications")
-        .insert([{
-          first_name: data.first_name,
-          last_name: data.last_name,
-          email: data.email,
-          phone: data.phone,
-          company: data.company || null,
-          address: data.address,
-          apt_suite: data.apt_suite || null,
-          city: data.city,
-          state: data.state,
-          zip_postal: data.zip_postal,
-          country: data.country,
-          telegram: data.telegram,
-          im: data.im || null,
-          im_type: data.im_type || null,
-          title: data.title || null,
-          website_url: data.website_url || null,
-          payment_method: data.payment_method,
-          pay_to: data.pay_to,
-          crypto_currency: data.crypto_currency || null,
-          crypto_wallet: data.crypto_wallet || null,
-          paypal_email: data.paypal_email || null,
-          bank_account_number: data.bank_account_number || null,
-          bank_swift: data.bank_swift || null,
-          bank_name: data.bank_name || null,
-          bank_address: data.bank_address || null,
-          marketing_comments: data.marketing_comments || null,
-          site_marketing: data.site_marketing || null,
-          known_contacts: data.known_contacts,
-          current_advertisers: data.current_advertisers,
-          status: 'pending'
-        }])
-        .select();
+      // Insert application into Supabase
+      const { error: submissionError } = await supabase
+        .from('affiliate_applications')
+        .insert([
+          {
+            first_name: data.first_name,
+            last_name: data.last_name,
+            email: data.email,
+            phone: data.phone,
+            company: data.company || null,
+            address: data.address,
+            apt_suite: data.apt_suite || null,
+            city: data.city,
+            state: data.state,
+            zip_postal: data.zip_postal,
+            country: data.country,
+            telegram: data.telegram,
+            im: data.im || null,
+            im_type: data.im_type || null,
+            title: data.title || null,
+            website_url: data.website_url || null,
+            payment_method: data.payment_method,
+            pay_to: data.pay_to,
+            crypto_currency: data.crypto_currency || null,
+            crypto_wallet: data.crypto_wallet || null,
+            paypal_email: data.paypal_email || null,
+            bank_account_number: data.bank_account_number || null,
+            bank_swift: data.bank_swift || null,
+            bank_name: data.bank_name || null,
+            bank_address: data.bank_address || null,
+            marketing_comments: data.marketing_comments || null,
+            site_marketing: data.site_marketing || null,
+            known_contacts: data.known_contacts,
+            current_advertisers: data.current_advertisers,
+            status: 'pending'
+          }
+        ]);
 
       if (submissionError) {
-        console.error("Supabase submission error:", submissionError);
         throw submissionError;
       }
 
-      console.log("Application submitted successfully:", insertedData);
-      console.log("Sending confirmation email...");
-      
-      const { error: emailError } = await supabase.functions.invoke(
-        "send-affiliate-confirmation",
-        {
-          body: { 
-            name: data.first_name, 
-            email: data.email 
-          }
+      // Send confirmation email
+      await supabase.functions.invoke('send-affiliate-confirmation', {
+        body: {
+          name: data.first_name,
+          email: data.email
         }
-      );
+      });
 
-      if (emailError) {
-        console.error("Error sending confirmation email:", emailError);
-        toast({
-          title: "Application Submitted",
-          description: "Your application was received but we encountered an issue sending the confirmation email. Don't worry, we have your application!",
-          variant: "default",
-          className: "bg-yellow-500 text-white border-yellow-600"
-        });
-      } else {
-        toast({
-          title: "Application Submitted Successfully! 🎉",
-          description: "Check your email for confirmation details.",
-          variant: "default",
-          className: "bg-green-500 text-white border-green-600"
-        });
-      }
+      // Show success message
+      toast({
+        title: "Application Submitted Successfully! 🎉",
+        description: "Check your email for confirmation details.",
+        variant: "default",
+        className: "bg-green-500 text-white border-green-600"
+      });
 
+      // Reset form and show thank you dialog
       form.reset();
       setShowThankYou(true);
+
     } catch (error: any) {
-      console.error("Error in application submission:", error);
+      console.error('Application submission error:', error);
       toast({
         title: "Error Submitting Application",
         description: error.message || "We encountered an error. Please try again or contact support.",
