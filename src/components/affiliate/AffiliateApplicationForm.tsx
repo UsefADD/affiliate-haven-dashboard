@@ -76,64 +76,77 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
     },
   });
 
-  const onSubmit = async (data: ApplicationFormData) => {
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    console.log("Submitting application form:", data);
+  const onSubmit = async (formData: ApplicationFormData) => {
+    console.log("Form submission triggered with data:", formData);
+    
+    if (isSubmitting) {
+      console.log("Already submitting, preventing double submission");
+      return;
+    }
 
     try {
-      // Insert application into Supabase
+      setIsSubmitting(true);
+      console.log("Validating form data...");
+
+      // Validate form data
+      const validatedData = applicationSchema.parse(formData);
+      console.log("Form data validated successfully:", validatedData);
+
+      console.log("Submitting to Supabase...");
       const { error: submissionError } = await supabase
         .from('affiliate_applications')
-        .insert([
-          {
-            first_name: data.first_name,
-            last_name: data.last_name,
-            email: data.email,
-            phone: data.phone,
-            company: data.company || null,
-            address: data.address,
-            apt_suite: data.apt_suite || null,
-            city: data.city,
-            state: data.state,
-            zip_postal: data.zip_postal,
-            country: data.country,
-            telegram: data.telegram,
-            im: data.im || null,
-            im_type: data.im_type || null,
-            title: data.title || null,
-            website_url: data.website_url || null,
-            payment_method: data.payment_method,
-            pay_to: data.pay_to,
-            crypto_currency: data.crypto_currency || null,
-            crypto_wallet: data.crypto_wallet || null,
-            paypal_email: data.paypal_email || null,
-            bank_account_number: data.bank_account_number || null,
-            bank_swift: data.bank_swift || null,
-            bank_name: data.bank_name || null,
-            bank_address: data.bank_address || null,
-            marketing_comments: data.marketing_comments || null,
-            site_marketing: data.site_marketing || null,
-            known_contacts: data.known_contacts,
-            current_advertisers: data.current_advertisers,
-            status: 'pending'
-          }
-        ]);
+        .insert([{
+          first_name: validatedData.first_name,
+          last_name: validatedData.last_name,
+          email: validatedData.email,
+          phone: validatedData.phone,
+          company: validatedData.company || null,
+          address: validatedData.address,
+          apt_suite: validatedData.apt_suite || null,
+          city: validatedData.city,
+          state: validatedData.state,
+          zip_postal: validatedData.zip_postal,
+          country: validatedData.country,
+          telegram: validatedData.telegram,
+          im: validatedData.im || null,
+          im_type: validatedData.im_type || null,
+          title: validatedData.title || null,
+          website_url: validatedData.website_url || null,
+          payment_method: validatedData.payment_method,
+          pay_to: validatedData.pay_to,
+          crypto_currency: validatedData.crypto_currency || null,
+          crypto_wallet: validatedData.crypto_wallet || null,
+          paypal_email: validatedData.paypal_email || null,
+          bank_account_number: validatedData.bank_account_number || null,
+          bank_swift: validatedData.bank_swift || null,
+          bank_name: validatedData.bank_name || null,
+          bank_address: validatedData.bank_address || null,
+          marketing_comments: validatedData.marketing_comments || null,
+          site_marketing: validatedData.site_marketing || null,
+          known_contacts: validatedData.known_contacts,
+          current_advertisers: validatedData.current_advertisers,
+          status: 'pending'
+        }]);
 
       if (submissionError) {
+        console.error("Supabase submission error:", submissionError);
         throw submissionError;
       }
 
-      // Send confirmation email
-      await supabase.functions.invoke('send-affiliate-confirmation', {
+      console.log("Application submitted successfully, sending confirmation email...");
+
+      const { error: emailError } = await supabase.functions.invoke('send-affiliate-confirmation', {
         body: {
-          name: data.first_name,
-          email: data.email
+          name: validatedData.first_name,
+          email: validatedData.email
         }
       });
 
-      // Show success message
+      if (emailError) {
+        console.error("Error sending confirmation email:", emailError);
+      }
+
+      console.log("Showing success message and thank you dialog");
       toast({
         title: "Application Submitted Successfully! 🎉",
         description: "Check your email for confirmation details.",
@@ -141,7 +154,6 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
         className: "bg-green-500 text-white border-green-600"
       });
 
-      // Reset form and show thank you dialog
       form.reset();
       setShowThankYou(true);
 
@@ -156,6 +168,8 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       setIsSubmitting(false);
     }
   };
+
+  const handleSubmit = form.handleSubmit(onSubmit);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-8">
@@ -203,7 +217,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-6">
                 <MemoizedPersonalInformation form={form} />
                 <div className="space-y-4">
