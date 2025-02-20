@@ -18,11 +18,11 @@ export const applicationSchema = z.object({
   im_type: z.string().optional(),
   title: z.string().optional(),
   website_url: z.string().url("Invalid URL").optional().or(z.literal("")),
-  payment_method: z.enum(["wire", "paypal", "crypto"]).optional(),
+  payment_method: z.enum(["wire", "paypal", "crypto"]),
   pay_to: z.string().min(1, "Pay to name is required"),
   crypto_currency: z.string().optional(),
   crypto_wallet: z.string().optional(),
-  paypal_email: z.string().email("Invalid PayPal email").optional(),
+  paypal_email: z.string().email("Invalid PayPal email").optional().nullable(),
   bank_account_number: z.string().optional(),
   bank_swift: z.string().optional(),
   bank_name: z.string().optional(),
@@ -31,6 +31,21 @@ export const applicationSchema = z.object({
   site_marketing: z.string().optional(),
   known_contacts: z.string().min(1, "Known contacts information is required"),
   current_advertisers: z.string().min(1, "Current advertisers information is required"),
+}).refine((data) => {
+  // Additional validation for payment method specific fields
+  if (data.payment_method === "paypal") {
+    return !!data.paypal_email;
+  }
+  if (data.payment_method === "crypto") {
+    return !!data.crypto_currency && !!data.crypto_wallet;
+  }
+  if (data.payment_method === "wire") {
+    return !!data.bank_name && !!data.bank_account_number && !!data.bank_swift;
+  }
+  return true;
+}, {
+  message: "Please fill in all required payment information",
+  path: ["payment_method"],
 });
 
 export type ApplicationFormData = z.infer<typeof applicationSchema>;

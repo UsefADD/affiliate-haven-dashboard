@@ -1,4 +1,3 @@
-
 import { useState, memo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,6 +73,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
       known_contacts: "",
       current_advertisers: "",
     },
+    mode: "onBlur"
   });
 
   const onSubmit = async (formData: ApplicationFormData) => {
@@ -86,59 +86,33 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
 
     try {
       setIsSubmitting(true);
-      console.log("Validating form data...");
 
-      // Validate form data
-      const validatedData = applicationSchema.parse(formData);
-      console.log("Form data validated successfully:", validatedData);
+      const submissionData = {
+        ...formData,
+        paypal_email: formData.payment_method === "paypal" ? formData.paypal_email : null,
+        crypto_currency: formData.payment_method === "crypto" ? formData.crypto_currency : null,
+        crypto_wallet: formData.payment_method === "crypto" ? formData.crypto_wallet : null,
+        bank_account_number: formData.payment_method === "wire" ? formData.bank_account_number : null,
+        bank_swift: formData.payment_method === "wire" ? formData.bank_swift : null,
+        bank_name: formData.payment_method === "wire" ? formData.bank_name : null,
+        bank_address: formData.payment_method === "wire" ? formData.bank_address : null,
+      };
 
-      console.log("Submitting to Supabase...");
       const { error: submissionError } = await supabase
         .from('affiliate_applications')
         .insert([{
-          first_name: validatedData.first_name,
-          last_name: validatedData.last_name,
-          email: validatedData.email,
-          phone: validatedData.phone,
-          company: validatedData.company || null,
-          address: validatedData.address,
-          apt_suite: validatedData.apt_suite || null,
-          city: validatedData.city,
-          state: validatedData.state,
-          zip_postal: validatedData.zip_postal,
-          country: validatedData.country,
-          telegram: validatedData.telegram,
-          im: validatedData.im || null,
-          im_type: validatedData.im_type || null,
-          title: validatedData.title || null,
-          website_url: validatedData.website_url || null,
-          payment_method: validatedData.payment_method,
-          pay_to: validatedData.pay_to,
-          crypto_currency: validatedData.crypto_currency || null,
-          crypto_wallet: validatedData.crypto_wallet || null,
-          paypal_email: validatedData.paypal_email || null,
-          bank_account_number: validatedData.bank_account_number || null,
-          bank_swift: validatedData.bank_swift || null,
-          bank_name: validatedData.bank_name || null,
-          bank_address: validatedData.bank_address || null,
-          marketing_comments: validatedData.marketing_comments || null,
-          site_marketing: validatedData.site_marketing || null,
-          known_contacts: validatedData.known_contacts,
-          current_advertisers: validatedData.current_advertisers,
+          ...submissionData,
           status: 'pending'
         }]);
 
       if (submissionError) {
-        console.error("Supabase submission error:", submissionError);
         throw submissionError;
       }
 
-      console.log("Application submitted successfully, sending confirmation email...");
-
       const { error: emailError } = await supabase.functions.invoke('send-affiliate-confirmation', {
         body: {
-          name: validatedData.first_name,
-          email: validatedData.email
+          name: formData.first_name,
+          email: formData.email
         }
       });
 
@@ -146,7 +120,6 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
         console.error("Error sending confirmation email:", emailError);
       }
 
-      console.log("Showing success message and thank you dialog");
       toast({
         title: "Application Submitted Successfully! 🎉",
         description: "Check your email for confirmation details.",
@@ -215,14 +188,7 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = form.getValues();
-                onSubmit(formData);
-              }} 
-              className="space-y-8"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="space-y-6">
                 <MemoizedPersonalInformation form={form} />
                 <div className="space-y-4">
