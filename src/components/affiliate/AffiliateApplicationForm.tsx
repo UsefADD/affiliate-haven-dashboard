@@ -169,8 +169,6 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
     }
   };
 
-  const handleSubmit = form.handleSubmit(onSubmit);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-8">
       <Dialog open={showThankYou} onOpenChange={handleCloseDialog}>
@@ -217,7 +215,14 @@ export default function AffiliateApplicationForm({ onSuccess, onCancel }: Affili
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = form.getValues();
+                onSubmit(formData);
+              }} 
+              className="space-y-8"
+            >
               <div className="space-y-6">
                 <MemoizedPersonalInformation form={form} />
                 <div className="space-y-4">
