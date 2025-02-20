@@ -7,8 +7,9 @@ import {
   Html,
   Link,
   Preview,
+  Section,
   Text,
-} from 'npm:@react-email/components@0.0.22'
+} from 'npm:@react-email/components@0.0.12'
 import * as React from 'npm:react@18.3.1'
 
 interface ConfirmationEmailProps {
@@ -17,82 +18,103 @@ interface ConfirmationEmailProps {
 
 export const ConfirmationEmail = ({
   name,
-}: ConfirmationEmailProps) => (
-  <Html>
-    <Head />
-    <Preview>Welcome to ClixAgent's Affiliate Program</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Welcome to ClixAgent!</Heading>
-        <Text style={text}>Dear {name},</Text>
-        <Text style={text}>
-          Thank you for applying to join ClixAgent's Affiliate Program. We're thrilled about the possibility of partnering with you!
-        </Text>
-        <Text style={text}>
-          Our team will carefully review your application within the next 2-3 business days. During this time, we'll evaluate your experience, marketing strategies, and potential alignment with our program goals.
-        </Text>
-        <Text style={text}>
-          What happens next:
-        </Text>
-        <ul style={list}>
-          <li>Our affiliate team will review your application</li>
-          <li>We'll evaluate your marketing channels and strategies</li>
-          <li>You'll receive a decision email within 2-3 business days</li>
-          <li>If approved, we'll send you detailed onboarding information</li>
-        </ul>
-        <Text style={text}>
-          If you have any questions in the meantime, please don't hesitate to reach out to our affiliate support team.
-        </Text>
-        <Text style={footer}>
-          Best regards,<br />
-          The ClixAgent Affiliate Team
-        </Text>
-      </Container>
-    </Body>
-  </Html>
-)
+}: ConfirmationEmailProps) => {
+  return (
+    <Html>
+      <Head />
+      <Preview>ClixAgent Application Received</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Section style={headerSection}>
+            <Heading style={header}>
+              ClixAgent
+            </Heading>
+          </Section>
 
-export default ConfirmationEmail
+          <Section style={contentSection}>
+            <Text style={text}>
+              Dear {name},
+            </Text>
+            
+            <Text style={text}>
+              Thank you for submitting your application to join ClixAgent. We're excited about the possibility of working together!
+            </Text>
+
+            <Text style={text}>
+              Our team will carefully review your application within the next 2-3 business days. You'll receive a follow-up email with our decision and next steps.
+            </Text>
+
+            <Text style={text}>
+              If you have any questions in the meantime, feel free to reach out to our support team.
+            </Text>
+
+            <Text style={text}>
+              Best regards,<br />
+              The ClixAgent Team
+            </Text>
+          </Section>
+
+          <Section style={footer}>
+            <Text style={footerText}>
+              © {new Date().getFullYear()} ClixAgent. All rights reserved.
+            </Text>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
 
 const main = {
-  backgroundColor: '#ffffff',
-  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
+  backgroundColor: '#f6f9fc',
+  fontFamily:
+    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 }
 
 const container = {
+  backgroundColor: '#ffffff',
   margin: '0 auto',
-  padding: '40px 20px',
-  maxWidth: '580px',
+  maxWidth: '600px',
+  borderRadius: '8px',
+  overflow: 'hidden',
 }
 
-const h1 = {
-  color: '#22c55e',
+const headerSection = {
+  backgroundColor: '#10b981',
+  padding: '20px',
+  textAlign: 'center' as const,
+}
+
+const header = {
+  color: '#ffffff',
   fontSize: '32px',
   fontWeight: 'bold',
+  margin: '0',
   textAlign: 'center' as const,
-  margin: '30px 0',
-  padding: '0',
+}
+
+const contentSection = {
+  padding: '40px',
 }
 
 const text = {
   color: '#333',
   fontSize: '16px',
-  lineHeight: '26px',
+  lineHeight: '24px',
   margin: '16px 0',
-}
-
-const list = {
-  color: '#333',
-  fontSize: '16px',
-  lineHeight: '26px',
-  margin: '16px 0',
-  paddingLeft: '20px',
 }
 
 const footer = {
-  color: '#666',
-  fontSize: '14px',
-  lineHeight: '24px',
-  margin: '48px 0 24px',
-  fontStyle: 'italic',
+  backgroundColor: '#f6f9fc',
+  padding: '20px',
+  textAlign: 'center' as const,
 }
+
+const footerText = {
+  color: '#666',
+  fontSize: '12px',
+  lineHeight: '16px',
+  margin: '0',
+}
+
+export default ConfirmationEmail

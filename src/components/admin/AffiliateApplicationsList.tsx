@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -37,6 +36,13 @@ interface AffiliateApplication {
   site_marketing: string | null;
   known_contacts: string;
   current_advertisers: string;
+  bank_name: string;
+  bank_account_number: string;
+  bank_swift: string;
+  bank_address: string;
+  paypal_email: string;
+  crypto_currency: string;
+  crypto_wallet: string;
 }
 
 interface Props {
@@ -104,7 +110,6 @@ export function AffiliateApplicationsList({ showAll = false, statusFilter }: Pro
         description: `Application ${newStatus} successfully`,
       });
 
-      // Refresh the list after updating status
       await fetchApplications();
       setSelectedApplication(null);
     } catch (error) {
@@ -127,6 +132,33 @@ export function AffiliateApplicationsList({ showAll = false, statusFilter }: Pro
         return <Badge variant="destructive">Rejected</Badge>;
       default:
         return <Badge variant="secondary">Pending</Badge>;
+    }
+  };
+
+  const renderPaymentDetails = (application: AffiliateApplication) => {
+    switch (application.payment_method) {
+      case 'wire':
+        return (
+          <div className="space-y-2">
+            <p><span className="font-medium">Bank Name:</span> {application.bank_name}</p>
+            <p><span className="font-medium">Account Number:</span> {application.bank_account_number}</p>
+            <p><span className="font-medium">SWIFT/BIC:</span> {application.bank_swift}</p>
+            <p><span className="font-medium">Bank Address:</span> {application.bank_address}</p>
+          </div>
+        );
+      case 'paypal':
+        return (
+          <p><span className="font-medium">PayPal Email:</span> {application.paypal_email}</p>
+        );
+      case 'crypto':
+        return (
+          <div className="space-y-2">
+            <p><span className="font-medium">Cryptocurrency:</span> {application.crypto_currency}</p>
+            <p><span className="font-medium">Wallet Address:</span> {application.crypto_wallet}</p>
+          </div>
+        );
+      default:
+        return <p>No payment details available</p>;
     }
   };
 
@@ -209,10 +241,17 @@ export function AffiliateApplicationsList({ showAll = false, statusFilter }: Pro
                 </div>
 
                 <div>
-                  <h3 className="font-semibold">Business Information</h3>
-                  <p><span className="font-medium">Website:</span> {selectedApplication.website_url || 'N/A'}</p>
+                  <h3 className="font-semibold">Payment Information</h3>
                   <p><span className="font-medium">Payment Method:</span> {selectedApplication.payment_method}</p>
                   <p><span className="font-medium">Pay To:</span> {selectedApplication.pay_to}</p>
+                  <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                    {renderPaymentDetails(selectedApplication)}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold">Business Information</h3>
+                  <p><span className="font-medium">Website:</span> {selectedApplication.website_url || 'N/A'}</p>
                 </div>
 
                 <div>
