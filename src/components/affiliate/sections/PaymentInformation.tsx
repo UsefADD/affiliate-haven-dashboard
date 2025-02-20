@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CreditCard } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { ApplicationFormData } from "../schema";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -21,29 +21,40 @@ export function PaymentInformation({ form }: PaymentInformationProps) {
   const handlePaymentMethodChange = (value: "wire" | "paypal" | "crypto") => {
     console.log("Payment method selected:", value);
     form.setValue("payment_method", value);
+    // Reset all payment fields when changing payment method
+    form.setValue("paypal_email", null);
+    form.setValue("crypto_currency", "");
+    form.setValue("crypto_wallet", "");
+    form.setValue("bank_name", "");
+    form.setValue("bank_account_number", "");
+    form.setValue("bank_swift", "");
+    form.setValue("bank_address", "");
     setOpen(true);
   };
 
   const handleSavePaymentInfo = () => {
     const method = form.getValues("payment_method");
     let isValid = true;
+    let requiredFields: (keyof ApplicationFormData)[] = [];
     
     if (method === "wire") {
-      const fields = ["bank_name", "bank_account_number", "bank_swift", "bank_address"] as const;
-      fields.forEach((field) => {
-        if (!form.getValues(field as keyof ApplicationFormData)) {
-          isValid = false;
-        }
-      });
+      requiredFields = ["bank_name", "bank_account_number", "bank_swift", "bank_address"];
     } else if (method === "paypal") {
-      if (!form.getValues("paypal_email")) {
-        isValid = false;
-      }
+      requiredFields = ["paypal_email"];
     } else if (method === "crypto") {
-      if (!form.getValues("crypto_currency") || !form.getValues("crypto_wallet")) {
+      requiredFields = ["crypto_currency", "crypto_wallet"];
+    }
+
+    requiredFields.forEach((field) => {
+      const value = form.getValues(field);
+      if (!value) {
+        form.setError(field, {
+          type: "required",
+          message: "This field is required"
+        });
         isValid = false;
       }
-    }
+    });
 
     if (!isValid) {
       toast({
